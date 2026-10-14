@@ -1,7 +1,9 @@
 // A demo R1 for the window outside Tauri (a plain browser): linked, awake, three agents and a look. Pairing plays
-// itself out (the QR, then "link R1?" a few seconds later). Nothing here talks to a real R1.
+// itself out (the QR, then "link R1?" a few seconds later). The install wizard gets a pretend R1 on USB
+// (./demo-install). Nothing here talks to a real R1.
 
 import type { Agent, LinkState } from "./link";
+import { installDemo } from "./demo-install";
 import { moreApi } from "./demo-more";
 import { type Look, type LookPatch, mergeLook } from "./theme";
 
@@ -11,13 +13,13 @@ const listeners = new Map<string, Set<Fn>>();
 const agents: Agent[] = [
   { id: "4f3e9879", name: "archer", form: "ghost", color: "#5aa0ff", finish: "aurora", eyes: "happy", wear: ["beanie", "scarf"], role: "", brain: "claude", personality: "friendly", state: "idle", unread: 1, can: { look: "ask", device: "ask" } },
   { id: "9c21aa04", name: "newsey", form: "orb", color: "amber", finish: "soft", eyes: "dots", wear: ["glasses", "bowtie"], role: "the news, every morning", brain: "codex", personality: "concise", state: "working" },
-  { id: "1b7d33e2", name: "Kiwi", form: "bunny", color: "lime", finish: "grain", eyes: "sparkle", wear: ["flower", "blush"], role: "plants and the garden", brain: "claude", personality: "playful", state: "working", works_on: "computer:5596c5bb", folders: [String.raw`C:\Users\you\Documents\garden`], computer: { name: "DESKTOP-DF9A6RS", connected: true } },
+  { id: "1b7d33e2", name: "Kiwi", form: "bunny", color: "lime", finish: "grain", eyes: "sparkle", wear: ["flower", "blush"], role: "plants and the garden", brain: "claude", personality: "playful", state: "working", works_on: "computer:5596c5bb", folders: [String.raw`C:\Users\you\Documents\garden`], computer: { name: "DESKTOP-R1OS", connected: true } },
 ];
 let device = { brightness: 40, auto_brightness: false, screen_timeout: 60, volume: 56, sounds: true, haptics: "medium", haptics_wheel: true, time_zone: "America/New_York", time_auto: true, build_model: "sonnet", agents_paused: false };
 const accounts = { claude: true, codex: false };
 let look: Look = { mode: "dark", accent: "orange", font: "rubik", home: { background: { kind: "mesh", colors: ["#4ea1ff", "#b07cf6", "#f06aa8"], grain: 0.5 } } };
 const state: LinkState = {
-  me: { id: "5596c5bb", name: "DESKTOP-DF9A6RS" },
+  me: { id: "5596c5bb", name: "DESKTOP-R1OS" },
   r1s: [{ id: "b97e6ef64c", name: "R1", online: true, path: "direct" }],
   pairing: null,
   asking: null,
@@ -67,6 +69,8 @@ const PHOTOS = [
 export const demo = {
   async invoke(cmd: string, args?: Record<string, unknown>): Promise<unknown> {
     await new Promise((r) => setTimeout(r, 120));
+    const usb = installDemo(cmd, args ?? {}, emit);
+    if (usb) return usb;
     switch (cmd) {
       case "link_state":
         return structuredClone(state);

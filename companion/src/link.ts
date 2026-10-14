@@ -267,13 +267,135 @@ export function codexSignIn(): Promise<void> {
   return invoke<void>("codex_sign_in");
 }
 
-/** Picks a folder on this computer (for an agent working here). */
-export async function pickFolder(): Promise<string | null> {
+/** Picks a folder on this computer (for an agent working here, or Rabbit's release unpacked). */
+export async function pickFolder(title = "a folder for your agent"): Promise<string | null> {
   if (!inTauri) return "C:\\Users\\you\\Projects\\garden";
   const { open } = await import("@tauri-apps/plugin-dialog");
-  const picked = await open({ directory: true, multiple: false, title: "a folder for your agent" });
+  const picked = await open({ directory: true, multiple: false, title });
   return typeof picked === "string" ? picked : null;
 }
+
+/** Picks r1os's system image for the flash (a `.img`). */
+export async function pickSystemImage(): Promise<string | null> {
+  if (!inTauri) return String.raw`C:\Users\you\Downloads\r1os-0.2.18-system.img`;
+  const { open } = await import("@tauri-apps/plugin-dialog");
+  const picked = await open({ directory: false, multiple: false, title: "r1os's system image", filters: [{ name: "system image", extensions: ["img"] }] });
+  return typeof picked === "string" ? picked : null;
+}
+
+// ---- installing r1os over USB (src-tauri/src/install.rs; docs/specs/companion.md §11) ----------------------------
+
+/** An R1 on USB, as the scan finds it: named by a hash of its serial, never the serial. */
+export interface UsbR1 {
+  id: string;
+  mode: "preloader" | "adb" | "unauthorized" | "fastboot" | "fastbootd" | "no_driver";
+  /** In the bootloader. */
+  unlocked: boolean | null;
+  slot: string | null;
+  /** Booted into r1os: its image's version. */
+  r1os: string | null;
+}
+/** What the scan found; `busy` while something else is talking to the R1 (nothing was asked). */
+export interface UsbScan {
+  busy?: boolean;
+  tools?: boolean;
+  r1s?: UsbR1[];
+}
+export interface UsbTools {
+  version: string | null;
+  pinned: string | null;
+  size: number | null;
+  terms: string;
+}
+export interface Drivers {
+  r1: boolean;
+  mtk: boolean;
+}
+export interface BackupStatus {
+  tools: boolean;
+  mtk_driver: boolean;
+  root: string;
+  /** This R1's newest backup that verifies. */
+  latest: string | null;
+  skip_phrase: string;
+}
+export interface BackupMade {
+  dir: string;
+  identity: string;
+  date: string;
+  parts: [string, number][];
+}
+export interface StockStatus {
+  ready: boolean;
+  bytes: number;
+  files: string[];
+  release: string;
+}
+/** A Rabbit update's merge status, from `para`: only `none` lets the flash go ahead. */
+export type Merge = "none" | "unknown" | "snapshotted" | "merging" | "cancelled";
+export interface ReadStatus {
+  read: boolean;
+  /** When it was read (ms). */
+  at?: number | null;
+  merge?: Merge | null;
+  vendor_a?: number | null;
+  vendor_b?: number | null;
+  r1?: string;
+}
+export interface Checked {
+  r1: string;
+  slot: string;
+  vendor_bytes: number;
+  other_vendor_bytes: number;
+  merge: Merge;
+}
+export interface FlashWrite {
+  what: "flash" | "erase" | "unlock" | "boot";
+  part: string | null;
+  bytes: number;
+}
+export interface FlashPlan {
+  r1: string;
+  slot: string;
+  system: string | null;
+  system_bytes: number;
+  /** The plan in words, as the flash itself says it. */
+  lines: string[];
+  writes: FlashWrite[];
+  bytes: number;
+  /** What has to be typed. */
+  confirm: string;
+}
+
+export const install = {
+  tools: () => invoke<UsbTools>("usb_tools"),
+  fetchTools: () => invoke<{ version: string }>("usb_fetch_tools"),
+  scan: () => invoke<UsbScan>("usb_scan"),
+  drivers: () => invoke<Drivers>("drivers_status"),
+  installDrivers: () => invoke<{ status: Drivers; log: string }>("drivers_install", { mtk: true, usbdk: false }),
+  undoDrivers: () => invoke<{ status: Drivers; log: string }>("drivers_undo"),
+  backupStatus: (identity: string | null) => invoke<BackupStatus>("backup_status", { identity }),
+  fetchBackupTools: () => invoke<void>("backup_fetch_tools"),
+  backup: () => invoke<BackupMade>("backup_run"),
+  stopBackup: () => invoke<void>("backup_stop"),
+  /** The backup skipped for [identity]'s R1 (`null`: before one was seen), if [typed] is the phrase. */
+  skipBackup: (typed: string, identity: string | null) => invoke<boolean>("backup_skip", { typed, identity }),
+  stock: () => invoke<StockStatus>("flash_stock_status"),
+  fetchStock: (from: string | null) => invoke<void>("flash_fetch_stock", { from }),
+  readStatus: (identity: string) => invoke<ReadStatus>("flash_read_status", { identity }),
+  readR1: () => invoke<ReadStatus>("flash_read_r1"),
+  toBootloader: () => invoke<void>("flash_to_bootloader"),
+  leaveBootloader: () => invoke<void>("flash_leave_bootloader"),
+  enterFastboot: () => invoke<void>("flash_enter_fastboot"),
+  stopEnterFastboot: () => invoke<void>("flash_enter_fastboot_stop"),
+  unlockAbility: () => invoke<{ r1: string; unlocked: boolean | null; ability: number | null }>("flash_unlock_ability"),
+  check: () => invoke<Checked>("flash_check"),
+  prepare: (system: string) => invoke<FlashPlan>("flash_prepare", { system }),
+  prepared: () => invoke<{ checked: Checked | null; plan: FlashPlan | null }>("flash_prepared"),
+  run: (typed: string) => invoke<void>("flash_run", { typed }),
+  /** One of the install's progress events, while `fn` is wanted. */
+  on: <T>(event: string, fn: (payload: T) => void) => listen<T>(event, fn),
+};
 
 /** Starting with Windows (minimised to the tray): the companion's own setting. */
 export const autostart = {

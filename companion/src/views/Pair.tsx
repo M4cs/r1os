@@ -8,7 +8,7 @@ import { Character } from "@shell/ui/Character";
 import { type LinkState, link } from "../link";
 import { page, soft, spring } from "../motion";
 
-export function Pair({ state, first, onDone }: { state: LinkState; first: boolean; onDone: () => void }) {
+export function Pair({ state, first, onDone, onInstall }: { state: LinkState; first: boolean; onDone: () => void; onInstall: () => void }) {
   const [err, setErr] = useState<string | null>(null);
   const showing = state.pairing;
   const asking = state.asking;
@@ -69,6 +69,11 @@ export function Pair({ state, first, onDone }: { state: LinkState; first: boolea
               {!first && (
                 <button className="btn ghost" onClick={() => { void link.stop(); onDone(); }}>
                   cancel
+                </button>
+              )}
+              {first && (
+                <button className="btn ghost" onClick={onInstall}>
+                  <Icon name="usb" weight="bold" size={16} /> r1os isn't on your r1 yet? install it over usb
                 </button>
               )}
             </div>

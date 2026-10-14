@@ -522,3 +522,73 @@ b { font-weight: 700; }
 .k-connection + .k-connection { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 6px; }
 .skill-choose { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; max-height: 280px; overflow: auto; }
 .skill-pick { display: flex; gap: 10px; align-items: baseline; cursor: pointer; }
+
+/* ---- installing r1os (T-171): the steps, one card at a time, the pictures, the plan and the log ------------------ */
+
+.install { max-width: 820px; display: flex; flex-direction: column; gap: 14px; }
+.install-head .lede { margin: 10px 0 0; max-width: 620px; }
+.install-head .chips { margin-top: 12px; }
+.install-steps { display: flex; gap: 4px; padding: 4px; border-radius: 18px; background: color-mix(in srgb, var(--panel) 85%, transparent); backdrop-filter: blur(14px); }
+.install-step { position: relative; flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; border: 0; background: none; padding: 9px 10px; border-radius: 14px; font-size: 13px; font-weight: 700; color: var(--muted); transition: color .2s; white-space: nowrap; }
+.install-step:hover:not(.on) { color: var(--fg); }
+.install-step.on { color: var(--ink); }
+.install-step > :not(.install-step-fill) { position: relative; }
+.install-step-fill { position: absolute; inset: 0; border-radius: 14px; background: var(--accent); }
+.install-step-n { width: 22px; height: 22px; flex: none; border-radius: 50%; display: grid; place-items: center; font-size: 12px; background: var(--panel2); }
+.install-step.done .install-step-n { background: #3ddc8426; color: #3ddc84; }
+.install-step.on .install-step-n { background: rgba(0, 0, 0, .14); color: var(--ink); }
+.install-what p { margin: 0 0 8px; line-height: 1.5; max-width: 680px; font-weight: 400; }
+.install-what p.small { margin-top: -2px; }
+.install-what p.install-soon { display: inline-flex; align-items: center; gap: 7px; padding: 5px 12px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 13px; font-weight: 700; }
+.hands { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 22px; align-items: center; padding: 2px 0 12px; }
+.hands.words { grid-template-columns: minmax(0, 1fr); }
+.hands-words { font-weight: 400; }
+.hands-words p { margin: 0; line-height: 1.5; }
+.hands-words ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 7px; line-height: 1.45; }
+.hands-words li::marker { color: var(--accent); font-weight: 700; }
+.hands-svg { width: 100%; height: auto; display: block; overflow: visible; }
+.hands-push { animation: hands-push 1.8s ease-in-out infinite; }
+.hands-ring { transform-box: fill-box; transform-origin: center; animation: hands-ring 1.8s ease-out infinite; }
+.hands-button { animation: hands-button 1.8s ease-in-out infinite; }
+.hands-plug { animation: hands-plug 2.6s ease-in-out infinite; }
+.hands-hint { animation: hands-hint 2.6s ease-in-out infinite; }
+@keyframes hands-push { 0%, 100% { transform: translateX(10px); } 45%, 60% { transform: translateX(0); } }
+@keyframes hands-ring { 0%, 40% { opacity: 0; transform: scale(.6); } 55% { opacity: .9; } 100% { opacity: 0; transform: scale(1.7); } }
+@keyframes hands-button { 0%, 40%, 70%, 100% { transform: translateX(0); } 50%, 60% { transform: translateX(-2px); } }
+@keyframes hands-plug { 0%, 15% { transform: translateX(-16px); } 55%, 100% { transform: translateX(0); } }
+@keyframes hands-hint { 0%, 15% { opacity: .9; transform: translateX(-6px); } 55%, 100% { opacity: 0; transform: translateX(4px); } }
+@media (prefers-reduced-motion: reduce) {
+  .hands-push, .hands-ring, .hands-button, .hands-plug, .hands-hint, .install-wait { animation: none; }
+}
+.wrong { margin: 0 0 10px; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-size: 13px; line-height: 1.45; }
+.state { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.state.ok { color: #3ddc84; }
+.install-row { padding: 4px 0 14px; }
+.install-row.hands { padding-top: 8px; }
+.install-bar .track { margin-top: 0; height: 10px; overflow: hidden; }
+.install-bar-line { display: flex; justify-content: space-between; gap: 12px; margin-top: 7px; font-size: 12px; color: var(--muted); }
+.install-bar-line > span:last-child { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.install-wait { width: 30%; animation: install-wait 1.4s ease-in-out infinite alternate; }
+@keyframes install-wait { from { left: 0; } to { left: 70%; } }
+.install-running { display: grid; gap: 10px; }
+.install-err { margin: 0 0 12px; }
+.install-plan { margin: 4px 0 14px; padding: 14px 16px; border-radius: 18px; background: var(--panel2); box-shadow: inset 0 0 0 1px var(--line); display: flex; flex-direction: column; gap: 10px; }
+.install-plan.danger { background: color-mix(in srgb, #f2555a 9%, var(--panel2)); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, #f2555a 45%, transparent); }
+.install-plan-title { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.install-plan.danger .install-plan-title { color: #ff8f8f; }
+.install-plan ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 5px; font-size: 14px; line-height: 1.45; }
+.install-plan p { margin: 0; }
+.install-writes { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 2px 18px; padding: 8px 10px; border-radius: 12px; background: color-mix(in srgb, var(--ink) 30%, transparent); }
+.install-write { display: grid; grid-template-columns: 44px 1fr auto; gap: 8px; font-size: 12px; }
+.install-confirm { max-width: 240px; font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+.install-nav { display: flex; justify-content: space-between; gap: 10px; }
+.install-log-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 0 6px; }
+.install-log-lines { margin: 4px 0 10px; max-height: 240px; overflow: auto; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--ink) 40%, transparent); font: 12px/1.55 ui-monospace, "Cascadia Mono", Consolas, monospace; text-transform: none; white-space: pre-wrap; user-select: text; }
+.link.inline { display: inline-flex; padding: 0; font-size: inherit; color: var(--accent); }
+.link:disabled { opacity: .5; cursor: default; }
+.cmd { padding: 1px 6px; border-radius: 6px; background: var(--panel2); white-space: nowrap; }
+@media (max-width: 1000px) {
+  .hands { grid-template-columns: minmax(0, 1fr); }
+  .hands-svg { max-width: 240px; }
+  .install-step { padding: 9px 6px; }
+}

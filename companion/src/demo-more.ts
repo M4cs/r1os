@@ -71,7 +71,7 @@ const connectionState = () => ({
   chatgpt_url: "https://chatgpt.com/apps",
 });
 let memories = [
-  { id: 1, text: "Max likes his coffee black", at: Date.now() - 50 * HOUR, shared: true, by: "4f3e9879" },
+  { id: 1, text: "Sam likes their coffee black", at: Date.now() - 50 * HOUR, shared: true, by: "4f3e9879" },
   { id: 2, text: "The fern on the windowsill needs water every Sunday", at: Date.now() - 20 * HOUR, shared: false, by: "1b7d33e2" },
 ];
 let chats = [

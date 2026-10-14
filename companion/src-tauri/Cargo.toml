@@ -3,6 +3,7 @@ name = "r1os-companion"
 description = "r1os Companion: your R1, on your computer (ADR-0047)"
 version = "0.1.0"
 edition.workspace = true
+license.workspace = true
 rust-version.workspace = true
 publish.workspace = true
 

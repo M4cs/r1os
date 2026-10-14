@@ -1,6 +1,6 @@
 // The companion's window (docs/specs/companion.md §5): its own title bar, your R1s down the side, and the R1 you
-// picked (or pairing a new one). It looks like the R1: its accent, mode and background, its agents, springs. The switch
-// at the top left turns it into chats with your agents (ADR-0051).
+// picked (or pairing a new one, or installing r1os on one over USB: §11). It looks like the R1: its accent, mode and
+// background, its agents, springs. The switch at the top left turns it into chats with your agents (ADR-0051).
 
 import { Icon } from "@r1os/icons";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
@@ -10,6 +10,7 @@ import { type R1Info, link, onPairRequest, useLink, windowDo } from "./link";
 import { Backdrop } from "./views/Backdrop";
 import { ChatsPanel } from "./views/Chats";
 import { Computer } from "./views/Computer";
+import { Install } from "./views/Install";
 import { Pair } from "./views/Pair";
 import { PAGES, type Page, R1View, useR1 } from "./views/R1View";
 import { spring } from "./motion";
@@ -18,6 +19,8 @@ export function App() {
   const state = useLink();
   const [pairing, setPairing] = useState(false);
   const [mine, setMine] = useState(false);
+  // Installing r1os on an R1 over USB: no linked R1 needed.
+  const [installing, setInstalling] = useState(false);
   const [picked, setPicked] = useState<string | null>(null);
   const [page, setPage] = useState<Page>("overview");
   // Managing the R1, or chatting with its agents: the switch at the top left, remembered.
@@ -37,7 +40,10 @@ export function App() {
   // The tray's "link an R1".
   useEffect(() => {
     let off: (() => void) | undefined;
-    onPairRequest(() => setPairing(true)).then((f) => (off = f));
+    onPairRequest(() => {
+      setPairing(true);
+      setInstalling(false);
+    }).then((f) => (off = f));
     return () => off?.();
   }, []);
 
@@ -53,9 +59,9 @@ export function App() {
     if (ids.join() !== known.join()) setKnown(ids);
   }, [r1s, known]);
 
-  const showPair = pairing || (state !== null && r1s.length === 0) || !!state?.asking;
+  const showPair = !!state?.asking || (!installing && (pairing || (state !== null && r1s.length === 0)));
   const unread = r1.agents.reduce((n, a) => n + (a.unread ?? 0), 0);
-  const chats = mode === "chats" && !showPair;
+  const chats = mode === "chats" && !showPair && !installing;
 
   return (
     <div className="app">
@@ -115,18 +121,19 @@ export function App() {
                 key={r.id}
                 r1={r}
                 agent={r.id === selected?.id ? r1.focus : null}
-                on={!showPair && !mine && r.id === selected?.id}
+                on={!showPair && !mine && !installing && r.id === selected?.id}
                 index={i}
                 onClick={() => {
                   setPicked(r.id);
                   setPairing(false);
                   setMine(false);
+                  setInstalling(false);
                   if (state?.pairing) void link.stop();
                 }}
               />
             ))}
             <AnimatePresence initial={false}>
-              {selected?.online && !showPair && !mine && (
+              {selected?.online && !showPair && !mine && !installing && (
                 <motion.nav
                   key={`pages-${selected.id}`}
                   className="side-pages"
@@ -150,6 +157,7 @@ export function App() {
               onClick={() => {
                 setPairing(true);
                 setMine(false);
+                setInstalling(false);
               }}
               whileTap={{ scale: 0.97 }}
               layout
@@ -164,10 +172,31 @@ export function App() {
                 <span className="device-sub">scan a code with its camera</span>
               </span>
             </motion.button>
+            <motion.button
+              className={`device add ${installing && !mine && !state?.asking ? "on" : ""}`}
+              onClick={() => {
+                setInstalling(true);
+                setPairing(false);
+                setMine(false);
+                if (state?.pairing) void link.stop();
+              }}
+              whileTap={{ scale: 0.97 }}
+              layout
+              transition={spring}
+            >
+              {installing && !mine && !state?.asking && <motion.div className="fill" layoutId="side-fill" transition={spring} />}
+              <span className="device-icon">
+                <Icon name="usb" weight="bold" size={20} />
+              </span>
+              <span className="device-text">
+                <span className="device-name">install r1os</span>
+                <span className="device-sub">on an r1, over usb</span>
+              </span>
+            </motion.button>
           </LayoutGroup>
           <div className="grow" />
           {state && (
-            <motion.button className={`device me ${mine ? "on" : ""}`} onClick={() => { setMine(true); setPairing(false); }} whileTap={{ scale: 0.97 }} layout transition={spring}>
+            <motion.button className={`device me ${mine ? "on" : ""}`} onClick={() => { setMine(true); setPairing(false); setInstalling(false); }} whileTap={{ scale: 0.97 }} layout transition={spring}>
               {mine && <motion.div className="fill" layoutId="side-fill" transition={spring} />}
               <span className="device-icon small"><Icon name="desktop" weight="bold" size={17} /></span>
               <span className="device-text">
@@ -185,12 +214,19 @@ export function App() {
               </motion.div>
             ) : mine ? (
               <Computer key="me" state={state} />
+            ) : installing && !state.asking ? (
+              <Install key="install" />
             ) : showPair ? (
               <Pair
                 key="pair"
                 state={state}
                 first={r1s.length === 0}
                 onDone={() => setPairing(false)}
+                onInstall={() => {
+                  setInstalling(true);
+                  setPairing(false);
+                  if (state.pairing) void link.stop();
+                }}
               />
             ) : selected ? (
               <R1View key={`r1-${selected.id}`} r1={selected} data={r1} page={page} onPage={setPage} />

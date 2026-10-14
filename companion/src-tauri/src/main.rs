@@ -193,8 +193,13 @@ fn main() {
             link_state, pair_start, pair_stop, pair_answer, unlink, r1_api, save_download, backup_r1, settings_get, settings_set, pc_status, codex_sign_in, claude_sign_in,
             install::usb_tools, install::usb_fetch_tools, install::usb_scan, install::drivers_status, install::drivers_install,
             install::drivers_undo, install::backup_status, install::backup_fetch_tools, install::backup_run,
-            install::backup_stop, install::backup_skip
+            install::backup_stop, install::backup_skip, install::flash_stock_status, install::flash_fetch_stock,
+            install::flash_read_status, install::flash_read_r1, install::flash_to_bootloader, install::flash_leave_bootloader,
+            install::flash_enter_fastboot, install::flash_enter_fastboot_stop, install::flash_unlock_ability,
+            install::flash_check, install::flash_prepare, install::flash_prepared, install::flash_run
         ])
+        // The flash's check and plan, between its steps.
+        .manage(install::Flash::default())
         .setup(move |app| {
             let handle = app.handle().clone();
             let link = tauri::async_runtime::block_on(link::Link::start(handle.clone()))?;

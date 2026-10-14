@@ -162,10 +162,11 @@ impl Adb {
         Ok(got)
     }
 
-    /// Into the bootloader's fastboot (`adb reboot bootloader`), or fastbootd.
-    pub fn reboot_to_fastboot(&self, userspace: bool) -> Result<()> {
+    /// Into the bootloader's fastboot (`adb reboot bootloader`). Never fastbootd: a trip there and back once left a
+    /// slot unbootable (T-182), and r1os's install doesn't use it (ADR-0067).
+    pub fn reboot_to_bootloader(&self) -> Result<()> {
         let out = command(&self.exe)
-            .args(["-s", &self.serial, "reboot", if userspace { "fastboot" } else { "bootloader" }])
+            .args(["-s", &self.serial, "reboot", "bootloader"])
             .output()
             .context("adb didn't run")?;
         if !out.status.success() {
