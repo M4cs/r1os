@@ -36,6 +36,12 @@ These are known. A report is still welcome if you find a way to make them worse.
   Requiring adb authorization, or a user build, is planned before a general release.
 - **One user for all agents:** every agent runs as the same user and shares one login home.
 - **The sign-in page:** it's served over plain HTTP on the local network, behind a one-time token.
+- **No mic or camera indicator** for Android apps: r1os turns Android's off, since r1d opens the mic on every button
+  press.
+- **Agents reach the local network** as well as the internet.
+
+The whole list, with what leaves the R1 and who can reach it, is the site's privacy page
+(`web/src/docs/content/privacy.md`).
 
 ## Out of scope
 

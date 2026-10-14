@@ -1,5 +1,5 @@
 // The home page's last parts: private by default, and the close: yours to change. Few words each; the docs carry the
-// detail. The close's characters rest while it's scrolled away.
+// detail (the privacy page says what isn't safe yet, so no claim here outruns it: T-177). The close's characters rest while it's scrolled away.
 
 import { Icon } from "@r1os/icons";
 import { motion, useReducedMotion } from "motion/react";
@@ -16,7 +16,7 @@ const PRIVATE = [
   { icon: "cube", title: "agents in a box", text: "on the device, each turn runs sandboxed, with no special powers." },
   { icon: "waveform", title: "heard on the device", text: "speech turns to text right here." },
   { icon: "hand-palm", title: "asks first", text: "orders, emails and settings wait for your yes." },
-  { icon: "lock-key", title: "locked down", text: "a new key every boot, and a pin lock." },
+  { icon: "lock-key", title: "a key every boot", text: "a fresh key every boot, and a pin lock. usb isn't locked yet." },
 ];
 
 const OPEN = ["claude + codex", "skills and connectors", "a full api", "a skill for coding agents", "android apps, no google account"];
@@ -44,7 +44,7 @@ export function Private() {
   return (
     <section className="section" id="private" ref={section} {...rest(seen)}>
       <div className="wrap">
-        <Head title="private by default." sub="just your device, your agents and the services you already pay for." />
+        <Head title="private by default." sub="just your device, your agents and the services you already pay for." link={{ to: "/docs/privacy", label: "what leaves the device" }} />
         <div className="grid3">
           {PRIVATE.map((p, i) => (
             <motion.div

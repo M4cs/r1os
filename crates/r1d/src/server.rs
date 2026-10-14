@@ -5,8 +5,8 @@
 //! - `/ws`: the event stream (a `hello` snapshot, then stamped events).
 //! - `/harness/*` (only with `--harness`): input injection, the event log, screenshots.
 //!
-//! Security gap (accepted for R1, closed in R4 by a unix socket in r1d's own SELinux domain): any
-//! process on the R1 can reach 127.0.0.1:7171. Today the only other apps are Android's own.
+//! Any process on the R1 can reach 127.0.0.1:7171, so `/api`, `/harness` and `/ws` take r1d's per-boot token
+//! (ADR-0026, `auth.rs`), which `/token` gives only to the host app's uid. `/mcp` takes the agents' tool tokens.
 
 use crate::device;
 use crate::gesture::Raw;

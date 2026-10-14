@@ -10,8 +10,8 @@
 #   - what r1os-base did through Magisk: the side button as BUTTON_1, the app-widgets feature,
 #     and Rabbit's USB CUA mode off.
 # Since: Aurora Store, the boot animation (your agents), verbose boot, and boot 36 s sooner (v0.2.15-17).
-# Not yet: SystemUI and Settings removed (not before r1d's loopback gap is closed,
-# r1d.md section 6), r1d and the speech libraries baked into the image, our branding.
+# Not yet: SystemUI and Settings removed (r1d's loopback gap, which held it back, is closed by its
+# per-boot token: ADR-0026), r1d and the speech libraries baked into the image, our branding.
 
 PRODUCT_PACKAGES += \
     R1osHost \

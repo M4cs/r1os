@@ -55,6 +55,8 @@ Everything is in `/data/r1os`, readable only by root: `core.db` (agents, chats, 
 
 ## Trust boundaries
 
+What leaves the R1, who can reach it and what isn't safe yet, all in one place: [Privacy and security](/docs/privacy).
+
 - **r1d and the host** are trusted. Only the host gets r1d's per-boot token, which `/api`, `/harness` and `/ws` need.
 - **USB adb** isn't authenticated yet: a computer with a cable gets root, and with it r1d's token and the CLIs' logins. An approval prompt is planned.
 - **Signing:** the image and the host carry r1os's own keys; an app signed with AOSP's public test keys gets no system powers.

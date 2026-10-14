@@ -1,6 +1,7 @@
 //! r1d: the r1os core daemon (docs/specs/r1d.md, ADR-0002).
 //!
-//! On the R1 it runs as root, started by the r1os-base Magisk module's service.sh. It reads the
+//! On the R1 it runs as root, started by init's r1d service on r1os's image (or r1os-base's service.sh
+//! under Magisk, the older route). It reads the
 //! wheel and side button from evdev, drives the camera motor, and serves the shell to the host
 //! app's WebView over 127.0.0.1. On a PC, `--sim` makes it the desktop simulator: no hardware,
 //! input through the harness.

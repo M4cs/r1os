@@ -87,7 +87,7 @@ The tools are bash, for Linux, macOS or Git Bash on Windows; the AOSP image buil
 
 ## Working in the repo
 
-- **Docs change with behaviour.** A behaviour change updates the website's docs pages (`web/src/docs/content`) in the same change, and this skill when a rule or gotcha changes. ADR numbers in comments name the maintainers' decision records (private).
+- **Docs change with behaviour.** A behaviour change updates the website's docs pages (`web/src/docs/content`) in the same change, and this skill when a rule or gotcha changes. A change to what leaves the R1, who can reach it, or a known gap closing updates `privacy.md` there (and `SECURITY.md`): its claims, and the home page's, must stay true. ADR numbers in comments name the maintainers' decision records (private).
 - **Tracking work:** contributors use issues and pull requests. Work you find but won't do now becomes an issue, never a TODO in code. The maintainers track their own work in a private vault (`docs/`, git-ignored): if `docs/maintainer.md` exists, follow it and [workflow.md](references/workflow.md).
 - **Battery first:** no timers, polling or animations that run with the screen off; a looping animation runs only while its view is visible; animate transform and opacity; prefer `/ws` events to polling.
 - **Wheel and button first:** every screen works without touch (typing aside; docked mode adds touch). New native screens use `Theme` tokens, never literal colours, so light mode works.

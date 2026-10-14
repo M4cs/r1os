@@ -95,8 +95,8 @@ impl Jail {
             std::fs::create_dir_all(&agents)?;
             restrict(&agents, None)?; // root-only: no agent can list the others
         }
-        // Root-only too: only its subdirectories are mounted into the box. (r1d runs with umask 0,
-        // so a plain create_dir_all would leave it 0777.)
+        // Root-only too: only its subdirectories are mounted into the box. (r1d's umask isn't relied on:
+        // under Magisk it was 0, so a plain create_dir_all would leave it 0777.)
         std::fs::create_dir_all(&dir)?;
         restrict(&dir, None)?;
         for sub in ["work", "work/files"].iter().copied().chain(PER_AGENT_HOME.iter().map(|(d, _)| *d)) {
