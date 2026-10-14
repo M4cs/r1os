@@ -1,6 +1,6 @@
 # Gotchas and lessons
 
-Things that have already gone wrong, each as **symptom → cause → what to do**, with where it was learned. Search for the symptom before debugging from scratch. When you learn a new one, record it in the docs (a dated research update, or the spec) so the next agent finds it. `docs/runbooks/` are the maintainer's own notes for one machine: take facts from the `tools/` scripts and specs, not their steps or paths.
+Things that have already gone wrong, each as **symptom → cause → what to do**, with where it was learned. Search for the symptom before debugging from scratch. When you learn a new one, add it here so the next agent finds it (and, if you keep the maintainers' vault, in its research notes too). `docs/runbooks/` are the maintainer's own notes for one machine: take facts from the `tools/` scripts and specs, not their steps or paths.
 
 ## Windows, Git Bash and tooling
 1. adb sees `C:/Program Files/Git/proc/version` → Git Bash rewrites POSIX-looking args → `MSYS_NO_PATHCONV=1` (`tools/lib.sh` exports it; prefix by hand: `MSYS_NO_PATHCONV=1 adb shell cat /proc/version`). Harmless on Linux and macOS. (`tools/lib.sh`)

@@ -2,6 +2,8 @@
 
 How work is planned and recorded in r1os's docs vault, how commits are written, and how to check a change in each layer.
 
+**The vault is the maintainers' own** (`docs/`, git-ignored, never published). The tracking sections below apply when it's there (`docs/maintainer.md` exists); otherwise use issues and pull requests (CONTRIBUTING.md). The verifying sections apply to everyone.
+
 ## The docs vault
 
 **The Obsidian vault is the only tracker** (`docs/README.md`, CLAUDE.md). Plans, tasks, backlog, decisions, research and open questions live in `docs/`: never in chat, scratch files, code comments or TODOs.

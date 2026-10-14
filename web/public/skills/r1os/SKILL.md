@@ -36,7 +36,7 @@ packages/          @r1os/runtime (the app runtime) and @r1os/icons (Phosphor)
 agent-box/         building the Alpine rootfs      device/  the image's layer (aosp/), init rc, sepolicy, overlays
 prompts/           the app builder's prompts (compiled into r1d)   fixtures/  example apps, eval briefs and scenarios
 tools/             bash + Python: build, deploy, sim, r1h, evals, keys, flashing, backup
-docs/              the source of truth, an Obsidian vault: specs, ADRs, research, roadmap, kanban
+docs/              git-ignored: the maintainers' private vault (specs, ADRs, kanban); public docs are web/src/docs/content
 web/               the website (Vite, React) and this skill (web/public/skills/r1os)
 firmware/ backups/ out/   git-ignored; never commit, upload or paste their contents
 ```
@@ -63,7 +63,7 @@ The R1 has no volume keys and no recovery menu. A bad write can hard-brick it. T
 - **Agents** run in r1d's jail (`jail.rs`: chroot, uid 2950, no caps, no_new_privs, seccomp, a 1.5 GB memory cgroup, the `r1d_agent` SELinux domain). They reach r1d only through `/mcp` with a token per process. At most 3 agent processes run at once (`MAX_PROCS`).
 - **The app window and the browser:** an agent's `app_*` and `browser_*` tools go to r1d, which asks the host (`app_window` / `browser` events) and waits for its answer at `/api/apps/window/result` / `/api/browser/result`. The host owns the window's virtual display and reads it with an accessibility service that's on only while the window is open.
 - **Apps** are EneeSpec YAML, compiled and checked by r1d, rendered in their own WebView, reaching the web only through r1d's fetcher behind permissions the user grants on the shell's card.
-- **Keep in sync:** `docs/specs/r1d.md` ↔ `shell/src/r1.ts` ↔ `crates/r1d` (and `host/…/net/R1d.kt`, and the companion's allowlist for routes a computer may call). `prompts/example.enee.yaml` must equal builder.md's example and compile with passing checks (`cargo test -p r1d`). Prompts are compiled into r1d, so a prompt change means rebuilding and redeploying r1d.
+- **Keep in sync:** the API docs (`web/src/docs/content/api.md`) ↔ `shell/src/r1.ts` ↔ `crates/r1d` (and `host/…/net/R1d.kt`, and the companion's allowlist for routes a computer may call). `prompts/example.enee.yaml` must equal builder.md's example and compile with passing checks (`cargo test -p r1d`). Prompts are compiled into r1d, so a prompt change means rebuilding and redeploying r1d.
 
 ## Build, test, run
 
@@ -87,8 +87,8 @@ The tools are bash, for Linux, macOS or Git Bash on Windows; the AOSP image buil
 
 ## Working in the repo
 
-- **Docs are the source of truth.** A behaviour change updates its spec or the architecture doc in the same change. A hard-to-reverse choice gets an ADR (next number, from `docs/decisions/0000-template.md`); an accepted ADR's decision is never edited, only superseded.
-- **Work is tracked in the vault** (`docs/`): a task note per piece of work (`docs/kanban/tasks/T-NNN Short title.md`) with a card on `docs/kanban/board.md`, under an epic. Find or make the task before starting, keep its card's lane in step with its `status`, and name it in the commit (`T-123: …`). Work you find but won't do now becomes a Backlog task, never a TODO in code.
+- **Docs change with behaviour.** A behaviour change updates the website's docs pages (`web/src/docs/content`) in the same change, and this skill when a rule or gotcha changes. ADR numbers in comments name the maintainers' decision records (private).
+- **Tracking work:** contributors use issues and pull requests. Work you find but won't do now becomes an issue, never a TODO in code. The maintainers track their own work in a private vault (`docs/`, git-ignored): if `docs/maintainer.md` exists, follow it and [workflow.md](references/workflow.md).
 - **Battery first:** no timers, polling or animations that run with the screen off; a looping animation runs only while its view is visible; animate transform and opacity; prefer `/ws` events to polling.
 - **Wheel and button first:** every screen works without touch (typing aside; docked mode adds touch). New native screens use `Theme` tokens, never literal colours, so light mode works.
 - **Research notes are dated snapshots.** Append a dated update section rather than rewriting, and mark unverified claims **(unverified)**.
