@@ -44,6 +44,28 @@ The same chats, typed. Replies stream with their tool steps and cards; add up to
 
 An agent set to work on a linked computer runs its turns there, with the real `claude` or `codex` CLI in the folders you allow, as your user: its folders and levels keep it in bounds, not a sandbox. Its approvals come to the R1, and messages wait while the computer is off. See [Your own agents](/docs/extend#agents-on-your-pc).
 
+## Installing r1os over USB
+
+The companion also installs r1os, one step at a time:
+1. **Windows' drivers.**
+2. **A backup** of the R1's own partitions.
+3. **The unlock.** The companion guides it; you request it on Rabbit's portal.
+4. **The flash.**
+5. **The first setup.**
+
+Each step says what it does, what to do with your hands, and what to do if it goes wrong. It finds out what state the R1 is in rather than assuming.
+
+- **Nothing is written by a single click.**
+  - The flash shows its plan and needs `ERASE` typed.
+  - It won't run without a backup of that R1 that checks out, unless you type "I understand" on the backup step.
+  - The first setup erases nothing. It shows its plan and starts when you click.
+- **Everything happens from the bootloader.** The flash writes `vbmeta`, then `super` with the R1's own vendor kept where it is, then wipes `userdata`. It never uses fastbootd.
+- **The first setup** puts on r1d, the shell, speech-to-text, the models and the agent box, from an r1os checkout you choose (releases come later).
+  - It plans only what isn't there yet.
+  - An R1 that isn't on Wi-Fi gets the rest now, and its agent box once it's online.
+
+**Status:** the flash has been checked on a computer against a real R1's partition layout, but it hasn't yet run end to end on an R1. Until it has, install with the [guide](/docs/start). To try the wizard without an R1, run `pnpm --dir companion dev` and choose **install r1os**.
+
 ## Signing in
 
 - **Claude:** the companion starts the CLI's login on the R1 and opens the link in your browser; you paste the code into the companion. It crosses the link once, straight to the CLI, and is forgotten.

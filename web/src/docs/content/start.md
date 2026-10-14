@@ -13,6 +13,8 @@ r1os runs on the Rabbit R1. There's no prebuilt image or over-the-air update yet
 
 This guide hasn't been run end to end from a stock R1 yet. If a step doesn't match what you see, stop and open an issue.
 
+The [companion](/docs/companion#installing-r1os-over-usb) is getting a wizard that does these steps for you. It hasn't run on an R1 yet, so for now this guide is the way.
+
 ## What you need
 
 - **A Rabbit R1** whose bootloader you can unlock.
