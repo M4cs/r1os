@@ -2,9 +2,9 @@
 //! it's still Rabbit's small filesystem, then r1d, the shell, speech-to-text, the models there are, and the agent box.
 //!
 //! **`run` writes to the R1.** It grows `/data` (`resize2fs`, online), writes `/data/r1os`, restarts r1d, and builds the
-//! agent box (which downloads Alpine's packages and Claude Code on the R1). CLAUDE.md: ask Max in chat before running
-//! it, naming this command. It shows the plan, then goes ahead only when `yes` is typed (`YES=1` skips the question:
-//! only after Max's OK for that run).
+//! agent box (which downloads Alpine's packages and Claude Code on the R1). CLAUDE.md: an agent asks the R1's owner in
+//! chat before running it, naming this command. It shows the plan, then goes ahead only when `yes` is typed (`YES=1`
+//! skips the question: only after the owner's OK for that run).
 //!
 //! `plan` needs no R1: it shows the steps for a just-flashed one ([`r1_usb::setup::Status::fresh`]). `status` only reads.
 //!
