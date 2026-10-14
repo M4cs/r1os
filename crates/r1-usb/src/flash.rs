@@ -241,6 +241,7 @@ fn describe_write(w: &Write) -> String {
         Write::DeleteLogical { part } => format!("Deleting {part}"),
         Write::CancelSnapshotUpdate => "Cancelling Rabbit's half-applied update".to_owned(),
         Write::Unlock => "Unlocking".to_owned(),
+        Write::FlashSuper(_) => "Writing super".to_owned(),
     }
 }
 

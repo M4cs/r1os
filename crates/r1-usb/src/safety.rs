@@ -21,6 +21,9 @@ pub enum Write {
     CancelSnapshotUpdate,
     /// `fastboot flashing unlock`: wipes the R1's data; the R1 itself asks, on its side button.
     Unlock,
+    /// `fastboot flash super <image>` from the bootloader (ADR-0067): only an image [`crate::superimg`] built and
+    /// verified (the R1's vendor never written), which nothing else can make.
+    FlashSuper(crate::superimg::SuperImage),
 }
 
 /// Partitions that may be flashed: the `vbmeta` images (verification off) and `system`, each on either slot, and
@@ -59,7 +62,7 @@ pub fn check(w: &Write) -> Result<(), Refused> {
         Write::Flash { part, .. } => (part.as_str(), FLASH, "flashed"),
         Write::Erase { part } => (part.as_str(), ERASE, "erased"),
         Write::DeleteLogical { part } => (part.as_str(), DELETE, "deleted"),
-        Write::CancelSnapshotUpdate | Write::Unlock => return Ok(()),
+        Write::CancelSnapshotUpdate | Write::Unlock | Write::FlashSuper(_) => return Ok(()),
     };
     if allowed.contains(&part) {
         return Ok(());
@@ -80,6 +83,7 @@ pub fn args(w: &Write) -> Result<Vec<String>, Refused> {
         Write::DeleteLogical { part } => vec!["delete-logical-partition".into(), part.clone()],
         Write::CancelSnapshotUpdate => vec!["snapshot-update".into(), "cancel".into()],
         Write::Unlock => vec!["flashing".into(), "unlock".into()],
+        Write::FlashSuper(image) => vec!["flash".into(), "super".into(), image.path().to_string_lossy().into_owned()],
     })
 }
 

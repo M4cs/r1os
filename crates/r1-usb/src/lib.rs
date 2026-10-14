@@ -19,9 +19,12 @@ pub mod drivers;
 pub mod fastboot;
 pub mod flash;
 pub mod folders;
+pub mod lp;
 pub mod preloader;
 pub mod safety;
 pub mod scan;
+pub mod sparse;
+pub mod superimg;
 pub mod stock;
 pub mod tools;
 

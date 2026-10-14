@@ -56,6 +56,60 @@ fn main() -> anyhow::Result<()> {
             r1_usb::preloader::enter_fastboot(std::time::Duration::from_secs(600), &Default::default())?;
             eprintln!("Asked for fastboot: `fastboot devices` should list the R1 in a few seconds.");
         }
+        Some("super-head") => {
+            // A `super`'s first bytes (its geometry and LP metadata): what's in it, and whether writing it back gives
+            // the same bytes (ADR-0067's builder, checked against a real R1's).
+            let file = args.get(1).ok_or_else(|| anyhow::anyhow!("super-head <file>"))?;
+            let head = std::fs::read(file)?;
+            let g = r1_usb::lp::geometry(&head)?;
+            for slot in 0..g.metadata_slot_count {
+                let m = r1_usb::lp::read(&head, slot)?;
+                let bytes = m.to_bytes()?;
+                let at = (r1_usb::lp::METADATA_OFFSET + slot as u64 * g.metadata_max_size as u64) as usize;
+                let same = head[at..at + bytes.len()] == bytes[..];
+                // liblp writes only the metadata, so a slot can keep bytes from a longer one past its tables.
+                let stale = head[at + bytes.len()..at + g.metadata_max_size as usize].iter().filter(|&&b| b != 0).count();
+                println!(
+                    "slot {slot}: {} partitions, written back {}{}",
+                    m.partitions.len(),
+                    if same { "identical" } else { "DIFFERENT" },
+                    if stale > 0 { format!(" ({stale} stale bytes past its tables, not part of it)") } else { String::new() }
+                );
+                if slot == 0 {
+                    for p in &m.partitions {
+                        println!("  {:<12} {:>10} sectors in {} extent(s), group {}", p.name, p.sectors(), p.extents.len(), m.groups[p.group as usize].name);
+                    }
+                }
+            }
+        }
+        Some("super-build") => {
+            // ADR-0067's image, on the PC only: built from a `super` head and a system image, then verified.
+            let (Some(head), Some(system), Some(out)) = (args.get(1), args.get(2), args.get(3)) else {
+                anyhow::bail!("super-build <super head> <system .img> <out> [a|b]")
+            };
+            let slot = args.get(4).and_then(|s| s.chars().next()).unwrap_or('a');
+            let head = std::fs::read(head)?;
+            let current = r1_usb::lp::read(&head, if slot == 'b' { 1 } else { 0 })?;
+            let started = std::time::Instant::now();
+            let mut shown = 0u64;
+            let image = r1_usb::superimg::build(&current, slot, system.as_ref(), out.as_ref(), |done, total| {
+                if done >= shown + (256 << 20) || done == total {
+                    shown = done;
+                    eprint!("\r  {} / {} MB", done >> 20, total >> 20);
+                }
+            })?;
+            eprintln!("\r  built and verified in {:.0} s{:20}", started.elapsed().as_secs_f64(), "");
+            for p in &image.metadata.partitions {
+                let ex: Vec<String> = p.extents.iter().map(|e| format!("{}+{}", e.target_data, e.sectors)).collect();
+                println!("  {:<10} {}", p.name, ex.join(", "));
+            }
+            println!("{}", serde_json::json!({ "image": image.path(), "bytes": std::fs::metadata(image.path())?.len() }));
+        }
+        Some("super-probe") => {
+            let (Some(head), Some(out)) = (args.get(1), args.get(2)) else { anyhow::bail!("super-probe <super head> <out>") };
+            let image = r1_usb::superimg::probe(&std::fs::read(head)?, out.as_ref())?;
+            println!("{}", serde_json::json!({ "probe": image.path(), "bytes": std::fs::metadata(image.path())?.len() }));
+        }
         Some("check") => println!("{}", serde_json::to_string(&flash::check(&r1()?)?)?),
         Some("run") => {
             let system = PathBuf::from(args.get(1).ok_or_else(|| anyhow::anyhow!("run <r1os system .img>"))?);
