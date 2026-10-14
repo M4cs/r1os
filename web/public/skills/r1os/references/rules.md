@@ -10,7 +10,7 @@ From the repository's `CLAUDE.md` and its ADRs. The R1 has no volume keys and no
 5. Never `fastboot flashing lock` on modified images. Never relock at all: re-unlocking needs Rabbit's portal or the BROM route (`docs/research/2026-10-08-r1-platform.md`).
 6. Never replace Rabbit's kernel: the scroll-wheel driver (`CONFIG_OCH1970`) isn't in the released source (ADR-0001).
 7. Don't let the R1 take a Rabbit OTA once it runs r1os.
-8. Before any wipe, `backups/` must hold this device's backup with a `SHA256SUMS`.
+8. Before any wipe, a backup of this R1 must verify: the flash scripts' `require_backup` matches the serial at the start of its `proinfo` and checks its `SHA256SUMS` (in `backups/`, or the companion's `Documents\r1os backups`).
 9. `firmware/`, `backups/`, `out/` are never committed, uploaded or pasted. Never print serials or IMEIs into docs or chat (`device-report.sh` redacts them).
 
 **Signing keys (ADR-0062).**

@@ -15,8 +15,6 @@
 //! Both come back out with [`undo_script`] (the R1's INF and its certificate; MediaTek's from Windows' apps list).
 
 use anyhow::{Context, Result, bail};
-use sha2::{Digest, Sha256};
-use std::io::Read;
 use std::path::{Path, PathBuf};
 
 /// The INF's file name, which is how it's found again in the driver store.
@@ -91,23 +89,23 @@ impl Mtk {
 
 /// Fetches Rabbit's MediaTek installer into [dir], checked against its pin, and returns the installer's path.
 pub fn fetch_mtk(dir: &Path) -> Result<PathBuf> {
-    std::fs::create_dir_all(dir)?;
-    let exe = dir.join(Mtk::EXE);
-    let zip_path = dir.join("mtk-vcom.zip");
-    let resp = ureq::get(Mtk::URL).call().with_context(|| format!("couldn't reach {}", Mtk::URL))?;
-    let mut bytes = Vec::with_capacity(Mtk::SIZE as usize);
-    resp.into_reader().take(Mtk::SIZE + 1).read_to_end(&mut bytes)?;
-    let sum: String = Sha256::digest(&bytes).iter().map(|b| format!("{b:02x}")).collect();
-    if bytes.len() as u64 != Mtk::SIZE || sum != Mtk::SHA256 {
-        bail!("Rabbit's driver download isn't the one expected ({} bytes): not used", bytes.len());
-    }
-    std::fs::write(&zip_path, &bytes)?;
-    let mut z = zip::ZipArchive::new(std::fs::File::open(&zip_path)?)?;
-    let mut f = z.by_name(Mtk::EXE).context("the installer isn't in Rabbit's zip")?;
-    std::io::copy(&mut f, &mut std::fs::File::create(&exe)?)?;
-    drop(f);
+    let pin = crate::download::Pin { url: Mtk::URL, size: Mtk::SIZE, sha256: Mtk::SHA256 };
+    let zip_path = crate::download::fetch(&pin, &dir.join("mtk-vcom.zip"), |_, _| {})?;
+    let n = crate::download::unzip(&zip_path, dir, Some(&[Mtk::EXE]))?;
     let _ = std::fs::remove_file(&zip_path);
-    Ok(exe)
+    if n != 1 {
+        bail!("the installer isn't in Rabbit's zip");
+    }
+    Ok(dir.join(Mtk::EXE))
+}
+
+/// What else the elevated step installs, beside the R1's own driver.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Extras<'a> {
+    /// Rabbit's MediaTek preloader driver installer ([`fetch_mtk`]).
+    pub mtk_exe: Option<&'a Path>,
+    /// UsbDk's MSI, for a stock R1's backup ([`crate::backup::fetch_usbdk`], T-169).
+    pub usbdk_msi: Option<&'a Path>,
 }
 
 /// What's installed, from the driver store (`pnputil /enum-drivers`), matched by the INFs' original names, which
@@ -130,15 +128,38 @@ fn status_of(store: &str) -> Status {
     Status { r1: names.iter().any(|n| n == INF_NAME), mtk: Mtk::INFS.iter().all(|i| names.iter().any(|n| n == i)) }
 }
 
-/// The elevated install, as a PowerShell script: Rabbit's installer (if given), then the R1's INF catalogued, signed
-/// with a certificate made for it, its public half trusted, its private key deleted, and the driver added and
-/// installed. Writes what it did to [log].
-pub fn install_script(package: &Path, mtk_exe: Option<&Path>, log: &Path) -> String {
+/// The elevated install, as a PowerShell script: Rabbit's installer and UsbDk's (if given), then the R1's INF
+/// catalogued, signed with a certificate made for it, its public half trusted, its private key deleted, and the driver
+/// added and installed (given [package]: none when it's installed already, as each install makes a certificate).
+/// Writes what it did to [log].
+pub fn install_script(package: Option<&Path>, extras: Extras<'_>, log: &Path) -> String {
     let q = |p: &Path| p.to_string_lossy().replace('\'', "''");
-    let mtk = mtk_exe.map(|e| format!(
+    let mut mtk = extras.mtk_exe.map(|e| format!(
         "  $p = Start-Process -FilePath '{}' -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait -PassThru\n  \"mediatek: installer exited $($p.ExitCode)\"\n",
         q(e)
     )).unwrap_or_default();
+    if let Some(msi) = extras.usbdk_msi {
+        mtk.push_str(&format!(
+            "  $p = Start-Process -FilePath 'msiexec.exe' -ArgumentList '/i','\"{}\"','/qn','/norestart' -Wait -PassThru\n  \"usbdk: msiexec exited $($p.ExitCode)\"\n  if ($p.ExitCode -ne 0 -and $p.ExitCode -ne 3010) {{ exit 3 }}\n",
+            q(msi)
+        ));
+    }
+    let Some(package) = package else {
+        return format!(
+            r#"$ErrorActionPreference = 'Stop'
+Start-Transcript -Path '{log}' | Out-Null
+try {{
+{mtk}  "the R1's driver is installed already"
+}} catch {{
+  "error: $_"
+  exit 1
+}} finally {{
+  Stop-Transcript | Out-Null
+}}
+"#,
+            log = q(log)
+        );
+    };
     format!(
         r#"$ErrorActionPreference = 'Stop'
 Start-Transcript -Path '{log}' | Out-Null
@@ -248,14 +269,15 @@ pub fn run_elevated(script_path: &Path) -> Result<u32> {
     }
 }
 
-/// Installs the drivers behind one administrator prompt: the R1's, and Rabbit's MediaTek one when [mtk_exe] is given.
+/// Installs the drivers behind one administrator prompt: the R1's, and [extras] (Rabbit's MediaTek one, UsbDk).
 /// [dir] is where the package, the script and the log go. Returns the log.
 #[cfg(windows)]
-pub fn install(dir: &Path, mtk_exe: Option<&Path>) -> Result<String> {
-    let pkg = write_package(dir)?;
+pub fn install(dir: &Path, extras: Extras<'_>) -> Result<String> {
+    let pkg = if status()?.r1 { None } else { Some(write_package(dir)?) };
+    std::fs::create_dir_all(dir)?;
     let log = dir.join("drivers-install.log");
     let script = dir.join("drivers-install.ps1");
-    std::fs::write(&script, install_script(&pkg, mtk_exe, &log))?;
+    std::fs::write(&script, install_script(pkg.as_deref(), extras, &log))?;
     let code = run_elevated(&script)?;
     let text = std::fs::read_to_string(&log).unwrap_or_default();
     if code != 0 {
@@ -304,17 +326,21 @@ mod tests {
 
     #[test]
     fn the_install_script_deletes_the_key_and_trusts_only_the_public_half() {
-        let s = install_script(Path::new(r"C:\x\r1-driver"), Some(Path::new(r"C:\x\mtk.exe")), Path::new(r"C:\x\log.txt"));
+        let s = install_script(Some(Path::new(r"C:\x\r1-driver")), Extras { mtk_exe: Some(Path::new(r"C:\x\mtk.exe")), usbdk_msi: Some(Path::new(r"C:\x\UsbDk.msi")) }, Path::new(r"C:\x\log.txt"));
         assert!(s.contains("-DeleteKey"));
         assert!(s.contains("Cert:\\LocalMachine\\Root") && s.contains("Cert:\\LocalMachine\\TrustedPublisher"));
         assert!(s.contains("Export-Certificate") && !s.contains("Export-PfxCertificate"));
         assert!(s.contains("/VERYSILENT") && s.contains(r"C:\x\mtk.exe"));
         assert!(s.contains("pnputil /add-driver $inf /install"));
-        let none = install_script(Path::new(r"C:\x"), None, Path::new(r"C:\x\l"));
-        assert!(!none.contains("VERYSILENT"));
+        assert!(s.contains("msiexec.exe") && s.contains(r"C:\x\UsbDk.msi") && s.contains("'/qn'"));
+        let none = install_script(Some(Path::new(r"C:\x")), Extras::default(), Path::new(r"C:\x\l"));
+        assert!(!none.contains("VERYSILENT") && !none.contains("msiexec"));
         // Paths with a quote can't break out of PowerShell's single quotes.
-        let q = install_script(Path::new(r"C:\Max's\x"), None, Path::new(r"C:\l"));
+        let q = install_script(Some(Path::new(r"C:\Max's\x")), Extras::default(), Path::new(r"C:\l"));
         assert!(q.contains(r"C:\Max''s\x"));
+        // The R1's installed already: only the extras, and no second certificate.
+        let only = install_script(None, Extras { mtk_exe: None, usbdk_msi: Some(Path::new(r"C:\x\UsbDk.msi")) }, Path::new(r"C:\l"));
+        assert!(only.contains("msiexec") && only.contains("installed already") && !only.contains("New-SelfSignedCertificate"));
     }
 
     #[test]

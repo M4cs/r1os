@@ -1,9 +1,19 @@
-//! One R1 over adb: what the install reads from a booted R1, and the reboot into fastboot. The first setup's pushes
-//! (r1d, the shell, the agent box) come with T-170.
+//! One R1 over adb: what the install reads from a booted R1 (its properties; its partitions as root, for the backup,
+//! T-169), and the reboot into fastboot. The first setup's pushes (r1d, the shell, the agent box) come with T-170.
 
 use anyhow::{Context, Result, bail};
-use std::path::PathBuf;
+use std::io::{Read, Write};
+use std::path::{Path, PathBuf};
 use std::process::Command;
+
+/// How a booted R1's shell gets root, for reading partitions.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Root {
+    /// adbd runs as root (r1os's image, after `adb root`).
+    Adbd,
+    /// Magisk's `su`.
+    Su,
+}
 
 /// What `adb devices` says of a device.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -66,6 +76,72 @@ impl Adb {
         }
         let out = command(&self.exe).args(["-s", &self.serial, "shell", "getprop", name]).output().context("adb didn't run")?;
         Ok(String::from_utf8_lossy(&out.stdout).trim().to_owned())
+    }
+
+    fn shell(&self, cmd: &str) -> Result<std::process::Output> {
+        command(&self.exe).args(["-s", &self.serial, "shell", cmd]).output().context("adb didn't run")
+    }
+
+    /// Root for reading partitions: adbd as root if it is or can be (`adb root`, which restarts adbd: r1os's image),
+    /// else Magisk's `su`.
+    pub fn root(&self) -> Result<Root> {
+        let is_root = |o: std::process::Output| String::from_utf8_lossy(&o.stdout).trim() == "0";
+        if is_root(self.shell("id -u")?) {
+            return Ok(Root::Adbd);
+        }
+        let r = command(&self.exe).args(["-s", &self.serial, "root"]).output().context("adb didn't run")?;
+        if r.status.success() && !String::from_utf8_lossy(&r.stdout).contains("cannot") {
+            let _ = command(&self.exe).args(["-s", &self.serial, "wait-for-device"]).output();
+            if is_root(self.shell("id -u")?) {
+                return Ok(Root::Adbd);
+            }
+        }
+        if is_root(self.shell("su -c 'id -u'")?) {
+            return Ok(Root::Su);
+        }
+        bail!("this R1 has no root over adb: it needs r1os's image (adb root) or Magisk's su")
+    }
+
+    /// The first 34 sectors of the R1's eMMC: the protective MBR, the GPT's header and its entries. Read only.
+    pub fn read_gpt(&self, root: Root, to: &Path) -> Result<u64> {
+        self.read(root, "dd if=/dev/block/mmcblk0 bs=512 count=34 2>/dev/null", to, |_| {})
+    }
+
+    /// One partition, whole, into [to] (`dd` from `/dev/block/by-name`). [progress] hears the bytes so far. Read only.
+    pub fn read_partition(&self, root: Root, name: &str, to: &Path, progress: impl FnMut(u64)) -> Result<u64> {
+        if name.is_empty() || !name.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_') {
+            bail!("not a partition's name");
+        }
+        self.read(root, &format!("dd if=/dev/block/by-name/{name} bs=4194304 2>/dev/null"), to, progress)
+    }
+
+    fn read(&self, root: Root, cmd: &str, to: &Path, mut progress: impl FnMut(u64)) -> Result<u64> {
+        let cmd = match root {
+            Root::Adbd => cmd.to_owned(),
+            Root::Su => format!("su -c '{cmd}'"),
+        };
+        let mut child = command(&self.exe)
+            .args(["-s", &self.serial, "exec-out", &cmd])
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::null())
+            .spawn()
+            .context("adb didn't run")?;
+        let mut out = child.stdout.take().context("no output from adb")?;
+        let mut file = std::io::BufWriter::with_capacity(4 << 20, std::fs::File::create(to)?);
+        let mut buf = vec![0u8; 1 << 20];
+        let mut got = 0u64;
+        loop {
+            let n = out.read(&mut buf)?;
+            if n == 0 {
+                break;
+            }
+            file.write_all(&buf[..n])?;
+            got += n as u64;
+            progress(got);
+        }
+        file.flush()?;
+        child.wait()?;
+        Ok(got)
     }
 
     /// Into the bootloader's fastboot (`adb reboot bootloader`), or fastbootd.

@@ -12,9 +12,12 @@
 //! error or anything the companion shows.
 
 pub mod adb;
+pub mod backup;
+pub mod download;
 #[cfg(windows)]
 pub mod drivers;
 pub mod fastboot;
+pub mod folders;
 pub mod safety;
 pub mod scan;
 pub mod tools;

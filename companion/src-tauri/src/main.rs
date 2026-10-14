@@ -192,7 +192,8 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             link_state, pair_start, pair_stop, pair_answer, unlink, r1_api, save_download, backup_r1, settings_get, settings_set, pc_status, codex_sign_in, claude_sign_in,
             install::usb_tools, install::usb_fetch_tools, install::usb_scan, install::drivers_status, install::drivers_install,
-            install::drivers_undo
+            install::drivers_undo, install::backup_status, install::backup_fetch_tools, install::backup_run,
+            install::backup_stop, install::backup_skip
         ])
         .setup(move |app| {
             let handle = app.handle().clone();

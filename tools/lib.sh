@@ -194,11 +194,34 @@ unpacked() {
   esac
 }
 
-# Refuses to continue unless backups/ holds at least one verified backup.
+# The serial of the R1 plugged in (fastboot first, else adb), for matching backups. Never printed.
+device_serial() {
+  local s
+  s=$(fastboot devices 2>/dev/null | tr -d '\r' | awk 'NR == 1 { print $1 }' || true)
+  [ -n "$s" ] || s=$(adb get-serialno 2>/dev/null | tr -d '\r' || true)
+  [ "$s" = unknown ] && s=
+  printf '%s' "$s"
+}
+
+# Refuses to continue unless a backup of the R1 plugged in verifies: its proinfo starts with this R1's serial (where
+# the R1 keeps it), and every file matches its SHA256SUMS. Looks in backups/ (tools/backup.sh) and in the companion's
+# Documents/r1os backups (T-169; R1OS_BACKUPS names another).
 require_backup() {
-  local b
-  # Folder names start with a timestamp, so the last one sorted is the newest.
-  b=$(find "$BACKUPS" -maxdepth 2 -name SHA256SUMS 2>/dev/null | sort | tail -1)
-  [ -n "$b" ] || die "No backup in backups/ yet. Run tools/backup.sh first (or set NO_BACKUP_OK=1 if you really mean it)."
-  say "Backup found: $(dirname "$b")"
+  local serial d p
+  serial=$(device_serial)
+  [ -n "$serial" ] || die "No R1 found to match a backup to: plug it in (fastboot or booted) first."
+  while IFS= read -r d; do
+    p=$d/proinfo.img
+    [ -f "$p" ] || p=$d/proinfo.bin
+    [ -f "$p" ] || continue
+    # The serial is proinfo's leading run of letters and digits.
+    [ "$(head -c 64 "$p" | LC_ALL=C tr -c '[:alnum:]' '\n' | head -1)" = "$serial" ] || continue
+    say "Checking $d against its SHA256SUMS"
+    if (cd "$d" && sha256sum --quiet -c SHA256SUMS >/dev/null 2>&1); then
+      say "Backup of this R1 found: $d"
+      return 0
+    fi
+    warn "$d doesn't match its SHA256SUMS: not counted"
+  done < <(find "$BACKUPS" "${R1OS_BACKUPS:-$HOME/Documents/r1os backups}" -maxdepth 3 -name SHA256SUMS -printf '%h\n' 2>/dev/null | sort -r)
+  die "No verified backup of this R1. Run tools/backup.sh (rooted) or the companion's backup first (or set NO_BACKUP_OK=1 if you really mean it)."
 }

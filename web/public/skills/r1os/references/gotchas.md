@@ -105,3 +105,4 @@ Things that have already gone wrong, each as **symptom → cause → what to do*
 
 ## Build environment
 82. Android 15 build refuses `WITHOUT_CHECK_API=true` → keep API checks; use `SKIP_ABI_CHECKS=true` and `m --skip-soong-tests`. The AOSP tree's sync alone is ~60–90 GB: give it a large disk of its own, and the build a lot of RAM plus swap. The image builds in Linux (WSL works). (`tools/build-image.sh`)
+83. Something an agent fetched into `AppData\Local` isn't there in the owner's terminal, or uv says "Missing expected target directory for Python minor version link" → an agent run by the Claude desktop app (a packaged app) has its writes under `AppData\Local` redirected to `AppData\Local\Packages\Claude_…\LocalCache\Local`, which only that app's processes see, and junctions made there name the real path → have the owner fetch from their terminal what they'll run there; `AppData\Local\Temp` isn't redirected. (2026-10-14, `crates/r1-usb/src/folders.rs`)

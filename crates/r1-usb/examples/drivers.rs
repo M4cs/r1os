@@ -2,18 +2,13 @@
 //! administrator prompt; `status` only reads the driver store.
 //!
 //!     cargo run -p r1-usb --example drivers -- status
-//!     cargo run -p r1-usb --example drivers -- install [--mtk]
+//!     cargo run -p r1-usb --example drivers -- install [--mtk] [--usbdk]
 //!     cargo run -p r1-usb --example drivers -- undo
 
 #[cfg(windows)]
 fn main() -> anyhow::Result<()> {
     use r1_usb::drivers;
-    let dir = std::env::var_os("LOCALAPPDATA")
-        .map(std::path::PathBuf::from)
-        .unwrap_or_else(std::env::temp_dir)
-        .join("r1os")
-        .join("companion")
-        .join("drivers");
+    let dir = r1_usb::folders::companion().join("drivers");
     let args: Vec<String> = std::env::args().skip(1).collect();
     match args.first().map(String::as_str) {
         Some("status") | None => println!("{}", serde_json::to_string(&drivers::status()?)?),
@@ -24,8 +19,14 @@ fn main() -> anyhow::Result<()> {
             } else {
                 None
             };
+            let usbdk = if args.iter().any(|a| a == "--usbdk") {
+                eprintln!("fetching UsbDk…");
+                Some(r1_usb::backup::fetch_usbdk(&dir)?)
+            } else {
+                None
+            };
             eprintln!("Windows will ask for permission…");
-            print!("{}", drivers::install(&dir, mtk.as_deref())?);
+            print!("{}", drivers::install(&dir, drivers::Extras { mtk_exe: mtk.as_deref(), usbdk_msi: usbdk.as_deref() })?);
             println!("{}", serde_json::to_string(&drivers::status()?)?);
         }
         Some("undo") => {
@@ -33,7 +34,7 @@ fn main() -> anyhow::Result<()> {
             print!("{}", drivers::undo(&dir)?);
             println!("{}", serde_json::to_string(&drivers::status()?)?);
         }
-        Some(other) => anyhow::bail!("status, install [--mtk] or undo, not {other}"),
+        Some(other) => anyhow::bail!("status, install [--mtk] [--usbdk] or undo, not {other}"),
     }
     Ok(())
 }

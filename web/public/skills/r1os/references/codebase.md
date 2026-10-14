@@ -11,6 +11,7 @@ Where everything lives, one line each, from the module headers. Paths are relati
 | `crates/enee-data/` | Per-app SQLite: migrations, undo (ported from eneeware) |
 | `crates/r1-link/` | The R1↔computer link protocol over iroh (pairing code, messages, short code); `bin/r1-link-pc` test program |
 | `crates/r1-bootlog/` | Verbose boot's program (`/system/bin/r1os-bootlog`, T-101) |
+| `crates/r1-usb/` | The companion's USB layer for installing r1os (ADR-0065): platform-tools (pinned), the R1s plugged in and their mode (`scan`), what may be written (`safety`), the Windows drivers (`drivers`), a stock R1's backup over the boot ROM with mtkclient (`backup`). Examples: `scan`, `drivers`, `backup` |
 | `host/` | Kotlin host app `dev.r1os.host` (HOME, signed with r1os's platform key): the native shell (ADR-0017), mic, camera, keyboard, WebViews for mini-apps, the agents' browser and app window. No AndroidX/Compose |
 | `shell/` | React + Vite: the **desktop simulator's** UI (`index.html`) and `app.html`, the page each mini-app runs in on the R1. Only `app.html` runs on the R1 |
 | `companion/` | Tauri 2 desktop app (Windows first): links to the R1, manages it, runs agents on the computer (`src-tauri/`), window in `src/` |
@@ -25,14 +26,13 @@ Where everything lives, one line each, from the module headers. Paths are relati
 | `fixtures/apps/` | Sample `.enee.yaml` apps (water, coffee, news, weather-live, stretch, dice, radio…) |
 | `fixtures/evals/` | `briefs.json` and `edits.json` (app build evals), `control.json` (app window and browser scenarios) |
 | `tools/` | Bash + Python scripts: build, deploy, simulator, harness CLI `r1h`, evals, signing keys, flashing, backup |
-| `docs/` | Obsidian vault and source of truth: specs, ADRs, research, runbooks, kanban, roadmap, open questions |
+| `docs/` | **Git-ignored**, the maintainers' own: an Obsidian vault (specs, ADRs, research, runbooks, kanban). The public docs are the website's (`web/src/docs/content/`) |
 | `third_party/rubik/`, `NOTICE.md` | Font and third-party credits |
-| `reports/`, `research_notes/` | Loose research (local LLMs on the R1) |
 | `firmware/`, `backups/`, `out/` | **Git-ignored.** Stock firmware/GSIs/Magisk; partition dumps (IMEI, radio calibration); build outputs. Never commit, upload or paste |
 | `artifacts/` | Git-ignored harness output (`r1h screenshot` → `artifacts/screenshots/`, `artifacts/power/`, `artifacts/evals/`) |
 | `.r1os-sim/` | Git-ignored simulator data dir (`r1d --sim --data`) |
 | `pnpm-workspace.yaml` | `shell`, `companion`, `web` (the website and this skill), `packages/*` |
-| `Cargo.toml` | Workspace: r1d, r1-link, r1-bootlog, enee-spec, enee-data, companion/src-tauri. Release profile: `opt-level="s"`, thin LTO, strip, **`panic = "abort"`** |
+| `Cargo.toml` | Workspace: r1d, r1-link, r1-usb, r1-bootlog, enee-spec, enee-data, companion/src-tauri. Release profile: `opt-level="s"`, thin LTO, strip, **`panic = "abort"`** |
 
 r1os's signing keys are never in the repository (ADR-0062): `tools/make-keys.sh` makes them outside it, and `R1OS_KEYS` points there.
 
@@ -120,7 +120,7 @@ Python scripts run with `python3` (`py -3` on Windows); bash scripts source `lib
 
 | Script | What it does | Device |
 |---|---|---|
-| `lib.sh` | Shared helpers: `MSYS_NO_PATHCONV=1`, `adb_ready` (USB first, else mDNS wireless), `r1d_forward` (7172→7171), `r1d_token`, `KEYS` (the signing keys' folder; `R1OS_KEYS`), `confirm` (fails without TTY; `YES=1`), `require_backup` | — |
+| `lib.sh` | Shared helpers: `MSYS_NO_PATHCONV=1`, `adb_ready` (USB first, else mDNS wireless), `r1d_forward` (7172→7171), `r1d_token`, `KEYS` (the signing keys' folder; `R1OS_KEYS`), `confirm` (fails without TTY; `YES=1`), `require_backup` (a backup of the R1 plugged in: its serial at the start of `proinfo`, its `SHA256SUMS` verified) | — |
 | `device-report.sh` | Snapshot (what's flashed, kernel, root, wheel/button/motor, kernel features); redacts serials/IMEIs | **read-only** |
 | `backup.sh` | Dumps device-unique partitions + boot chains + mmcblk0boot* to `backups/<time>-slot<x>/` with SHA256SUMS | **read-only** (needs root) |
 | `hw-check.sh` | Raw wheel/button events | read-only; **`--motor` writes** (moves camera) |
