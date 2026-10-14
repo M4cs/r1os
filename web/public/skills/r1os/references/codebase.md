@@ -82,7 +82,7 @@ r1os's signing keys are never in the repository (ADR-0062): `tools/make-keys.sh`
 | `approvals.rs` | Agents' changes and acts via ask/allow/never levels per area and an on-device card (ADR-0045) |
 | `device_settings.rs` | Brightness, timeout, volume, sounds, haptics, docked, time zone, build model… in one place |
 | `device.rs` | Camera motor (sysfs `step_motor_ms35774/orientation`, one move at a time), the battery, and read-only system facts |
-| `power.rs` | Power policy applied at start (no background scans, no location, cell radio off without a SIM, Doze sooner, no doze display) (T-037) |
+| `power.rs` | Power policy applied at start: r1os's own settings every start (Doze sooner, no doze display, airplane mode as the cell radio alone); defaults put once, then the user's (no location, no background scans, cell radio off without a SIM, only on `ABSENT`) (T-037, T-176) |
 | `pin.rs` | 4-digit wheel PIN lock, salted hash, back-off (ADR-0016) |
 | `media.rs`, `recorder.rs`, `notes.rs`, `journal.rs` | Photos/recordings store, Recorder, Journal voice notes, Journal (ADR-0031/0033/0037) |
 | `player.rs` | Apps' background audio via the host's media service (ADR-0040) |

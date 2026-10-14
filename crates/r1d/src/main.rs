@@ -186,8 +186,13 @@ async fn run() -> anyhow::Result<()> {
         }
     });
     let voice = voice::Voice::start(hub.clone(), hub.cfg.data.join("models").join("stt"));
-    // The host's camera and mic (ADR-0031): granted at start, and again when the host asks (a fresh install).
-    tokio::spawn(server::grant_host());
+    // The host's camera and mic (ADR-0031): granted at start, and again when the host asks (a fresh install). Then,
+    // with Android's services up, the power policy (T-037, T-176), once per start.
+    let h = hub.clone();
+    tokio::spawn(async move {
+        server::grant_host().await;
+        power::apply(&h.core).await;
+    });
     // System One (ADR-0032): reads what's said as it's said.
     let (s1_dir, s1_lib) = system1::paths(&hub.cfg.data);
     system1::System1::start(&hub, s1_dir, s1_lib);

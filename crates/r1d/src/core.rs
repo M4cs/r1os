@@ -599,6 +599,17 @@ impl Core {
         self.put("look", look)
     }
 
+    // ---- the power policy's defaults (T-176) --------------------------------------------------------------
+
+    /// Which of the power policy's defaults are in place once, and yours from then on.
+    pub fn power_defaults(&self) -> crate::power::Done {
+        self.get("power_defaults").unwrap_or_default()
+    }
+
+    pub fn set_power_defaults(&self, done: &crate::power::Done) -> anyhow::Result<()> {
+        self.put("power_defaults", done)
+    }
+
     // ---- linked computers (ADR-0048) ------------------------------------------------------------------
 
     /// The computers this R1 trusts (their keys and names).

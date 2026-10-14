@@ -3183,8 +3183,6 @@ pub async fn grant_host() -> Vec<String> {
     crate::android::grant_store().await;
     crate::android::allow_listener().await;
     crate::android::compile_host().await;
-    // The power policy (T-037): Android's settings that cost battery for nothing on an R1.
-    crate::power::apply().await;
     granted
 }
 
