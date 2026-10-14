@@ -4,6 +4,7 @@ members = ["crates/r1d", "crates/r1-link", "crates/r1-usb", "crates/r1-bootlog",
 
 [workspace.package]
 version = "0.1.0"
+license = "MIT"
 edition = "2024"
 rust-version = "1.95"
 publish = false

@@ -3,6 +3,7 @@ name = "r1-bootlog"
 description = "Verbose boot: the kernel's log on the R1's screen until SurfaceFlinger takes it (T-101)"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
 rust-version.workspace = true
 publish.workspace = true
 

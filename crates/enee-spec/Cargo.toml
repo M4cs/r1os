@@ -3,6 +3,7 @@ name = "enee-spec"
 description = "EneeSpec compiler: YAML app spec -> compiled app (json-render views, SQL, actions) with model-readable diagnostics"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
 rust-version.workspace = true
 publish.workspace = true
 

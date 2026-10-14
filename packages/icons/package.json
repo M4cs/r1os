@@ -1,6 +1,7 @@
 {
   "name": "@r1os/icons",
   "private": true,
+  "license": "MIT",
   "version": "0.0.0",
   "description": "Phosphor icons for r1os: lazy per-icon SVG loading, the tagged catalog, app tiles. Ported from eneeware packages/icons at 61bc7a7.",
   "type": "module",

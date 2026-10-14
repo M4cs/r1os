@@ -1,6 +1,7 @@
 {
   "name": "@r1os/runtime",
   "private": true,
+  "license": "MIT",
   "version": "0.0.0",
   "description": "json-render runtime for compiled enee apps (catalog, StateStore, $x directive, action runner), rendered inside the r1os shell (ADR-0006). Ported from eneeware packages/runtime at 61bc7a7, minus the iframe bridge and the sql.js dev host.",
   "type": "module",

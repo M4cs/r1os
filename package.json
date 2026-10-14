@@ -1,6 +1,7 @@
 {
   "name": "r1os",
   "private": true,
+  "license": "MIT",
   "scripts": {
     "build": "pnpm --filter @r1os/shell build",
     "typecheck": "pnpm -r typecheck",

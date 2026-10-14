@@ -3,6 +3,7 @@ name = "enee-data"
 description = "Per-app SQLite for enee apps: hardened connections, the contract's SQL helpers, additive migrations and snapshots (ADR-0005)."
 version.workspace = true
 edition.workspace = true
+license.workspace = true
 rust-version.workspace = true
 publish.workspace = true
 

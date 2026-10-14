@@ -74,3 +74,47 @@ source is at that address, under the GNU General Public License v3.0 or later. r
 ## Rubik (SIL Open Font License 1.1)
 
 The shell's typeface (ADR-0021): `host/app/src/main/res/font/rubik_*.ttf` and `shell/public/fonts/Rubik-*.ttf`, copied unmodified from AOSP's `external/google-fonts/rubik`. Copyright 2015 The Rubik Project Authors (https://github.com/googlefonts/rubik). The license is in [`third_party/rubik/OFL.txt`](third_party/rubik/OFL.txt).
+
+## The R1's fonts in the companion and the site (SIL Open Font License 1.1, Apache License 2.0)
+
+The companion draws the R1's screen with the R1's own typefaces: `companion/src/fonts/r1/*.woff2`, converted unmodified from AOSP 15's copies (the site uses them through the companion). Each family's licence, with its copyright, is beside them in [`companion/src/fonts/r1/licences/`](companion/src/fonts/r1/licences/):
+
+| Font | Licence | From AOSP |
+|---|---|---|
+| Carrois Gothic SC | OFL-1.1 | `external/google-fonts/carrois-gothic-sc` |
+| Coming Soon | Apache-2.0 | `external/google-fonts/coming-soon` |
+| Cutive Mono | OFL-1.1 | `external/google-fonts/cutive-mono` |
+| Dancing Script | OFL-1.1 | `external/google-fonts/dancing-script` |
+| Droid Sans Mono | Apache-2.0 | `frameworks/base/data/fonts` |
+| Noto Serif | OFL-1.1 | `external/noto-fonts/notoserif` |
+| Roboto | Apache-2.0 | `external/roboto-fonts` |
+| Roboto Flex | OFL-1.1 | `external/roboto-flex-fonts` |
+| Source Sans Pro | OFL-1.1 | `external/google-fonts/source-sans-pro` |
+
+The companion's Rubik (`companion/src/fonts/rubik_*.ttf`) is the same as the shell's, above.
+
+## Phosphor Icons (MIT)
+
+`packages/icons` redistributes [Phosphor Icons](https://phosphoricons.com) (`@phosphor-icons/core` 2.1.1); its notice is in [`packages/icons/THIRD_PARTY.md`](packages/icons/THIRD_PARTY.md).
+
+## On-device models and runtimes (fetched, not in this repository)
+
+`tools/fetch-speech.sh` and `tools/fetch-models.sh` download these, pinned by hash, and `tools/deploy.sh` puts them on the R1. Each stays under its own licence.
+
+- **Speech to text:** Banafo's Kroko streaming English model (`sherpa-onnx-streaming-zipformer-en-kroko-2025-08-06`). Banafo's community models are under CC-BY-SA, per https://huggingface.co/Banafo/Kroko-ASR, though that page doesn't name this build (**unverified**). r1os converts it to ONNX Runtime's `.ort` format.
+- **System One:** sentence-transformers' all-MiniLM-L6-v2 (Apache-2.0).
+- **The Translator:**
+  - **Listening:** OpenAI's Whisper base (MIT), as exported by sherpa-onnx.
+  - **Translating:** Helsinki-NLP's OPUS-MT models (CC-BY-4.0), in Xenova's ONNX conversions.
+  - **Speaking:** Piper voices, as packaged by sherpa-onnx, with espeak-ng's data (GPL-3.0-or-later). Each voice is under its dataset's terms, in its `MODEL_CARD`:
+
+    | Voice | Dataset terms |
+    |---|---|
+    | German, Spanish, Portuguese | CC0 |
+    | French | CC-BY 4.0 |
+    | English | the Blizzard 2013 Lessac licence |
+    | Arabic, Italian | at their dataset's URL |
+    | Russian | unknown |
+    | Hindi | CC BY-NC-SA 4.0 (non-commercial) |
+    | Chinese | non-commercial use only |
+- **Runtimes:** sherpa-onnx (Apache-2.0), with ONNX Runtime (MIT).
