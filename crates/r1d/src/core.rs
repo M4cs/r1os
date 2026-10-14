@@ -910,6 +910,15 @@ impl Core {
         Ok(Message { id, role: role.into(), text: text.into(), at: t, meta: meta.clone() })
     }
 
+    /// The routine whose run is the chat's latest turn (its prompt's `routine`, T-092), if that turn was one.
+    pub fn last_turn_routine(&self, chat: &str) -> anyhow::Result<Option<String>> {
+        let db = self.db.lock().unwrap();
+        let meta: Option<Option<String>> = db
+            .query_row("SELECT meta FROM messages WHERE chat = ?1 AND role = 'user' ORDER BY id DESC LIMIT 1", [chat], |r| r.get(0))
+            .optional()?;
+        Ok(meta.flatten().and_then(|m| serde_json::from_str::<Value>(&m).ok()).and_then(|v| v["routine"].as_str().map(str::to_owned)))
+    }
+
     pub fn messages(&self, chat: &str) -> anyhow::Result<Vec<Message>> {
         let db = self.db.lock().unwrap();
         let mut st = db.prepare("SELECT id, role, text, at, meta FROM messages WHERE chat = ?1 ORDER BY id")?;
@@ -1143,6 +1152,10 @@ mod tests {
         core.add_message("c2", "assistant", "done", &Value::Null).unwrap();
         core.add_message("c2", "user", "the weather and my day", &serde_json::json!({ "routine": "Morning" })).unwrap();
         assert_eq!(core.chat("c2").unwrap().unwrap().last.as_deref(), Some("done"), "nor is a routine's prompt (T-092)");
+        // Its latest turn was a routine's; c1's was the user's own.
+        assert_eq!(core.last_turn_routine("c2").unwrap().as_deref(), Some("Morning"));
+        assert_eq!(core.last_turn_routine("c1").unwrap(), None);
+        assert_eq!(core.last_turn_routine("nope").unwrap(), None);
         core.mark_seen("c2").unwrap();
         assert_eq!(core.chats(None, "all").unwrap().len(), 2);
         // A reply is unread until the chat is seen (the user's own words and notes never are).

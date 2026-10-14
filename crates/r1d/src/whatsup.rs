@@ -21,7 +21,11 @@ pub fn gather(hub: &Hub) -> anyhow::Result<Value> {
     let mut unread = Vec::new();
     for a in hub.core.agents()? {
         for ch in hub.core.chats(Some(&a.id), "user")?.into_iter().filter(|c| c.unread > 0) {
-            unread.push(json!({ "agent": a.id, "name": a.name, "chat": ch.id, "title": ch.title, "count": ch.unread, "last": ch.last, "at": ch.updated }));
+            // A routine's run is labelled by the routine ("Morning briefing"), not by the chat it ran in: an agent's
+            // routines run in its latest chat, whose title is that chat's first task (Max, 2026-10-14: Archer's routine
+            // read as Uber Eats, the order its chat began with).
+            let title = hub.core.last_turn_routine(&ch.id)?.unwrap_or(ch.title);
+            unread.push(json!({ "agent": a.id, "name": a.name, "chat": ch.id, "title": title, "count": ch.unread, "last": ch.last, "at": ch.updated }));
         }
     }
     // Newest first: the glance screen shows the agent with the newest reply.
