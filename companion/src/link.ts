@@ -275,6 +275,12 @@ export async function pickFolder(title = "a folder for your agent"): Promise<str
   return typeof picked === "string" ? picked : null;
 }
 
+/** Picks the r1os checkout the first setup's files come from (until r1os's releases bring them). */
+export async function pickCheckout(): Promise<string | null> {
+  if (!inTauri) return String.raw`C:\Users\you\r1os`;
+  return pickFolder("your r1os checkout");
+}
+
 /** Picks r1os's system image for the flash (a `.img`). */
 export async function pickSystemImage(): Promise<string | null> {
   if (!inTauri) return String.raw`C:\Users\you\Downloads\r1os-0.2.18-system.img`;
@@ -366,6 +372,69 @@ export interface FlashPlan {
   /** What has to be typed. */
   confirm: string;
 }
+/** One of the first setup's inputs in a checkout: which, where under it, whether it's there, and whether the setup
+ *  goes on without it. */
+export interface SetupInput {
+  key: "r1d" | "shell" | "speech_libs" | "speech_model" | "system1" | "translator" | "alpine" | "codex" | "codex_host" | "busybox";
+  path: string | null;
+  here: boolean;
+  optional: boolean;
+}
+/** Where the first setup's files come from: an r1os checkout, for now (`from` is null until one is picked). */
+export interface SetupInputs {
+  from: string | null;
+  found: SetupInput[];
+  /** What's wrong with them, in words. */
+  error: string | null;
+  ready: boolean;
+}
+/** What's on a booted R1 for the setup (r1-usb's `setup::Status`). */
+export interface SetupStatus {
+  /** r1os's image version, if it's r1os's image. */
+  image: string | null;
+  data: { device: string; kind: string; fs_bytes: number; partition_bytes: number; grown: boolean };
+  restarter: "Init" | "Magisk" | "None";
+  r1d: { sha256: string; version: string | null } | null;
+  r1d_running: boolean;
+  online: boolean | null;
+  agent_box: {
+    rootfs: boolean;
+    user: boolean;
+    packages: boolean;
+    codex: boolean;
+    codex_host: boolean;
+    alpine: string | null;
+    claude: string | null;
+    agent_exec: boolean;
+    busybox: "Magisk" | "Ours" | "None";
+  };
+  /** A just-flashed R1 as it's assumed to be, not read from one. */
+  assumed: boolean;
+}
+export interface SetupStep {
+  what: "grow" | "speech" | "system1" | "translator" | "r1d" | "shell" | "restart" | "agent_exec" | "busybox" | "agent_box";
+  /** The step as the setup itself says it. */
+  words: string;
+  /** What it sends over USB. */
+  bytes: number;
+}
+export interface SetupPlan {
+  /** The R1 it was read from; null for an assumed just-flashed one (with why no R1 was read), which can't be run. */
+  r1: string | null;
+  assumed: boolean;
+  why: string | null;
+  steps: SetupStep[];
+  /** What's there already, and left alone. */
+  already: string[];
+  /** The R1 isn't online: the agent box waits for Wi-Fi and a new plan. */
+  box_later: boolean;
+  status: SetupStatus;
+}
+/** A booted R1 by its identity, and what the setup read from it. */
+export interface SetupR1 {
+  r1: string;
+  status: SetupStatus;
+}
 
 export const install = {
   tools: () => invoke<UsbTools>("usb_tools"),
@@ -393,6 +462,12 @@ export const install = {
   prepare: (system: string) => invoke<FlashPlan>("flash_prepare", { system }),
   prepared: () => invoke<{ checked: Checked | null; plan: FlashPlan | null }>("flash_prepared"),
   run: (typed: string) => invoke<void>("flash_run", { typed }),
+  /** The first setup's inputs: [from] a checkout just picked, or (null) the one picked before. */
+  setupInputs: (from: string | null) => invoke<SetupInputs>("setup_inputs", { from }),
+  setupStatus: () => invoke<SetupR1>("setup_status"),
+  setupPlan: () => invoke<SetupPlan>("setup_plan"),
+  setupPlanned: () => invoke<SetupPlan | null>("setup_planned"),
+  setupRun: () => invoke<SetupR1>("setup_run"),
   /** One of the install's progress events, while `fn` is wanted. */
   on: <T>(event: string, fn: (payload: T) => void) => listen<T>(event, fn),
 };

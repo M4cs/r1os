@@ -196,10 +196,12 @@ fn main() {
             install::backup_stop, install::backup_skip, install::flash_stock_status, install::flash_fetch_stock,
             install::flash_read_status, install::flash_read_r1, install::flash_to_bootloader, install::flash_leave_bootloader,
             install::flash_enter_fastboot, install::flash_enter_fastboot_stop, install::flash_unlock_ability,
-            install::flash_check, install::flash_prepare, install::flash_prepared, install::flash_run
+            install::flash_check, install::flash_prepare, install::flash_prepared, install::flash_run,
+            install::setup_inputs, install::setup_status, install::setup_plan, install::setup_planned, install::setup_run
         ])
-        // The flash's check and plan, between its steps.
+        // The flash's check and plan, and the first setup's plan, between their steps.
         .manage(install::Flash::default())
+        .manage(install::FirstSetup::default())
         .setup(move |app| {
             let handle = app.handle().clone();
             let link = tauri::async_runtime::block_on(link::Link::start(handle.clone()))?;

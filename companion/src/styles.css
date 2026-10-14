@@ -539,7 +539,6 @@ b { font-weight: 700; }
 .install-step.on .install-step-n { background: rgba(0, 0, 0, .14); color: var(--ink); }
 .install-what p { margin: 0 0 8px; line-height: 1.5; max-width: 680px; font-weight: 400; }
 .install-what p.small { margin-top: -2px; }
-.install-what p.install-soon { display: inline-flex; align-items: center; gap: 7px; padding: 5px 12px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 13px; font-weight: 700; }
 .hands { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 22px; align-items: center; padding: 2px 0 12px; }
 .hands.words { grid-template-columns: minmax(0, 1fr); }
 .hands-words { font-weight: 400; }
@@ -576,10 +575,20 @@ b { font-weight: 700; }
 .install-plan.danger { background: color-mix(in srgb, #f2555a 9%, var(--panel2)); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, #f2555a 45%, transparent); }
 .install-plan-title { display: flex; align-items: center; gap: 8px; font-weight: 700; }
 .install-plan.danger .install-plan-title { color: #ff8f8f; }
-.install-plan ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 5px; font-size: 14px; line-height: 1.45; }
+.install-plan ul, .install-plan ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 5px; font-size: 14px; line-height: 1.45; }
+.install-plan ol li::marker { color: var(--accent); font-weight: 700; }
 .install-plan p { margin: 0; }
+.install-note { display: flex; align-items: flex-start; gap: 8px; line-height: 1.45; }
+.install-note > :first-child { flex: none; margin-top: 2px; color: var(--accent); }
 .install-writes { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 2px 18px; padding: 8px 10px; border-radius: 12px; background: color-mix(in srgb, var(--ink) 30%, transparent); }
 .install-write { display: grid; grid-template-columns: 44px 1fr auto; gap: 8px; font-size: 12px; }
+/* The first setup's inputs in a checkout: what, where, and whether it's there. */
+.install-inputs { display: grid; gap: 3px; margin: 0 0 12px; padding: 8px 10px; border-radius: 12px; background: color-mix(in srgb, var(--ink) 30%, transparent); }
+.install-input { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) 64px; gap: 10px; align-items: baseline; font-size: 12px; }
+.install-input > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.install-input > .state { justify-self: end; font-size: 12px; }
+/* What the R1 prints while a step runs (the agent box's build). */
+.install-live { max-height: 130px; margin: 0; }
 .install-confirm { max-width: 240px; font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
 .install-nav { display: flex; justify-content: space-between; gap: 10px; }
 .install-log-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 0 6px; }

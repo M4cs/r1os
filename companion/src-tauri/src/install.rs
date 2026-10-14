@@ -1,15 +1,18 @@
 //! Installing r1os on an R1 over USB (ADR-0065, docs/specs/companion.md §11): the wizard's commands (T-171's
 //! screens). Google's platform-tools fetched on first use (into `%LOCALAPPDATA%\r1os\companion\platform-tools`) and
 //! the R1s plugged in, in whatever mode (T-167); the drivers (T-168); a stock R1's backup over the boot ROM (T-169),
-//! which only reads; and the flash, all from the bootloader (T-170, ADR-0067).
+//! which only reads; the flash, all from the bootloader (T-170, ADR-0067); and the first setup once r1os has started.
 //!
-//! One thing writes to an R1: [flash_run], with the plan [flash_prepare] made for the R1 [flash_check] checked, and
-//! `ERASE` typed. Every write in it goes through `r1_usb::safety`. The rest reads, or asks for a boot mode.
+//! Two things write to an R1. [flash_run], with the plan [flash_prepare] made for the R1 [flash_check] checked, and
+//! `ERASE` typed: every write in it goes through `r1_usb::safety`. [setup_run], with the plan [setup_plan] made from
+//! the R1's own status, after a click: it erases nothing, and every command in it comes from `r1_usb::setup`'s fixed
+//! templates. The rest reads, or asks for a boot mode.
 
 use r1_usb::fastboot::{Fastboot, Reboot};
 use r1_usb::flash::{self, Checked, Plan, Step};
 use r1_usb::safety::Write;
 use r1_usb::scan::Mode;
+use r1_usb::setup::{self, Inputs, OverAdb, Progress, Setup, Status};
 use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -664,5 +667,321 @@ pub async fn flash_run(app: AppHandle, flash: State<'_, Flash>, typed: String) -
         flash.forget();
     }
     done
+}
+
+// ---- the first setup (T-170, T-171): r1d, the shell, speech, the models and the agent box, over adb ----------------
+
+/// Where the setup remembers the r1os checkout its files come from.
+fn setup_file() -> PathBuf {
+    dir().join("setup.json")
+}
+
+/// The r1os checkout picked last, if one was (there are no releases yet: T-166).
+fn setup_from() -> Option<PathBuf> {
+    let v: Value = serde_json::from_slice(&std::fs::read(setup_file()).ok()?).ok()?;
+    v["checkout"].as_str().map(PathBuf::from)
+}
+
+/// Each input a checkout has for the setup, for the screen: which, where under [root], whether it's there, and
+/// whether the setup goes on without it (`from_checkout` leaves an optional one out when it isn't there).
+fn inputs_json(root: &Path, i: &Inputs) -> Vec<Value> {
+    let one = |key: &str, p: Option<&Path>, optional: bool| {
+        let path = p.map(|p| p.strip_prefix(root).unwrap_or(p).to_string_lossy().replace('\\', "/"));
+        json!({ "key": key, "path": path, "here": p.is_some_and(Path::exists), "optional": optional })
+    };
+    let b = i.agent_box.as_ref();
+    vec![
+        one("r1d", Some(&i.r1d), false),
+        one("shell", Some(&i.shell), false),
+        one("speech_libs", Some(&i.speech_libs), false),
+        one("speech_model", Some(&i.speech_model), false),
+        one("system1", i.system1.as_deref(), true),
+        one("translator", i.translator.as_deref(), true),
+        one("alpine", b.map(|b| b.alpine.as_path()), false),
+        one("codex", b.and_then(|b| b.codex.as_deref()), true),
+        one("codex_host", b.and_then(|b| b.codex_host.as_deref()), true),
+        one("busybox", b.and_then(|b| b.busybox.as_deref()), true),
+    ]
+}
+
+/// Where the first setup's files come from: [from], an r1os checkout picked on this computer, remembered for next
+/// time; with none, the one picked before. Reads only this computer, every file checked and hashed as the setup will
+/// take it: `{from, found, error, ready}`, each input and whether it's there, and what `Setup::new` found wrong, in
+/// words. `from` is `null` until a checkout is picked.
+#[tauri::command]
+pub async fn setup_inputs(from: Option<String>) -> Result<Value, String> {
+    blocking(move || {
+        let root = match from {
+            Some(f) => {
+                let root = PathBuf::from(f);
+                if !root.join("crates").join("r1d").is_dir() {
+                    anyhow::bail!("{} isn't an r1os checkout: it has no crates\\r1d", root.display());
+                }
+                std::fs::create_dir_all(dir())?;
+                std::fs::write(setup_file(), serde_json::to_vec_pretty(&json!({ "checkout": root }))?)?;
+                root
+            }
+            None => match setup_from() {
+                Some(root) => root,
+                None => return Ok(json!({ "from": null, "found": [], "error": null, "ready": false })),
+            },
+        };
+        let inputs = Inputs::from_checkout(&root);
+        let found = inputs_json(&root, &inputs);
+        let error = Setup::new(inputs).err().map(|e| format!("{e:#}"));
+        Ok(json!({ "from": root, "found": found, "ready": error.is_none(), "error": error }))
+    })
+    .await
+}
+
+/// What's on the booted R1 for the setup (`r1_usb::setup::status`): r1os's image, `/data`, r1d, the agent box, and
+/// whether it's online. Reads only. `{r1, status}`, the R1 by its identity.
+#[tauri::command]
+pub async fn setup_status() -> Result<Value, String> {
+    blocking(|| {
+        let _usb = usb();
+        let adb = booted()?;
+        let status = setup::status(&OverAdb::new(&adb)?)?;
+        Ok(json!({ "r1": adb.id(), "status": status }))
+    })
+    .await
+}
+
+/// A plan as [setup_plan] made it: for the R1 it read (by its identity), or for an assumed just-flashed one (and why
+/// none was read), with the status it was made from, and each step's bytes for the screen's estimate.
+#[derive(Clone)]
+struct Planned {
+    r1: Option<String>,
+    why: Option<String>,
+    plan: setup::Plan,
+    status: Status,
+    bytes: Vec<u64>,
+    box_later: bool,
+}
+
+/// What the first setup keeps between its steps: the plan, until it's run or a new one is made.
+#[derive(Default)]
+pub struct FirstSetup(Mutex<Option<Planned>>);
+
+impl FirstSetup {
+    fn kept(&self) -> MutexGuard<'_, Option<Planned>> {
+        self.0.lock().unwrap_or_else(|e| e.into_inner())
+    }
+}
+
+/// Every file's bytes under [dir].
+fn folder_bytes(dir: &Path) -> u64 {
+    std::fs::read_dir(dir)
+        .into_iter()
+        .flatten()
+        .flatten()
+        .map(|e| match e.file_type() {
+            Ok(t) if t.is_dir() => folder_bytes(&e.path()),
+            _ => e.metadata().map_or(0, |m| m.len()),
+        })
+        .sum()
+}
+
+/// What a step pushes over USB: with what it does on the R1, the screen's estimate of how long it takes.
+fn step_bytes(step: &setup::Step, i: &Inputs) -> u64 {
+    let b = i.agent_box.as_ref();
+    match step {
+        setup::Step::Speech => folder_bytes(&i.speech_libs) + folder_bytes(&i.speech_model),
+        setup::Step::System1 => i.system1.as_deref().map_or(0, folder_bytes),
+        setup::Step::Translator => i.translator.as_deref().map_or(0, folder_bytes),
+        setup::Step::R1d => size(&i.r1d),
+        setup::Step::Shell => folder_bytes(&i.shell),
+        setup::Step::AgentExec => setup::AGENT_EXEC.len() as u64,
+        setup::Step::Busybox => b.and_then(|b| b.busybox.as_deref()).map_or(0, size),
+        setup::Step::AgentBox => b.map_or(0, |b| size(&b.alpine) + b.codex.as_deref().map_or(0, size) + b.codex_host.as_deref().map_or(0, size)),
+        setup::Step::GrowData { .. } | setup::Step::RestartR1d => 0,
+    }
+}
+
+/// A step's name for the screen.
+fn step_what(step: &setup::Step) -> &'static str {
+    match step {
+        setup::Step::GrowData { .. } => "grow",
+        setup::Step::Speech => "speech",
+        setup::Step::System1 => "system1",
+        setup::Step::Translator => "translator",
+        setup::Step::R1d => "r1d",
+        setup::Step::Shell => "shell",
+        setup::Step::RestartR1d => "restart",
+        setup::Step::AgentExec => "agent_exec",
+        setup::Step::Busybox => "busybox",
+        setup::Step::AgentBox => "agent_box",
+    }
+}
+
+/// A plan for the screen: the R1 (`null` when assumed, with `why`), each step (`what`, its `words`, its `bytes`), what's
+/// there already, whether the agent box waits for the R1 to be online, and the status it was made from.
+fn planned_json(p: &Planned) -> Value {
+    let steps: Vec<Value> = p
+        .plan
+        .steps()
+        .iter()
+        .zip(p.plan.describe())
+        .zip(&p.bytes)
+        .map(|((s, words), bytes)| json!({ "what": step_what(s), "words": words, "bytes": bytes }))
+        .collect();
+    json!({
+        "r1": p.r1,
+        "assumed": p.r1.is_none(),
+        "why": p.why,
+        "steps": steps,
+        "already": p.plan.already(),
+        "box_later": p.box_later,
+        "status": p.status,
+    })
+}
+
+/// The plan for an R1 in [status], and the inputs it takes. An offline R1 whose agent box is still to be built gets its
+/// plan without the box, which downloads on the R1 (Q76), and `true` for that; one with its box built plans as it is.
+fn plan_for(checked: &Setup, status: &Status) -> anyhow::Result<(setup::Plan, Inputs, bool)> {
+    match checked.plan(status) {
+        Err(_) if status.online == Some(false) && checked.inputs().agent_box.is_some() => {
+            let no_box = Inputs { agent_box: None, ..checked.inputs().clone() };
+            Ok((Setup::new(no_box.clone())?.plan(status)?, no_box, true))
+        }
+        plan => Ok((plan?, checked.inputs().clone(), false)),
+    }
+}
+
+/// The first setup's plan, from the checkout picked ([setup_inputs]), for the booted R1's own status; with none
+/// booted, for a just-flashed R1 as it's assumed to be (`Status::fresh`), to show what it will do: that one can't be
+/// run. An R1 that isn't online gets a plan without the agent box, whose build downloads on the R1 (Q76): it comes
+/// once the R1 is on Wi-Fi, from a new plan. Reads only. Kept for [setup_run]; returns it ([planned_json]).
+#[tauri::command]
+pub async fn setup_plan(kept: State<'_, FirstSetup>) -> Result<Value, String> {
+    *kept.kept() = None;
+    let planned = blocking(|| {
+        let root = setup_from().ok_or_else(|| anyhow::anyhow!("choose your r1os checkout first"))?;
+        let checked = Setup::new(Inputs::from_checkout(&root))?;
+        let (r1, why, status) = {
+            let _usb = usb();
+            match booted() {
+                Ok(adb) => (Some(adb.id()), None, setup::status(&OverAdb::new(&adb)?)?),
+                Err(e) => (None, Some(format!("{e:#}")), Status::fresh()),
+            }
+        };
+        let (plan, inputs, box_later) = plan_for(&checked, &status)?;
+        let bytes = plan.steps().iter().map(|s| step_bytes(s, &inputs)).collect();
+        Ok(Planned { r1, why, plan, status, bytes, box_later })
+    })
+    .await?;
+    let out = planned_json(&planned);
+    *kept.kept() = Some(planned);
+    Ok(out)
+}
+
+/// The plan the setup holds now, or `null`.
+#[tauri::command]
+pub fn setup_planned(kept: State<'_, FirstSetup>) -> Value {
+    kept.kept().as_ref().map_or(Value::Null, planned_json)
+}
+
+/// The first setup (`r1_usb::setup::run`): the plan [setup_plan] made, on the R1 it was made for. It writes to the R1
+/// (`/data` grown online, `/data/r1os`, r1d restarted, the agent box built) but erases nothing, so a click after the
+/// plan is shown starts it, with no word to type. Refused with no plan, an assumed R1's plan, or another R1 plugged
+/// in; the run reads the R1 again first and stops if the plan would differ. `setup-progress {index, of, words}` as
+/// each step starts, and `setup-line` with each line the R1 prints. Returns `{r1, status}`, the R1 as it is after.
+/// Once it has started, a setup after it starts from a new plan, however it ended.
+#[tauri::command]
+pub async fn setup_run(app: AppHandle, kept: State<'_, FirstSetup>) -> Result<Value, String> {
+    let p = kept.kept().clone().ok_or("nothing to set up yet: read the R1 for its plan first")?;
+    let Some(id) = p.r1.clone() else {
+        return Err("this plan is for an assumed R1: plug the R1 in, booted, and read it for its own plan".into());
+    };
+    let started = std::sync::Arc::new(AtomicBool::new(false));
+    let ran = started.clone();
+    let done = blocking(move || {
+        let _usb = usb();
+        let adb = booted()?;
+        if adb.id() != id {
+            anyhow::bail!("the R1 plugged in isn't the one the plan was made for: read it for its own plan");
+        }
+        let r1 = OverAdb::new(&adb)?;
+        ran.store(true, Ordering::SeqCst);
+        let after = setup::run(&r1, &p.plan, &mut |progress| match progress {
+            Progress::Step { index, of, words } => {
+                let _ = app.emit("setup-progress", json!({ "index": index, "of": of, "words": words }));
+            }
+            Progress::Line(l) => {
+                let _ = app.emit("setup-line", l);
+            }
+        })?;
+        Ok(json!({ "r1": id, "status": after }))
+    })
+    .await;
+    if started.load(Ordering::SeqCst) {
+        *kept.kept() = None;
+    }
+    done
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A checkout with the least the setup takes, and an agent box's Alpine and BusyBox.
+    fn checkout(dir: &Path) -> Inputs {
+        let put = |rel: &str, b: &[u8]| {
+            let p = dir.join(rel);
+            std::fs::create_dir_all(p.parent().unwrap()).unwrap();
+            std::fs::write(p, b).unwrap();
+        };
+        // An arm64 program's ELF header.
+        let mut elf = vec![0u8; 64];
+        elf[..4].copy_from_slice(b"\x7fELF");
+        (elf[4], elf[5], elf[18]) = (2, 1, 183);
+        std::fs::create_dir_all(dir.join("crates").join("r1d")).unwrap();
+        put("target/aarch64-linux-android/release/r1d", &elf);
+        put("shell/dist/index.html", b"<!doctype html>");
+        put("out/speech/lib/arm64-v8a/libsherpa-onnx-c-api.so", b"sherpa");
+        put("out/speech/lib/arm64-v8a/libonnxruntime.so", b"ort");
+        for f in ["encoder.ort", "decoder.ort", "joiner.ort", "tokens.txt"] {
+            put(&format!("out/speech/stt-r1/{f}"), f.as_bytes());
+        }
+        put("firmware/agent-box/alpine-minirootfs-3.24.2-aarch64.tar.gz", &[0x1f, 0x8b, 8, 0]);
+        put("firmware/agent-box/busybox-arm64", &elf);
+        Inputs::from_checkout(dir)
+    }
+
+    #[test]
+    fn an_offline_r1_is_set_up_without_its_box() {
+        let dir = std::env::temp_dir().join(format!("r1os-companion-setup-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let checked = Setup::new(checkout(&dir)).unwrap();
+
+        // Online (as a just-flashed R1 is assumed to be): every step, the box last.
+        let (plan, inputs, later) = plan_for(&checked, &Status::fresh()).unwrap();
+        let what: Vec<_> = plan.steps().iter().map(step_what).collect();
+        assert_eq!(what, ["grow", "speech", "r1d", "shell", "restart", "agent_exec", "busybox", "agent_box"]);
+        assert!(!later && inputs.agent_box.is_some());
+        let bytes: Vec<u64> = plan.steps().iter().map(|s| step_bytes(s, &inputs)).collect();
+        assert_eq!(bytes, [0, 9 + 42, 64, 15, 0, setup::AGENT_EXEC.len() as u64, 64, 4]);
+
+        // Offline: the rest now, the box once it's on Wi-Fi.
+        let mut offline = Status::fresh();
+        offline.online = Some(false);
+        assert!(checked.plan(&offline).is_err(), "r1_usb::setup refuses the box offline");
+        let (plan, inputs, later) = plan_for(&checked, &offline).unwrap();
+        let what: Vec<_> = plan.steps().iter().map(step_what).collect();
+        assert_eq!(what, ["grow", "speech", "r1d", "shell", "restart"]);
+        assert!(later && inputs.agent_box.is_none());
+
+        // Not known isn't offline.
+        offline.online = None;
+        assert!(!plan_for(&checked, &offline).unwrap().2);
+
+        // The screen's list: each input under the checkout, with `/`, and what's left out.
+        let found = inputs_json(&dir, checked.inputs());
+        let r1d = found.iter().find(|f| f["key"] == "r1d").unwrap();
+        assert_eq!((r1d["path"].as_str(), r1d["here"].as_bool()), (Some("target/aarch64-linux-android/release/r1d"), Some(true)));
+        let codex = found.iter().find(|f| f["key"] == "codex").unwrap();
+        assert!(codex["path"].is_null() && codex["here"] == false && codex["optional"] == true);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }
 

@@ -1,9 +1,10 @@
 // Installing r1os on an R1 over USB (ADR-0065, ADR-0067, docs/specs/companion.md §11; T-171): the wizard, reachable
 // with no linked R1. Five steps, one at a time: drivers, a backup, the unlock, the flash and the first setup. Each says
 // what's happening, what to do with your hands and what to do if it goes wrong, and finds its state out (the R1 on
-// USB, what's installed, fetched and read) rather than assuming it. Nothing is written to the R1 by a single click: the
-// flash shows its plan and needs ERASE typed, and only after a backup or a typed "I understand". A log of it all,
-// without serials or IMEIs, can be saved.
+// USB, what's installed, fetched and read) rather than assuming it. Nothing is erased by a single click: the flash
+// shows its plan and needs ERASE typed, and only after a backup or a typed "I understand". The first setup erases
+// nothing: it shows its plan, read from the R1, and starts on a click. A log of it all, without serials or IMEIs, can
+// be saved.
 
 import { Icon } from "@r1os/icons";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
@@ -17,6 +18,12 @@ import {
   type FlashWrite,
   type Merge,
   type ReadStatus,
+  type SetupInput,
+  type SetupInputs,
+  type SetupPlan,
+  type SetupR1,
+  type SetupStatus,
+  type SetupStep as SetupStepT,
   type StockStatus,
   type UsbR1,
   type UsbScan,
@@ -24,6 +31,7 @@ import {
   inTauri,
   install,
   openUrl,
+  pickCheckout,
   pickFolder,
   pickSystemImage,
   reveal,
@@ -91,8 +99,8 @@ function words(e: unknown): string {
 // ---- what's kept while the companion runs --------------------------------------------------------------------------
 
 /** What the wizard keeps while the companion runs, so leaving the page and coming back finds it as it was: the log, the
- *  step, the R1 last seen, a backup made or skipped (for which R1), the system image picked, a flash done. Never on
- *  disk. */
+ *  step, the R1 last seen, a backup made or skipped (for which R1), the system image picked, a flash done, an R1 set
+ *  up. Never on disk. */
 const kept = {
   lines: [] as string[],
   said: "",
@@ -102,6 +110,7 @@ const kept = {
   skipped: null as string | null,
   system: null as string | null,
   flashed: false,
+  setUp: null as SetupR1 | null,
 };
 type Kept = typeof kept;
 
@@ -210,9 +219,11 @@ export function Install() {
   const backedUp = !!backup?.latest || (!!made && made.identity === known);
   const skipped = skippedFor !== null && (skippedFor === "" || skippedFor === known);
 
-  // The system image for the flash (picked here; r1os's releases come later), and whether it was flashed just now.
+  // The system image for the flash (picked here; r1os's releases come later), whether it was flashed just now, and the
+  // R1 as the first setup left it.
   const [system, setSystem] = useKept("system");
   const [flashed, setFlashed] = useKept("flashed");
+  const [setUp, setSetUp] = useKept("setUp");
 
   // The R1 as it changes, in the log.
   useEffect(() => {
@@ -229,7 +240,7 @@ export function Install() {
     backup: backedUp || skipped,
     unlock: (r1?.mode === "fastboot" && r1.unlocked === true) || (r1?.mode === "adb" && !!r1.r1os),
     flash: flashed || (r1?.mode === "adb" && !!r1.r1os),
-    setup: false,
+    setup: !!setUp && setUp.r1 === known,
   };
   const index = STEPS.findIndex((s) => s.id === at);
   // Another step: its top in view.
@@ -298,11 +309,16 @@ export function Install() {
               onSystem={setSystem}
               log={log}
               again={again}
-              onFlashed={() => setFlashed(true)}
+              onFlashed={() => {
+                setFlashed(true);
+                // Its /data is erased: a setup before the flash is gone with it.
+                setSetUp(null);
+              }}
               onBackup={() => go("backup")}
+              onSetup={() => go("setup")}
             />
           )}
-          {at === "setup" && <SetupStep />}
+          {at === "setup" && <SetupStep r1={r1} known={known} flashed={flashed} setUp={setUp} log={log} onSetUp={setSetUp} />}
         </motion.div>
       </AnimatePresence>
 
@@ -371,9 +387,9 @@ function useSince(since: number): number {
   return Math.max(0, (now - since) / 1000);
 }
 
-/** Progress: a track, what's being done, how far, and how long it's likely to take still (its own pace once it has
- *  one, else [rate]). With no total, how long it's been going. */
-function Bar({ what, done = 0, total = 0, since, rate }: { what: string; done?: number; total?: number; since: number; rate?: number }) {
+/** Progress: a track, what's being done, how far (in bytes, or as [count] says it), and how long it's likely to take
+ *  still (its own pace once it has one, else [rate]). With no total, how long it's been going. */
+function Bar({ what, done = 0, total = 0, since, rate, count }: { what: string; done?: number; total?: number; since: number; rate?: number; count?: string }) {
   const elapsed = useSince(since);
   const frac = total > 0 ? Math.min(1, done / total) : 0;
   const pace = elapsed > 3 && done > 0 ? done / elapsed : rate;
@@ -390,7 +406,7 @@ function Bar({ what, done = 0, total = 0, since, rate }: { what: string; done?: 
       <div className="install-bar-line">
         <span>{what}</span>
         <span>
-          {total > 0 ? `${done ? size(done) : "0 mb"} of ${size(total)}` : `for ${elapsed < 60 ? `${Math.round(elapsed)} s` : `${Math.floor(elapsed / 60)} min ${Math.round(elapsed % 60)} s`}`}
+          {total > 0 ? (count ?? `${done ? size(done) : "0 mb"} of ${size(total)}`) : `for ${elapsed < 60 ? `${Math.round(elapsed)} s` : `${Math.floor(elapsed / 60)} min ${Math.round(elapsed % 60)} s`}`}
           {total > 0 && left > 0 ? ` · ${about(left)} left` : ""}
         </span>
       </div>
@@ -900,7 +916,7 @@ interface Running {
   sparse: [number, number] | null;
 }
 
-function FlashStep({ r1, known, backupOk, system, onSystem, log, again, onFlashed, onBackup }: {
+function FlashStep({ r1, known, backupOk, system, onSystem, log, again, onFlashed, onBackup, onSetup }: {
   r1: UsbR1 | null;
   known: string | null;
   backupOk: boolean;
@@ -910,6 +926,7 @@ function FlashStep({ r1, known, backupOk, system, onSystem, log, again, onFlashe
   again: () => void;
   onFlashed: () => void;
   onBackup: () => void;
+  onSetup: () => void;
 }) {
   const [stock, setStock] = useState<StockStatus | null>(null);
   const [stockGoing, setStockGoing] = useState<{ file: string; index: number; count: number } | null>(null);
@@ -1236,6 +1253,12 @@ function FlashStep({ r1, known, backupOk, system, onSystem, log, again, onFlashe
       {finished && (
         <div className="install-row">
           <p className="ok-note">flashed. r1os is starting: its first start takes a few minutes. never take rabbit's update on it.</p>
+          <div className="row-buttons">
+            <span className="small">keep it plugged in: the first setup puts r1os's core on it once it's started.</span>
+            <button className="btn small primary" onClick={onSetup}>
+              the first setup <Icon name="arrow-right" weight="bold" size={14} />
+            </button>
+          </div>
         </div>
       )}
       {err && <p className="err install-err">{err}</p>}
@@ -1245,30 +1268,401 @@ function FlashStep({ r1, known, backupOk, system, onSystem, log, again, onFlashe
 
 // ---- 5. first setup ------------------------------------------------------------------------------------------------
 
-function SetupStep() {
+/** A checkout's inputs for the setup, in words. */
+const INPUT: Record<SetupInput["key"], string> = {
+  r1d: "r1d, built for the r1",
+  shell: "the shell",
+  speech_libs: "speech-to-text's libraries",
+  speech_model: "the speech-to-text model",
+  system1: "system one's model",
+  translator: "the translator's models",
+  alpine: "alpine, for the agent box",
+  codex: "codex",
+  codex_host: "codex's code-mode host",
+  busybox: "a static busybox",
+};
+
+/** Rough seconds each step takes on the R1 besides what it sends over USB: /data grown, r1d back, the agent box's
+ *  downloads and build. Guesses until a setup's been timed on an R1. */
+const ON_R1: Record<SetupStepT["what"], number> = {
+  grow: 15,
+  speech: 3,
+  system1: 2,
+  translator: 20,
+  r1d: 2,
+  shell: 2,
+  restart: 15,
+  agent_exec: 2,
+  busybox: 2,
+  agent_box: 240,
+};
+
+/** How long a step is likely to take, in seconds. */
+function estimate(s: SetupStepT): number {
+  return s.bytes / USB_RATE + ON_R1[s.what];
+}
+
+/** "115 gb", "2.8 gb": decimal, as the setup says a partition's size. */
+function gb(bytes: number): string {
+  const g = bytes / 1e9;
+  return `${g >= 10 ? g.toFixed(0) : g.toFixed(1)} gb`;
+}
+
+/** What the setup read from an R1, in a line. */
+function statusWords(s: SetupStatus): string {
+  const box = s.agent_box;
+  return [
+    s.image ? `r1os ${s.image}` : s.restarter === "Magisk" ? "r1os-base, under magisk" : "not r1os's image",
+    s.data.grown ? `/data ${gb(s.data.fs_bytes)}` : `/data ${gb(s.data.fs_bytes)} of ${gb(s.data.partition_bytes)}`,
+    s.r1d_running ? `r1d running${s.r1d?.version ? ` (${s.r1d.version})` : ""}` : s.r1d ? "r1d there, not running" : "no r1d yet",
+    box.rootfs && box.claude ? `the agent box: alpine ${box.alpine ?? "?"}, claude code ${box.claude}` : "no agent box yet",
+    s.online ? "online" : s.online === false ? "offline" : "online or not: not known",
+  ].join(" · ");
+}
+
+/** Whether the agent box is built, as the setup read it. */
+function boxBuilt(s: SetupStatus): boolean {
+  return s.agent_box.rootfs && s.agent_box.packages && !!s.agent_box.claude;
+}
+
+interface SetupRunning {
+  since: number;
+  /** The step going (from 1, 0 before the first), of how many, its words and when it started. */
+  index: number;
+  of: number;
+  words: string;
+  stepSince: number;
+  /** The last lines the R1 printed in this step. */
+  lines: string[];
+}
+
+/** The setup's progress, each step's share its estimate: the steps done, and the one going as its time passes (up to
+ *  its estimate, so a slow one waits at the end of its share rather than running past it). */
+function SetupBar({ steps, running }: { steps: SetupStepT[]; running: SetupRunning }) {
+  const inStep = useSince(running.stepSince);
+  const est = steps.map(estimate);
+  const i = Math.max(1, running.index) - 1;
+  const done = running.index ? est.slice(0, i).reduce((n, s) => n + s, 0) + Math.min((est[i] ?? 0) * 0.95, inStep) : 0;
+  const total = est.reduce((n, s) => n + s, 0);
+  return (
+    <Bar
+      what={running.index ? running.words : "reading the r1 again: is the plan still the same?"}
+      done={done}
+      total={total}
+      since={running.since}
+      rate={1}
+      count={`step ${Math.max(1, running.index)} of ${running.of}`}
+    />
+  );
+}
+
+function SetupStep({ r1, known, flashed, setUp, log, onSetUp }: {
+  r1: UsbR1 | null;
+  known: string | null;
+  flashed: boolean;
+  setUp: SetupR1 | null;
+  log: Log;
+  onSetUp: (done: SetupR1) => void;
+}) {
+  const [inputs, setInputs] = useState<SetupInputs | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [plan, setPlan] = useState<SetupPlan | null>(null);
+  // What was last read from an R1: by a plan, a read alone, or the run.
+  const [seen, setSeen] = useState<SetupR1 | null>(setUp);
+  const [busy, setBusy] = useState(false);
+  const [running, setRunning] = useState<SetupRunning | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [opened] = useState(Date.now());
+  // The R1 a plan was last asked for (null: none booted), so a plan that fails isn't asked for again by itself.
+  const tried = useRef<string | null | undefined>(undefined);
+  const booted = r1?.mode === "adb" ? r1 : null;
+
+  const fail = (e: unknown) => {
+    setErr(words(e));
+    log.add(`setup: ${words(e)}`);
+  };
+
+  /** The checkout's files checked: [from] one just picked, else the one picked before. [say]: in the log. */
+  const checkInputs = async (from: string | null, say: boolean) => {
+    setErr(null);
+    setChecking(true);
+    if (from) log.add(`setup: r1os's files from ${from}`);
+    try {
+      const i = await install.setupInputs(from);
+      setInputs(i);
+      if (say && i.from) log.add(i.ready ? "setup: every file it takes is here, read and checked" : `setup: ${i.error}`);
+    } catch (e) {
+      fail(e);
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  // The plan the core holds, then the checkout picked before.
+  useEffect(() => {
+    install
+      .setupPlanned()
+      .then((p) => {
+        setPlan(p);
+        if (p) tried.current = p.r1;
+      })
+      .catch(() => undefined)
+      .finally(() => void checkInputs(null, false));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const pick = async () => {
+    const dir = await pickCheckout();
+    if (dir) {
+      setPlan(null);
+      tried.current = undefined;
+      void checkInputs(dir, true);
+    }
+  };
+
+  /** The plan, read from the booted R1 (or for an assumed just-flashed one with none). Reads only. */
+  const makePlan = async () => {
+    setErr(null);
+    setBusy(true);
+    tried.current = booted?.id ?? null;
+    log.add(booted ? `setup: reading r1 ${booted.id} for its plan (reading only)` : "setup: no r1 booted: the plan for a just-flashed one, assumed");
+    try {
+      const p = await install.setupPlan();
+      setPlan(p);
+      if (!p.assumed && p.r1) {
+        setSeen({ r1: p.r1, status: p.status });
+        log.add(`setup: r1 ${p.r1}: ${statusWords(p.status)}`);
+        p.steps.forEach((s, n) => log.add(`plan: ${n + 1}. ${s.words}`));
+        if (p.box_later) log.add("plan: the r1 isn't online: the agent box waits for wi-fi");
+        if (!p.steps.length) {
+          log.add("plan: nothing to do: it's set up");
+          onSetUp({ r1: p.r1, status: p.status });
+        }
+      }
+    } catch (e) {
+      setPlan(null);
+      fail(e);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /** What's on the R1 alone, before the checkout is ready. Reads only. */
+  const readR1 = async () => {
+    setErr(null);
+    setBusy(true);
+    log.add("setup: reading the r1 (reading only)");
+    try {
+      const s = await install.setupStatus();
+      setSeen(s);
+      log.add(`setup: r1 ${s.r1}: ${statusWords(s.status)}`);
+    } catch (e) {
+      fail(e);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // A plan once the files are ready, and again whenever another R1 is booted. Reading only, so it needn't wait for a
+  // click: after the flash, the R1's own plan is here as soon as r1os has started.
+  useEffect(() => {
+    if (!inputs?.ready || busy || running) return;
+    const target = booted?.id ?? null;
+    const stale = !plan || (target !== null && plan.r1 !== target);
+    if (stale && tried.current !== target) void makePlan();
+  }, [inputs?.ready, booted?.id, plan, busy, running]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const go = async () => {
+    if (!plan || plan.assumed) return;
+    setErr(null);
+    const since = Date.now();
+    setRunning({ since, index: 0, of: plan.steps.length, words: "", stepSince: since, lines: [] });
+    const offs = await Promise.all([
+      install.on<{ index: number; of: number; words: string }>("setup-progress", (p) => {
+        log.add(`setup: step ${p.index} of ${p.of}: ${p.words}`);
+        setRunning((r) => r && { ...r, ...p, stepSince: Date.now(), lines: [] });
+      }),
+      install.on<string>("setup-line", (l) => {
+        log.add(`setup: ${l}`);
+        setRunning((r) => r && { ...r, lines: [...r.lines.slice(-5), l] });
+      }),
+    ]);
+    log.add(`setup: set up clicked; setting up r1 ${plan.r1}`);
+    try {
+      const done = await install.setupRun();
+      setSeen(done);
+      onSetUp(done);
+      log.add(`setup: done: ${statusWords(done.status)}`);
+    } catch (e) {
+      fail(e);
+    } finally {
+      offs.forEach((f) => f());
+      setRunning(null);
+      // Once it's started, the core keeps no plan: the next is read anew.
+      install.setupPlanned().then(setPlan).catch(() => setPlan(null));
+    }
+  };
+
+  const other = !!plan && !plan.assumed && !!booted && plan.r1 !== booted.id;
+  const waiting = flashed && !booted;
+  const shown = seen && seen.r1 === (booted?.id ?? known) ? seen : null;
+  const done = setUp && setUp.r1 === (booted?.id ?? known) ? setUp : null;
+  const total = plan ? plan.steps.reduce((n, s) => n + estimate(s), 0) : 0;
+  const r1Sub = !r1
+    ? flashed
+      ? "r1os is starting after the flash: its first start takes a few minutes, then it shows up here"
+      : "plug it in, started into r1os"
+    : r1.mode === "adb"
+      ? r1.r1os
+        ? `booted into r1os ${r1.r1os}: the setup reads and writes it over adb, as root`
+        : "booted, but not into r1os's image: the setup needs root over adb (r1os's image, or magisk)"
+      : r1.mode === "unauthorized"
+        ? "it's asking whether to allow usb debugging: allow it on its screen"
+        : r1.mode === "fastboot"
+          ? "in its bootloader: leave it (the flash step) and r1os starts"
+          : MODE[r1.mode];
+
   return (
     <StepCard
       what={
         <>
-          <p className="install-soon">
-            <Icon name="hourglass-medium" weight="bold" size={15} /> not available yet: it's being built
+          <p>
+            r1os's image has started, but /data is still nearly empty: r1os's core (r1d), its screens, speech-to-text and its models live there, beside the agent box where claude and codex run. this computer puts them on over usb: /data grown to its full size first (online; nothing is erased), each file checked by its sha-256, r1d started, then the agent box built on the r1. only what isn't there yet is done, so it's safe to run again.
           </p>
-          <p>once r1os has started, this computer sets it up from the same release, over usb. then the r1 carries on by itself.</p>
+          <p className="muted small">
+            it writes to the r1 but erases nothing, so there's no word to type: the plan is read from the r1 and shown first, and it starts when you click set up. r1os's releases come later: for now, its files come from your r1os checkout.
+          </p>
         </>
       }
-      hands={<p>keep the r1 plugged in and on. when it's done, follow the r1's own screen: wi-fi, a first agent, then signing in with your phone.</p>}
-      wrong={["until it's here, r1os starts without its core, and shows little. for developers, r1os's repository does it: tools/deploy.sh, then tools/agent-box.sh install."]}
+      hands={
+        <ol>
+          <li>{flashed ? "leave the r1 plugged in: it starts r1os by itself, a few minutes the first time." : "plug the r1 in, started into r1os."}</li>
+          <li>if it asks whether to allow usb debugging, allow it on its screen.</li>
+          <li>look over the plan, then click set up. keep the r1 plugged in until it's done.</li>
+          <li>afterwards, follow the r1's own screen: wi-fi, a first agent, then signing in with your phone. if the agent box waited for wi-fi, come back here and set up once more.</li>
+        </ol>
+      }
+      wrong={[
+        "a file is missing on this computer: build it in your checkout as it says (tools/build-r1d.sh, pnpm --dir shell build, tools/fetch-speech.sh), then check again.",
+        "the r1 doesn't show up after the flash: give its first start a few minutes, and allow usb debugging if it asks. if it never starts, rabbit's restore (the flash step) puts its os back.",
+        "it says the r1 changed since the plan: something on it changed in between. read it again for a new plan.",
+        "r1d doesn't come back: its log is /data/r1os/log/r1d.log on the r1. save this log and ask for help.",
+        "the agent box's build fails: usually the r1's wi-fi. check it's online, then set up again.",
+        "it stops part way: nothing is erased or lost. set up again, and it carries on with what isn't there yet.",
+      ]}
     >
-      <Section title="what it will do" />
-      <Item label="grow /data" sub="if the r1 needs it, so r1os's models and the agent box fit">
-        <span className="state">not yet</span>
+      <Section title="what it puts on" />
+      <Item
+        label="r1os's files"
+        sub={inputs?.from ? `from ${inputs.from}${inputs.ready ? ": each one read and checked" : ""}` : "r1os's releases come later: for now, your r1os checkout, with r1d, the shell and the speech files built in it"}
+      >
+        <div className="row-buttons">
+          {inputs?.from && <Found ok={checking ? null : inputs.ready} yes="here, checked" no="not all there" unknown="checking…" />}
+          {inputs?.from && (
+            <button className="link" disabled={checking || !!running} onClick={() => void checkInputs(null, true)}>
+              check again
+            </button>
+          )}
+          <button className="btn small" disabled={checking || !!running} onClick={() => void pick()}>
+            <Icon name="folder-open" weight="bold" size={14} /> {inputs?.from ? "another…" : "choose…"}
+          </button>
+        </div>
       </Item>
-      <Item label="r1d, the shell and the speech files" sub="r1os's core, its screens, and speech-to-text, pushed with their labels set">
-        <span className="state">not yet</span>
+      {inputs?.from && inputs.found.length > 0 && (
+        <div className="install-inputs">
+          {inputs.found.map((f) => (
+            <div key={f.key} className="install-input">
+              <span>{INPUT[f.key]}</span>
+              <span className="mono muted" title={f.path ?? undefined}>
+                {f.path ?? ""}
+              </span>
+              <span className={`state ${f.here ? "ok" : ""}`}>{f.here ? "here" : f.optional ? "left out" : "missing"}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      {inputs?.error && !checking && <p className="err install-err">{inputs.error}</p>}
+
+      <Section title="this r1" />
+      <Item label="the r1" sub={r1Sub}>
+        <Found ok={booted ? true : r1 ? false : null} yes={booted?.r1os ? `r1os ${booted.r1os}` : "booted"} no="not yet" unknown={waiting ? "starting…" : "not plugged in"} />
       </Item>
-      <Item label="the agent box" sub="a small linux where claude and codex run, signed in later from the r1">
-        <span className="state">not yet</span>
+      {waiting && (
+        <div className="install-row">
+          <Bar what="waiting for r1os to start, with usb debugging allowed" since={opened} />
+        </div>
+      )}
+      <Item label="what's on it" sub={shown ? statusWords(shown.status) : "/data, r1d, the agent box, and whether it's online: reading only"}>
+        <button className="btn small" disabled={!booted || busy || !!running || checking} onClick={() => void (inputs?.ready ? makePlan() : readR1())}>
+          {busy ? "reading…" : shown ? "read it again" : "read it"}
+        </button>
       </Item>
+
+      {plan && !running && (
+        <>
+          <Section title="the plan" />
+          <div className="install-plan">
+            <div className="install-plan-title">
+              <Icon name="list-checks" weight="bold" size={16} /> {plan.assumed ? "what it does on a just-flashed r1" : `what it does on r1 ${plan.r1}`}
+            </div>
+            {plan.assumed && <p className="muted small">assumed, not read: {plan.why ?? "no r1 read yet"}. once the r1 has started r1os, it's read for its own plan.</p>}
+            {plan.steps.length ? (
+              <ol className="keep-case">
+                {plan.steps.map((s) => (
+                  <li key={s.what}>{s.words}</li>
+                ))}
+              </ol>
+            ) : (
+              <p>nothing to do: everything's on it already.</p>
+            )}
+            {plan.already.length > 0 && (
+              <p className="muted small">
+                already there, left alone: <span className="keep-case">{plan.already.join(" · ")}</span>
+              </p>
+            )}
+            {plan.box_later && (
+              <p className="small install-note">
+                <Icon name="wifi-slash" weight="bold" size={15} />
+                <span>the r1 isn't online, so the agent box waits: its build downloads alpine's packages and claude code on the r1. after this, connect it to wi-fi on its own screen, then read it again here for the box.</span>
+              </p>
+            )}
+            {plan.steps.length > 0 && (
+              <>
+                <p className="muted small">
+                  {about(total)} roughly. it writes to the r1 but erases nothing, so there's no word to type: it starts when you click set up. keep the r1 plugged in until it's done.
+                </p>
+                <div className="row-buttons">
+                  <motion.button className="btn small primary" whileTap={{ scale: 0.95 }} disabled={plan.assumed || !booted || other || busy} onClick={() => void go()}>
+                    <Icon name="rocket-launch" weight="bold" size={14} /> set up
+                  </motion.button>
+                  {plan.assumed && <span className="small muted">the r1 is read for its own plan first</span>}
+                </div>
+              </>
+            )}
+          </div>
+          {other && <p className="err install-err">the r1 plugged in isn't the one this plan was read from: read it again.</p>}
+        </>
+      )}
+      {running && plan && (
+        <>
+          <Section title="setting up" />
+          <div className="install-row install-running">
+            <SetupBar steps={plan.steps} running={running} />
+            {running.lines.length > 0 && <pre className="install-log-lines install-live">{running.lines.join("\n")}</pre>}
+            <p className="muted small">don't unplug the r1 or close this window. its screen may go blank for a moment while r1d starts.</p>
+          </div>
+        </>
+      )}
+      {done && !running && (
+        <div className="install-row">
+          <p className="ok-note">set up: {statusWords(done.status)}.</p>
+          <p className="small">
+            {boxBuilt(done.status)
+              ? "r1os's core is running, and the agent box is built. follow the r1's own screen now: a first agent, then signing in with your phone."
+              : "r1os's core is running. the agent box is still to come: connect the r1 to wi-fi on its own screen, then read it again here and set up once more."}
+          </p>
+        </div>
+      )}
+      {err && <p className="err install-err">{err}</p>}
     </StepCard>
   );
 }

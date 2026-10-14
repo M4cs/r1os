@@ -1,14 +1,17 @@
 // The demo's pretend R1 on USB, for the install wizard outside Tauri: src-tauri/src/install.rs's commands answered here,
 // with their progress events. By default an R1 running r1os (unlocked, with root), so every step can be walked through;
 // `?r1=stock` makes it a stock R1, off and locked, whose backup goes through its preloader. It changes mode as a real
-// one would (restarts take a few seconds). Made up: nothing here talks to a real R1.
+// one would (restarts take a few seconds; after the flash it asks to allow USB debugging). Either way its /data is as
+// just flashed, so the first setup has all ten steps; `?wifi=off` makes it offline until a while after the setup, as
+// if Wi-Fi were set up in its onboarding. Made up: nothing here talks to a real R1.
 
-import type { Checked, FlashPlan, FlashWrite } from "./link";
+import type { Checked, FlashPlan, FlashWrite, SetupInput, SetupPlan, SetupStatus, SetupStep } from "./link";
 
 type Emit = (event: string, payload: unknown) => void;
-type Mode = "off" | "adb" | "preloader" | "fastboot";
+type Mode = "off" | "adb" | "unauthorized" | "preloader" | "fastboot";
 
-const stockR1 = typeof location !== "undefined" && new URLSearchParams(location.search).get("r1") === "stock";
+const params = new URLSearchParams(typeof location !== "undefined" ? location.search : "");
+const stockR1 = params.get("r1") === "stock";
 /** Its identity (a hash of its serial), and its preloader's: that has a serial of its own. */
 const ID = "5e0c41b7a9d2";
 const AT_POWER_ON = "c07fa1e3b512";
@@ -20,6 +23,8 @@ const BACKUPS = String.raw`C:\Users\you\Documents\r1os backups`;
 const r1 = { mode: (stockR1 ? "off" : "adb") as Mode, unlocked: !stockR1, slot: "b", r1os: stockR1 ? null : ("0.2.17" as string | null) };
 const pc = { tools: null as string | null, drivers: { r1: false, mtk: false }, backupTools: false, backups: {} as Record<string, string>, stock: false };
 const flash = { read: null as number | null, checked: null as Checked | null, plan: null as FlashPlan | null };
+/** The first setup: the checkout picked, the steps done on the R1, whether r1d runs and the R1 is online, the plan. */
+const setup = { from: null as string | null, done: new Set<SetupStep["what"]>(), running: false, online: params.get("wifi") !== "off", plan: null as SetupPlan | null };
 /** What a running wait or backup stops with. */
 let stop: (() => void) | null = null;
 
@@ -79,6 +84,110 @@ function planFor(system: string): FlashPlan {
     bytes: writes.reduce((n, w) => n + w.bytes, 0),
     confirm: "ERASE",
   };
+}
+
+/** The setup's steps in order, as r1-usb's setup says them for a checkout with everything in it (`examples/setup plan`),
+ *  with what each sends, how long it takes here, and what the R1 prints. */
+const SETUP: (SetupStep & { ms: number; lines?: string[] })[] = [
+  {
+    what: "grow",
+    words: "Grow /data to fill its partition: its filesystem is 2.8 GB of 115 GB (online; nothing is erased)",
+    bytes: 0,
+    ms: 1800,
+    lines: [
+      "resize2fs 1.47.0 (5-Feb-2023)",
+      "Filesystem at /dev/block/dm-48 is mounted on /data; on-line resizing required",
+      "old_desc_blocks = 1, new_desc_blocks = 7",
+      "The filesystem on /dev/block/dm-48 is now 28075008 (4k) blocks long.",
+    ],
+  },
+  { what: "speech", words: "Speech-to-text: its libraries and model (99 MB)", bytes: 98_729_593, ms: 1400 },
+  { what: "system1", words: "System One's model (23 MB)", bytes: 23_257_592, ms: 700 },
+  { what: "translator", words: "The Translator's models (2.5 GB: the first time takes a few minutes)", bytes: 2_477_711_753, ms: 5000 },
+  { what: "r1d", words: "r1d, r1os's core (18 MB)", bytes: 18_385_560, ms: 800 },
+  { what: "shell", words: "The shell, r1os's screens (3 MB)", bytes: 2_607_257, ms: 500 },
+  { what: "restart", words: "Start r1d, and wait for it", bytes: 0, ms: 2600 },
+  { what: "agent_exec", words: "The agent box's agent-exec, which runs the agents' CLIs in it", bytes: 3_273, ms: 300 },
+  { what: "busybox", words: "A static BusyBox for the agent box (2 MB): r1os's image has no Magisk", bytes: 1_710_600, ms: 400, lines: ["BusyBox v1.36.1 (2024-01-21 12:00:00 UTC) multi-call binary."] },
+  {
+    what: "agent_box",
+    words: "Build the agent box: Alpine 3.24.2 (4 MB), Codex, and Claude Code from its installer. The R1 downloads packages, so it has to be online; a few minutes",
+    bytes: 133_661_156,
+    ms: 8000,
+    lines: [
+      "== extracting alpine.tar.gz",
+      "== agent user",
+      "== packages",
+      "== codex",
+      "== claude code (official installer, as agent)",
+      "Setting up Claude Code...",
+      "Claude Code successfully installed!",
+      "Version: 2.0.14",
+      "Location: ~/.local/bin/claude",
+      "== versions",
+      "claude: 2.0.14 (Claude Code)",
+      "codex:  codex-cli 0.162.0",
+    ],
+  },
+];
+const BOX_STEPS: SetupStep["what"][] = ["agent_exec", "busybox", "agent_box"];
+const DEPLOY: SetupStep["what"][] = ["speech", "system1", "translator", "r1d", "shell"];
+
+/** What r1-usb's setup says is there already, for each step done. */
+const ALREADY: Partial<Record<SetupStep["what"], string>> = {
+  grow: "/data is full size (113 GB)",
+  speech: "Speech-to-text",
+  system1: "System One's model",
+  translator: "The Translator's models",
+  r1d: "r1d, this build",
+  shell: "The shell, this build",
+  agent_exec: "The agent box's agent-exec, this build",
+  busybox: "BusyBox, for the agent box",
+  agent_box: "The agent box (Alpine 3.24.2, Claude Code 2.0.14)",
+};
+
+/** The pretend R1 as the setup reads it, or a just-flashed one as r1-usb's `Status::fresh` assumes it. */
+function setupStatus(assumed: boolean): SetupStatus {
+  const has = (w: SetupStep["what"]) => !assumed && setup.done.has(w);
+  const box = has("agent_box");
+  return {
+    image: assumed ? null : r1.r1os,
+    data: { device: assumed ? "" : "/dev/block/dm-48", kind: "ext4", fs_bytes: has("grow") ? 113_011_265_536 : 2_818_572_288, partition_bytes: 115_000_000_000, grown: has("grow") },
+    restarter: "Init",
+    r1d: has("r1d") ? { sha256: "5d2f0c8e41a7b39f6e0d14c2a9b87e3f0c51d6a2e4b8f9037c1e6d5a4b3c2f1e", version: "0.1.0" } : null,
+    r1d_running: !assumed && setup.running,
+    online: assumed || setup.online,
+    agent_box: { rootfs: box, user: box, packages: box, codex: box, codex_host: box, alpine: box ? "3.24.2" : null, claude: box ? "2.0.14" : null, agent_exec: has("agent_exec"), busybox: has("busybox") ? "Ours" : "None" },
+    assumed,
+  };
+}
+
+/** What's left to do on the R1 (or on an assumed just-flashed one), as r1-usb's `Setup::plan` makes it; an offline
+ *  R1 whose box isn't built yet gets its plan without the box. */
+function setupPlan(assumed: boolean, why: string | null): SetupPlan {
+  const status = setupStatus(assumed);
+  const has = (w: SetupStep["what"]) => !assumed && setup.done.has(w);
+  const boxLater = !has("agent_box") && status.online === false;
+  const steps: SetupStep[] = [];
+  const already: string[] = [];
+  for (const s of SETUP) {
+    if (boxLater && BOX_STEPS.includes(s.what)) continue;
+    if (s.what === "restart") {
+      const deploying = steps.some((t) => DEPLOY.includes(t.what));
+      if (deploying || !status.r1d_running) {
+        steps.push({ what: s.what, words: status.r1d_running ? "Restart r1d with what's new, and wait for it" : s.words, bytes: 0 });
+      } else already.push("r1d is running");
+    } else if (has(s.what)) already.push(ALREADY[s.what] ?? s.words);
+    else steps.push({ what: s.what, words: s.words, bytes: s.bytes });
+  }
+  return { r1: assumed ? null : ID, assumed, why, steps, already, box_later: boxLater, status };
+}
+
+/** The pretend R1 booted with root over adb, as install.rs's `booted()` and `OverAdb` find it, or why not. */
+function bootedWhy(): string | null {
+  if (r1.mode === "unauthorized" && pc.tools) return "the R1 is asking whether to allow USB debugging: allow it on its screen";
+  if (r1.mode !== "adb" || !pc.tools) return "no R1 booted on USB with USB debugging allowed";
+  return null;
 }
 
 /** The install's commands, or null for any other. */
@@ -299,9 +408,84 @@ const COMMANDS: Record<string, (args: Record<string, unknown>, emit: Emit) => Pr
       emit("flash-progress", { what: "boot", part: null, bytes: 0, step: steps, steps });
       line("Booting r1os: the first boot takes a few minutes");
       line("Rebooting                                          OKAY [  0.00s]");
-      later("adb", 8000, () => (r1.r1os = "0.2.18"));
+      // userdata is erased: nothing of the setup's is left, and r1d isn't there to run.
+      setup.done.clear();
+      setup.running = false;
+      setup.plan = null;
+      // r1os starts, and asks to allow USB debugging before adb reaches it.
+      later("unauthorized", 8000, () => {
+        r1.r1os = "0.2.18";
+        setTimeout(() => (r1.mode = "adb"), 5000);
+      });
     } finally {
       forget();
     }
+  },
+  async setup_inputs(args) {
+    const from = (args.from as string | null) ?? setup.from;
+    if (!from) return { from: null, found: [], error: null, ready: false };
+    // Each file read and hashed, as Setup::new does.
+    await sleep(900);
+    setup.from = from;
+    const box = "firmware/agent-box";
+    const found: SetupInput[] = [
+      { key: "r1d", path: "target/aarch64-linux-android/release/r1d", here: true, optional: false },
+      { key: "shell", path: "shell/dist", here: true, optional: false },
+      { key: "speech_libs", path: "out/speech/lib/arm64-v8a", here: true, optional: false },
+      { key: "speech_model", path: "out/speech/stt-r1", here: true, optional: false },
+      { key: "system1", path: "out/system1", here: true, optional: true },
+      { key: "translator", path: "out/translate", here: true, optional: true },
+      { key: "alpine", path: `${box}/alpine-minirootfs-3.24.2-aarch64.tar.gz`, here: true, optional: false },
+      { key: "codex", path: `${box}/codex-rust-v0.162.0.tar.gz`, here: true, optional: true },
+      { key: "codex_host", path: `${box}/codex-code-mode-host-rust-v0.162.0.tar.gz`, here: true, optional: true },
+      { key: "busybox", path: `${box}/busybox-arm64`, here: true, optional: true },
+    ];
+    return { from, found, error: null, ready: true };
+  },
+  async setup_status() {
+    const why = bootedWhy();
+    if (why) fail(why);
+    if (!r1.r1os) fail("this R1 has no root over adb: it needs r1os's image (adb root) or Magisk's su");
+    await sleep(1500);
+    return { r1: ID, status: setupStatus(false) };
+  },
+  async setup_plan() {
+    setup.plan = null;
+    if (!setup.from) fail("choose your r1os checkout first");
+    await sleep(900);
+    const why = bootedWhy();
+    if (!why && !r1.r1os) fail("this R1 has no root over adb: it needs r1os's image (adb root) or Magisk's su");
+    if (!why) await sleep(1500);
+    setup.plan = setupPlan(!!why, why);
+    return setup.plan;
+  },
+  async setup_planned() {
+    return setup.plan;
+  },
+  async setup_run(_, emit) {
+    const plan = setup.plan;
+    if (!plan) fail("nothing to set up yet: read the R1 for its plan first");
+    if (plan.assumed) fail("this plan is for an assumed R1: plug the R1 in, booted, and read it for its own plan");
+    const why = bootedWhy();
+    if (why) fail(why);
+    setup.plan = null;
+    await sleep(1200);
+    const of = plan.steps.length;
+    for (const [i, step] of plan.steps.entries()) {
+      emit("setup-progress", { index: i + 1, of, words: step.words });
+      const s = SETUP.find((t) => t.what === step.what)!;
+      const lines = s.lines ?? [];
+      for (const l of lines) {
+        await sleep(s.ms / (lines.length + 1));
+        emit("setup-line", l);
+      }
+      await sleep(s.ms / (lines.length + 1));
+      if (step.what === "restart") setup.running = true;
+      else setup.done.add(step.what);
+    }
+    await sleep(1000);
+    // As if Wi-Fi were set up in the R1's onboarding a little after.
+    if (plan.box_later) setTimeout(() => (setup.online = true), 15000);
+    return { r1: ID, status: setupStatus(false) };
   },
 };
