@@ -17,9 +17,12 @@ pub mod download;
 #[cfg(windows)]
 pub mod drivers;
 pub mod fastboot;
+pub mod flash;
 pub mod folders;
+pub mod preloader;
 pub mod safety;
 pub mod scan;
+pub mod stock;
 pub mod tools;
 
 use sha2::{Digest, Sha256};

@@ -68,6 +68,15 @@ impl Fastboot {
         Ok(self.getvar("unlocked")?.map(|v| v == "yes"))
     }
 
+    /// `fastboot flashing get_unlock_ability`'s number, as the bootloader gives it. Read only. The R1's says
+    /// `(bootloader) unlock_ability = 16777216` (`0x01000000`, unlocked, 2026-10-14), where 2026-10-08's note had `0` on
+    /// the same R1: what it means isn't settled (**unverified**), so it's reported, not judged.
+    pub fn unlock_ability(&self) -> Result<Option<u64>> {
+        let out = command(&self.exe).args(["-s", &self.serial, "flashing", "get_unlock_ability"]).output().context("fastboot didn't run")?;
+        let text = format!("{}{}", String::from_utf8_lossy(&out.stderr), String::from_utf8_lossy(&out.stdout));
+        Ok(unlock_ability_of(&text))
+    }
+
     /// fastbootd (userspace) rather than the bootloader.
     pub fn userspace(&self) -> Result<bool> {
         Ok(self.getvar("is-userspace")?.as_deref() == Some("yes"))
@@ -82,6 +91,19 @@ impl Fastboot {
             Reboot::Fastbootd => c.args(["reboot", "fastboot"]),
         };
         check_status(c.output().context("fastboot didn't run")?, "reboot")
+    }
+
+    /// Waits until `fastboot devices` lists this R1 again (after a reboot into the bootloader or fastbootd), up to
+    /// [limit].
+    pub fn wait(&self, limit: std::time::Duration) -> Result<()> {
+        let until = std::time::Instant::now() + limit;
+        while std::time::Instant::now() < until {
+            if devices(&self.exe).map(|d| d.contains(&self.serial)).unwrap_or(false) {
+                return Ok(());
+            }
+            std::thread::sleep(std::time::Duration::from_millis(500));
+        }
+        bail!("the R1 wasn't back in fastboot after {} s", limit.as_secs())
     }
 
     /// One write, refused unless [`safety::check`] allows it. [progress] hears fastboot's lines as they come.
@@ -137,6 +159,14 @@ fn value_of(text: &str, name: &str) -> Option<String> {
     })
 }
 
+/// The number in `unlock_ability = N` (the R1's bootloader) or `get_unlock_ability: N` (AOSP's).
+fn unlock_ability_of(text: &str) -> Option<u64> {
+    text.lines().find_map(|l| {
+        let (_, v) = l.split_once("unlock_ability")?;
+        v.trim_start_matches([' ', '=', ':']).trim().parse().ok()
+    })
+}
+
 /// An error's text without the serial in it.
 pub(crate) fn scrub(text: &str, serial: &str) -> String {
     if serial.is_empty() { text.to_owned() } else { text.replace(serial, "<this R1>") }
@@ -154,6 +184,13 @@ mod tests {
         assert_eq!(value_of("is-userspace: no\n", "is-userspace").as_deref(), Some("no"));
         assert_eq!(value_of("unlocked:\n", "unlocked"), None);
         assert_eq!(value_of("something else\n", "unlocked"), None);
+    }
+
+    #[test]
+    fn unlock_ability_either_way() {
+        assert_eq!(unlock_ability_of("(bootloader) unlock_ability = 16777216\nOKAY [  0.001s]\n"), Some(16_777_216));
+        assert_eq!(unlock_ability_of("(bootloader) get_unlock_ability: 1\n"), Some(1));
+        assert_eq!(unlock_ability_of("FAILED (remote: 'unknown command')\n"), None);
     }
 
     #[test]

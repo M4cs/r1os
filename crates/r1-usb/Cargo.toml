@@ -10,6 +10,7 @@ publish.workspace = true
 anyhow = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+serialport = { version = "4", default-features = false }
 sha2 = "0.10"
 ureq = "2"
 zip = { version = "2", default-features = false, features = ["deflate"] }
