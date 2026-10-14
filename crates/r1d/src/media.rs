@@ -205,7 +205,7 @@ fn wav_peaks(bytes: &[u8], per_s: u32) -> Vec<f32> {
     let window = (16_000 / per_s.clamp(1, 100)) as usize * 2;
     body.chunks(window)
         .map(|c| {
-            let s: Vec<f32> = c.chunks_exact(2).map(|b| f32::from(i16::from_le_bytes([b[0], b[1]])) / 32768.0).collect();
+            let s: Vec<f32> = c.as_chunks::<2>().0.iter().map(|b| f32::from(i16::from_le_bytes(*b)) / 32768.0).collect();
             (crate::voice::meter(&s) * 100.0).round() / 100.0
         })
         .collect()

@@ -303,14 +303,8 @@ impl<'a> Pass<'a> {
         let triggers = pass.triggers(root.get("triggers"));
         let glance = pass.glance(root.get("glance"));
         let checks = pass.checks(root.get("checks"));
-        for unsupported in ["components"] {
-            if root.contains_key(unsupported) {
-                pass.diags.error(
-                    "E_UNSUPPORTED",
-                    unsupported,
-                    format!("`{unsupported}` escape hatches are not supported yet (v0)"),
-                );
-            }
+        if root.contains_key("components") {
+            pass.diags.error("E_UNSUPPORTED", "components", "`components` escape hatches are not supported yet (v0)".to_owned());
         }
         pass.coverage(!services.is_empty());
 

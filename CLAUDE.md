@@ -62,7 +62,7 @@ The R1 has no volume keys and no recovery menu. A bad write to the wrong partiti
 |---|---|
 | r1d tests + lint (host) | `cargo test -p r1d` · `cargo clippy -p r1d --all-targets -- -D warnings` |
 | r1d for the R1 | `tools/build-r1d.sh` (NDK clang; it sets its own `RUSTFLAGS`, so a global `RUSTFLAGS` such as `+crt-static` can't break it) · lint: `CARGO_CMD=clippy tools/build-r1d.sh -- -D warnings` |
-| Everything in Rust | `cargo test --workspace` · `cargo clippy --workspace --all-targets -- -D warnings` (as CI runs them; the companion's front end must be built first: `pnpm --dir companion build`) |
+| Everything in Rust | `cargo test --workspace` · `cargo clippy --workspace --all-targets -- -D warnings` (as CI runs them; the companion's front end must be built first: `pnpm --dir companion build`). CI uses the newest stable Rust, whose clippy can flag what an older one passes: `rustup toolchain install stable` or `cargo +<version> clippy …` to match it |
 | Shell | `pnpm --dir shell build` · `pnpm --dir shell typecheck` · hot reload: `pnpm --dir shell dev` (proxies to r1d on :7171) |
 | Host app | `tools/build-host.sh` → `out/r1os-host.apk` (Gradle 9.4.1, AGP 9.2.1 built-in Kotlin), signed with r1os's platform key from `~/.r1os/keys` (made once by `tools/make-keys.sh`; the image uses the same keys, ADR-0062) |
 | Desktop simulator | `tools/sim.sh`, then open http://127.0.0.1:7171 (↑/↓ = wheel, Space = button) · drive it: `R1H_TARGET=sim tools/r1h …` |
