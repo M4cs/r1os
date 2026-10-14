@@ -17,7 +17,7 @@ zip = { version = "2", default-features = false, features = ["deflate"] }
 # The R1s plugged in, whatever their driver: Windows' configuration manager lists a device with none (nusb doesn't);
 # elsewhere, nusb.
 [target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.61", features = ["Win32_Devices_DeviceAndDriverInstallation"] }
+windows-sys = { version = "0.61", features = ["Win32_Devices_DeviceAndDriverInstallation", "Win32_Foundation", "Win32_System_Threading", "Win32_System_Registry", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }
 
 [target.'cfg(not(windows))'.dependencies]
 nusb = "0.1"

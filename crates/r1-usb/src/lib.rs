@@ -12,6 +12,8 @@
 //! error or anything the companion shows.
 
 pub mod adb;
+#[cfg(windows)]
+pub mod drivers;
 pub mod fastboot;
 pub mod safety;
 pub mod scan;

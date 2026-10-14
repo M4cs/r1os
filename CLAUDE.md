@@ -146,8 +146,9 @@ The R1 has no volume keys and no recovery menu. A bad write to the wrong partiti
   - Fastboot is USB only.
 - `uv` and Python 3.11 (`py -3`) are available. `jq` isn't, so don't use it in scripts.
 - **Fastboot on Windows:**
-  - The R1's bootloader enumerates as `0E8D:201C`, the same ID as Android's adb. It needs Google's *Android Bootloader Interface* driver picked by hand in Device Manager (runbook §0).
-  - Windows rebinds it to the adb driver after every Android boot. When `fastboot devices` is empty and Device Manager shows "Android" ⚠ (code 28), ask Max to re-pick the driver. Max has to do this; agents don't change Windows drivers.
+  - The R1's bootloader enumerates as `0E8D:201C`, the same ID as Android's adb (`REV_0100`, class `FF/42/03`; booted it's `REV_0223`, `FF/42/01`), and Windows has nothing to match it with.
+  - r1os's own driver binds it in both modes, every time: `cargo run -p r1-usb --example drivers -- install` (or the companion's wizard; T-168, installed on Max's PC 2026-10-14). `-- status` reads whether it's there; `-- undo` takes it out.
+  - When `fastboot devices` is empty and Device Manager shows "Android" ⚠ (code 28), it isn't installed: the install shows Windows' admin prompt, so the user runs it. Agents don't change Windows drivers.
   - Prefer `tools/flash-boot.sh`'s on-device dd path (root over adb) for boot writes.
 - Entering fastboot from power-off goes through the MediaTek preloader's USB serial port.
   - That needs the MediaTek preloader VCOM driver, which Rabbit publishes in the `drivers` release of `rabbit-hmi-oss/firmware`.

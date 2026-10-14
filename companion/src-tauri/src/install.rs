@@ -54,3 +54,44 @@ pub async fn usb_scan() -> Result<Value, String> {
     .await
     .map_err(|e| e.to_string())
 }
+
+/// Where the drivers' package, scripts and logs go.
+fn drivers_dir() -> PathBuf {
+    dir().join("drivers")
+}
+
+/// What's installed: `{r1, mtk}` (T-168).
+#[tauri::command]
+pub async fn drivers_status() -> Result<Value, String> {
+    tauri::async_runtime::spawn_blocking(|| r1_usb::drivers::status().map(|s| json!(s)).map_err(|e| format!("{e:#}")))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+/// Installs the R1's driver (and, with `mtk`, Rabbit's MediaTek preloader driver, fetched and checked first) behind
+/// one administrator prompt. Returns the new status and the step's log.
+#[tauri::command]
+pub async fn drivers_install(mtk: bool) -> Result<Value, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let dir = drivers_dir();
+        let exe = if mtk { Some(r1_usb::drivers::fetch_mtk(&dir)?) } else { None };
+        let log = r1_usb::drivers::install(&dir, exe.as_deref())?;
+        Ok::<_, anyhow::Error>(json!({ "status": r1_usb::drivers::status()?, "log": log }))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+    .map_err(|e| format!("{e:#}"))
+}
+
+/// Takes the R1's driver and its certificate back out, behind one administrator prompt.
+#[tauri::command]
+pub async fn drivers_undo() -> Result<Value, String> {
+    tauri::async_runtime::spawn_blocking(|| {
+        let log = r1_usb::drivers::undo(&drivers_dir())?;
+        Ok::<_, anyhow::Error>(json!({ "status": r1_usb::drivers::status()?, "log": log }))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+    .map_err(|e| format!("{e:#}"))
+}
+

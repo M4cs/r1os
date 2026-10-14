@@ -191,7 +191,8 @@ fn main() {
         .plugin(tauri_plugin_autostart::init(tauri_plugin_autostart::MacosLauncher::LaunchAgent, Some(vec!["--minimized"])))
         .invoke_handler(tauri::generate_handler![
             link_state, pair_start, pair_stop, pair_answer, unlink, r1_api, save_download, backup_r1, settings_get, settings_set, pc_status, codex_sign_in, claude_sign_in,
-            install::usb_tools, install::usb_fetch_tools, install::usb_scan
+            install::usb_tools, install::usb_fetch_tools, install::usb_scan, install::drivers_status, install::drivers_install,
+            install::drivers_undo
         ])
         .setup(move |app| {
             let handle = app.handle().clone();
