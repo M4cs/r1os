@@ -1,0 +1,39 @@
+name: Bug
+description: Something in r1os doesn't work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting it. Found a security hole? Don't file it here: see SECURITY.md.
+
+        **Never include your R1's serial number or IMEI**, or anyone's sign-in codes. Remove them from any logs.
+  - type: input
+    id: image
+    attributes:
+      label: r1os image version
+      description: On the R1, Settings › About. Or "simulator" if it happened in the desktop simulator.
+    validations:
+      required: true
+  - type: input
+    id: companion
+    attributes:
+      label: Companion version
+      description: If the companion was involved (its About page). Leave empty if not.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what you expected
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to make it happen
+      description: The steps, from a known state.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: "`tools/r1h logs`, or the companion's install log, with serials and IMEIs removed."
+      render: text

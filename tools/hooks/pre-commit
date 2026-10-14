@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+# Optional: a secret scan of what you're about to commit (CI runs the same over every push).
+# Turn it on with:  git config core.hooksPath tools/hooks
+# Needs gitleaks (https://github.com/gitleaks/gitleaks) on your PATH; without it, it says so and lets the commit through.
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "pre-commit: gitleaks isn't installed, so no secret scan" >&2
+  exit 0
+fi
+exec gitleaks git --pre-commit --staged --redact --no-banner

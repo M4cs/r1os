@@ -1,0 +1,16 @@
+name: Idea
+description: Something r1os could do, or do better.
+labels: [idea]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What you'd like
+      description: What you'd do with it on the R1, in your own words.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+      description: What it would make easier, or possible.

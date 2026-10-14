@@ -17,10 +17,16 @@ build/
 .gradle/
 local.properties
 
-# Secrets
+# Secrets: env files, and signing keys in any form (r1os's own live outside the repo, in ~/.r1os/keys)
 .env
 *.keystore
 *.jks
+*.pk8
+*.x509.pem
+*.pem
+*.key
+*.p12
+*.pfx
 
 # OS / editor
 .DS_Store
