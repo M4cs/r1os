@@ -13,6 +13,10 @@
 //! Not covered: `/mcp` and `/hooks/pre-tool-use` (each agent process has its own token, crate::mcp), the shell's static files (no
 //! data), and the simulator (`--sim` runs on a PC and is open). The mic socket checks the per-boot token in
 //! its hello (crate::voice).
+//!
+//! Before any of that, on the R1 r1d answers only requests addressed to it ([addressed], T-186): a `Host` of
+//! `127.0.0.1`, `localhost` or `[::1]`. A web page on another name that resolves to 127.0.0.1 (DNS rebinding) in
+//! one of the host's WebViews would otherwise share the host's uid, which `/token` trusts.
 
 use crate::hub::Hub;
 use axum::extract::{Request, State};
@@ -200,6 +204,40 @@ pub async fn layer(State(hub): State<Arc<Hub>>, req: Request, next: Next) -> Res
     (StatusCode::UNAUTHORIZED, axum::Json(serde_json::json!({ "error": "r1d needs its token" }))).into_response()
 }
 
+/// Whether a request's `Host` is r1d's own loopback address, on any port (`tools/r1h` forwards another), or absent
+/// (the link's calls through the router, crate::link).
+fn ours(host: Option<&str>) -> bool {
+    let Some(host) = host else { return true };
+    let (name, port) = match host.strip_prefix('[') {
+        Some(v6) => match v6.split_once(']') {
+            Some((name, rest)) if rest.is_empty() || rest.starts_with(':') => (name, rest.strip_prefix(':')),
+            _ => return false,
+        },
+        None => match host.split_once(':') {
+            Some((name, port)) => (name, Some(port)),
+            None => (host, None),
+        },
+    };
+    let port_ok = port.is_none_or(|p| !p.is_empty() && p.bytes().all(|b| b.is_ascii_digit()));
+    port_ok && (name == "127.0.0.1" || name.eq_ignore_ascii_case("localhost") || name == "::1")
+}
+
+/// The outermost middleware on the R1: refuses (421) a request addressed to another name (T-186). The simulator, and
+/// an R1 with `/data/r1os/auth-off`, answer any.
+pub async fn addressed(State(hub): State<Arc<Hub>>, req: Request, next: Next) -> Response {
+    // A `Host` that isn't text is nobody's: refused.
+    let host = match req.headers().get(axum::http::header::HOST) {
+        Some(v) => Some(v.to_str().unwrap_or("?").to_owned()),
+        None => req.uri().authority().map(|a| a.as_str().to_owned()),
+    };
+    if !hub.auth.enabled() || ours(host.as_deref()) {
+        return next.run(req).await;
+    }
+    let shown: String = host.unwrap_or_default().chars().take(80).collect();
+    tracing::warn!(host = %shown, path = req.uri().path(), "refused a request addressed to another host");
+    (StatusCode::MISDIRECTED_REQUEST, axum::Json(serde_json::json!({ "error": "r1d answers only 127.0.0.1" }))).into_response()
+}
+
 fn write_private(path: &Path, text: &str) -> std::io::Result<()> {
     let tmp = path.with_extension("tmp");
     std::fs::write(&tmp, text)?;
@@ -221,6 +259,17 @@ fn set_mode(_: &Path, _: u32) -> std::io::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn only_requests_addressed_to_r1d() {
+        for host in [None, Some("127.0.0.1:7171"), Some("127.0.0.1:7172"), Some("localhost:5171"), Some("LOCALHOST"), Some("[::1]:7171"), Some("127.0.0.1")] {
+            assert!(ours(host), "{host:?}");
+        }
+        // DNS rebinding: a public name that resolves to 127.0.0.1.
+        for host in ["evil.example:7171", "evil.example", "127.0.0.1.evil.example:7171", "localhost.evil.example", "127.0.0.1:", "127.0.0.1:x", "[::1", "[::1]x", "[::2]:7171", "192.168.1.4:7171", "?"] {
+            assert!(!ours(Some(host)), "{host}");
+        }
+    }
 
     #[test]
     fn tokens_and_their_reach() {

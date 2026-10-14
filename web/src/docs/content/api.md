@@ -12,6 +12,7 @@ order: 2
 r1d serves `127.0.0.1:7171`: HTTP for commands, `/ws` for events. Errors are JSON with an `error` field.
 
 - **On the device,** `/api`, `/harness` and `/ws` need r1d's per-boot token as `Authorization: Bearer <token>`, or answer 401. It's in `/data/r1os/run/token` (root only) and changes whenever r1d starts.
+- **On the device, every request must be addressed to r1d:** a `Host` of `127.0.0.1`, `localhost` or `[::1]`, on any port. Any other name gets 421, so a web page on a name that resolves to 127.0.0.1 can't reach r1d.
 - **The simulator** needs no token. `/mcp` takes per-process agent tokens instead ([Agents](/docs/agents)).
 
 From a computer with adb, the tools forward local port 7172 to the device's 7171 and read the token as root:

@@ -219,6 +219,8 @@ pub async fn serve(hub: Shared) -> anyhow::Result<()> {
     let app = app.layer(axum::middleware::from_fn_with_state(hub.clone(), crate::auth::layer));
     let shell = ServeDir::new(&hub.cfg.shell).fallback(ServeFile::new(hub.cfg.shell.join("index.html")));
     let app = app.fallback_service(shell).with_state(hub.clone());
+    // Before everything, `/token` and the static files too: only requests addressed to r1d (T-186).
+    let app = app.layer(axum::middleware::from_fn_with_state(hub.clone(), crate::auth::addressed));
     // Linked computers call allowed routes through it (crate::link).
     hub.link.set_router(app.clone());
 
