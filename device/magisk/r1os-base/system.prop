@@ -1,0 +1,6 @@
+# Rabbit's vendor brings the R1's USB up in "CUA" mode (USB keyboard + mouse + WebUSB device, for
+# rabbitOS's computer-use feature). On a GSI that mode never comes up. init and Android then fight
+# over the USB config, which causes 20 s stalls, system_server watchdog kills and adb dying after a
+# replug. Plain ADB mode only. (Found by r1ptt; see NOTICE.md.)
+# Check: adb shell getprop ro.vendor.cua.enable  -> 0; the R1 should enumerate as 0e8d:201c, not 0e8d:2303.
+ro.vendor.cua.enable=0

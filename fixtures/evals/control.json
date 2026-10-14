@@ -1,0 +1,263 @@
+{
+  "about": "App and browser control scenarios for tools/eval-control.py (T-144): real agent turns on the R1. Food orders are dry runs: built up to the add-to-cart button, never added, ordered or paid. Nothing plays sound.",
+  "suffix": {
+    "dry": " (This is a test run: build it all the way up to the add-to-cart button, but don't add it to the cart or order anything. Then tell me exactly what you'd add, every choice you made, and the price on the screen.)",
+    "quiet": " (Don't play anything.)"
+  },
+  "reject": {
+    "dry": [
+      "partway|part of the way|got stuck|gave up",
+      "(guard|test run|test-run)[^.]{0,40}block|blocked",
+      "didn'?t (get to|finish|manage)|wasn'?t able|unable to (finish|complete|select|get)",
+      "aren'?t selected|not selected yet|haven'?t (been )?(selected|picked|chosen)",
+      "couldn'?t (build|get|find|order)|(isn'?t|not) on the menu"
+    ]
+  },
+  "scenarios": [
+    {
+      "id": "b1",
+      "surface": "browser",
+      "name": "Wikipedia fact",
+      "task": "Use the R1's browser, not WebSearch or WebFetch: go to en.wikipedia.org, search for Rabbit R1, and tell me the year it came out.",
+      "expect": [
+        "2024"
+      ]
+    },
+    {
+      "id": "b2",
+      "surface": "browser",
+      "name": "Fill a form",
+      "task": "In the R1's browser (not WebFetch), open https://httpbin.org/forms/post and fill it in: customer name Max Bridgland, telephone 555-0100, email max@example.com, pizza size Medium, toppings Bacon and Extra Cheese, delivery time 19:30, comments: ring twice. Don't submit it, and leave the browser open; tell me when it's filled in.",
+      "expect": [
+        "fill"
+      ],
+      "verify_browser": [
+        "value=\"Max Bridgland\"",
+        "value=\"555-0100\"",
+        "radio \"Medium\".*\\(checked\\)",
+        "checkbox \"Bacon\".*\\(checked\\)",
+        "checkbox \"Extra Cheese\".*\\(checked\\)",
+        "value=\"19:30\"",
+        "ring twice"
+      ]
+    },
+    {
+      "id": "b3",
+      "surface": "browser",
+      "name": "Python release",
+      "task": "Use the R1's browser (not WebSearch or WebFetch) to open python.org and tell me the latest Python 3 release its Downloads page offers.",
+      "expect": [
+        "3\\.1\\d\\.\\d+"
+      ]
+    },
+    {
+      "id": "b4",
+      "surface": "browser",
+      "name": "Weather search box",
+      "task": "Use the R1's browser (not WebSearch or WebFetch): on forecast.weather.gov, look up Boston, MA with its search box and tell me tonight's low.",
+      "expect": [
+        "\\d+\\s*(°|degrees|F\\b)"
+      ]
+    },
+    {
+      "id": "s1",
+      "surface": "app",
+      "name": "Spotify artist",
+      "task": "In Spotify in the app window, search for Fontaines D.C. and tell me their three most popular songs from the artist page.",
+      "suffix": "quiet",
+      "expect": [
+        "Starburster|Favourite|Jackie Down the Line|Here's the Thing|In the Modern World|Bug|Boys in the Better Land|Roman Holiday|Big Shot"
+      ]
+    },
+    {
+      "id": "s2",
+      "surface": "app",
+      "name": "Spotify album",
+      "task": "In Spotify in the app window, find the album Romance by Fontaines D.C. and tell me how many songs are on it.",
+      "suffix": "quiet",
+      "expect": [
+        "\\b11\\b|eleven"
+      ]
+    },
+    {
+      "id": "s3",
+      "surface": "app",
+      "name": "Spotify library",
+      "task": "In Spotify in the app window, open my Liked Songs and tell me the first three songs in it.",
+      "suffix": "quiet",
+      "expect": [
+        "."
+      ]
+    },
+    {
+      "id": "u1",
+      "surface": "app",
+      "name": "Big Mac meal (Max's)",
+      "task": "Order me a Big Mac meal, medium, with a Coke from McDonald's on Uber Eats.",
+      "suffix": "dry",
+      "expect": [
+        "Big Mac",
+        "Coke",
+        "\\$\\d+\\.\\d\\d"
+      ]
+    },
+    {
+      "id": "u2",
+      "surface": "app",
+      "name": "Complicated sandwich",
+      "task": "On Uber Eats, build me a footlong from Subway: turkey on Italian Herbs & Cheese bread, toasted, with provolone, lettuce, tomatoes, red onions and banana peppers, no mayo, extra mustard.",
+      "suffix": "dry",
+      "expect": [
+        "turkey",
+        "toast",
+        "[Pp]rovolone",
+        "[Bb]anana",
+        "[Mm]ustard",
+        "\\$\\d+\\.\\d\\d"
+      ]
+    },
+    {
+      "id": "u3",
+      "surface": "app",
+      "name": "Burrito bowl",
+      "task": "From Chipotle on Uber Eats, build a burrito bowl: double chicken, white rice, black beans, fajita veggies, mild salsa, corn salsa, cheese, lettuce, and guacamole on the side.",
+      "suffix": "dry",
+      "expect": [
+        "chicken",
+        "guac",
+        "\\$\\d+\\.\\d\\d"
+      ]
+    },
+    {
+      "id": "u4",
+      "surface": "app",
+      "name": "Best pizza (open-ended)",
+      "task": "Find me the best-rated pizza place on Uber Eats that delivers in under 30 minutes, and pick something good from its menu for under $20.",
+      "suffix": "dry",
+      "expect": [
+        "\\d\\.\\d",
+        "\\$\\d+"
+      ]
+    },
+    {
+      "id": "u5",
+      "surface": "app",
+      "name": "Cheap and filling (open-ended)",
+      "task": "I want something cheap and filling for dinner from Uber Eats, under $15 including the delivery fee. Compare a few places and pick for me.",
+      "suffix": "dry",
+      "expect": [
+        "\\$\\d+"
+      ]
+    },
+    {
+      "id": "b5",
+      "surface": "browser",
+      "name": "Compare across pages",
+      "task": "Use the R1's browser (not WebSearch or WebFetch): on Wikipedia, find the populations of Malden, Medford and Everett in Massachusetts, and tell me which is largest and by how much.",
+      "expect": [
+        "Malden",
+        "\\d{2},\\d{3}"
+      ]
+    },
+    {
+      "id": "b6",
+      "surface": "browser",
+      "name": "Recipe with constraints",
+      "task": "Use the R1's browser (not WebSearch or WebFetch) to find a pizza dough or pizza recipe on allrecipes.com rated at least 4.5 stars that takes under an hour in total. Tell me its name, rating and total time.",
+      "expect": [
+        "\\d\\.\\d|\\d stars",
+        "min|hour|hr"
+      ]
+    },
+    {
+      "id": "u6",
+      "surface": "app",
+      "name": "Multi-item with changes",
+      "task": "On Uber Eats, from McDonald's: two McDoubles, one of them with no pickles, a 10-piece Chicken McNuggets with sweet 'n sour sauce, and a large fries.",
+      "suffix": "dry",
+      "expect": [
+        "McDouble",
+        "pickle",
+        "McNuggets|Nuggets",
+        "[Ss]weet",
+        "[Ll]arge",
+        "\\$\\d+\\.\\d\\d"
+      ]
+    },
+    {
+      "id": "u7",
+      "surface": "app",
+      "name": "Fussy coffee",
+      "task": "On Uber Eats, from Starbucks: a grande iced caramel macchiato with oat milk, an extra shot, light ice, and sugar-free vanilla syrup instead of the regular vanilla, plus a butter croissant, warmed.",
+      "suffix": "dry",
+      "expect": [
+        "[Gg]rande",
+        "[Oo]at",
+        "shot",
+        "[Ll]ight ice",
+        "[Ss]ugar",
+        "[Cc]roissant",
+        "\\$\\d+\\.\\d\\d"
+      ]
+    },
+    {
+      "id": "u8",
+      "surface": "app",
+      "name": "Constraints (open-ended)",
+      "task": "I'm vegetarian and want something high in protein for under $20, delivered in under 40 minutes, from Uber Eats. Find the best option you can and build it.",
+      "suffix": "dry",
+      "expect": [
+        "\\$\\d+",
+        "protein|tofu|bean|paneer|egg|cheese|lentil|chickpea"
+      ]
+    },
+    {
+      "id": "b7",
+      "surface": "browser",
+      "name": "Who came first",
+      "task": "Use the R1's browser (not WebSearch or WebFetch): on Wikipedia, find out which of Ada Lovelace, Charles Babbage and Alan Turing was born first, and give all three birth years.",
+      "expect": [
+        "Babbage",
+        "1791",
+        "1815",
+        "1912"
+      ]
+    },
+    {
+      "id": "b8",
+      "surface": "browser",
+      "name": "Hacker News now",
+      "task": "Use the R1's browser (not WebSearch or WebFetch): open news.ycombinator.com and tell me the title of the top story right now, how many points it has, and how many comments.",
+      "expect": [
+        "\\d+\\s*points?",
+        "comments?"
+      ]
+    },
+    {
+      "id": "u9",
+      "surface": "app",
+      "name": "Dunkin' breakfast",
+      "task": "On Uber Eats, from Dunkin': a large hot coffee with cream and two sugars, a Boston Kreme donut, and a bacon, egg and cheese on an everything bagel.",
+      "suffix": "dry",
+      "expect": [
+        "[Ll]arge",
+        "[Cc]ream",
+        "[Ss]ugar",
+        "Boston Kreme",
+        "[Bb]agel",
+        "\\$\\d+\\.\\d\\d"
+      ]
+    },
+    {
+      "id": "u10",
+      "surface": "app",
+      "name": "Cheaper of two stores (open-ended)",
+      "task": "On Uber Eats, a 10-piece Chicken McNuggets can cost different amounts at different McDonald's. Check two nearby McDonald's, tell me the price at each, and build it at the cheaper one with barbecue sauce.",
+      "suffix": "dry",
+      "expect": [
+        "\\$\\d+\\.\\d\\d[\\s\\S]*\\$\\d+\\.\\d\\d",
+        "BBQ|[Bb]arbecue"
+      ]
+    }
+  ]
+}

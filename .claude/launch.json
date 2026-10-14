@@ -1,0 +1,64 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "r1os-sim",
+      "runtimeExecutable": "cargo",
+      "runtimeArgs": [
+        "run",
+        "-q",
+        "-p",
+        "r1d",
+        "--",
+        "--sim",
+        "--harness",
+        "--shell",
+        "shell/dist"
+      ],
+      "port": 7171
+    },
+    {
+      "name": "shell-dev",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--dir",
+        "shell",
+        "dev"
+      ],
+      "port": 5171
+    },
+    {
+      "name": "companion-ui",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--dir",
+        "companion",
+        "dev"
+      ],
+      "port": 1420
+    },
+    {
+      "name": "web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--dir",
+        "web",
+        "dev"
+      ],
+      "port": 5180
+    },
+    {
+      "name": "web-preview",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--dir",
+        "web",
+        "preview",
+        "--port",
+        "4180",
+        "--strictPort"
+      ],
+      "port": 4180
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android's swipe from an edge (to show its hidden, empty bars) starts nowhere: r1os's own swipes start there. -->
+    <dimen name="system_gestures_start_threshold">0dp</dimen>
+</resources>

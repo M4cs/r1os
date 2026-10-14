@@ -1,0 +1,30 @@
+diff --git a/rw-system.sh b/rw-system.sh
+index a7b94f6..3427edc 100644
+--- a/rw-system.sh
++++ b/rw-system.sh
+@@ -366,14 +366,18 @@ if ! getprop ro.vendor.build.fingerprint |grep samsung/;then
+     mount -o remount,ro / || true
+ fi
+ 
+-for part in /dev/block/bootdevice/by-name/oppodycnvbk  /dev/block/platform/bootdevice/by-name/nvdata;do
+-    if [ -b "$part" ];then
+-        oppoName="$(grep -aohE '(RMX|CPH)[0-9]{4}' "$part" |head -n 1)"
+-        if [ -n "$oppoName" ];then
+-            setprop ro.build.overlay.deviceid "$oppoName"
++# r1os: only on Oppo, Realme and OnePlus vendors. Elsewhere this greps all of nvdata (64 MB on a
++# Rabbit R1) for a model number, which took 38 s of every boot there (T-099).
++if getprop ro.vendor.build.fingerprint | grep -qiE '^(oppo|realme|oneplus)/'; then
++    for part in /dev/block/bootdevice/by-name/oppodycnvbk  /dev/block/platform/bootdevice/by-name/nvdata;do
++        if [ -b "$part" ];then
++            oppoName="$(grep -aohE '(RMX|CPH)[0-9]{4}' "$part" |head -n 1)"
++            if [ -n "$oppoName" ];then
++                setprop ro.build.overlay.deviceid "$oppoName"
++            fi
+         fi
+-    fi
+-done
++    done
++fi
+ 
+ 
+ mkdir -p /mnt/phh/

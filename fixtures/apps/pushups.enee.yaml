@@ -1,0 +1,62 @@
+enee: 1
+app:
+  id: pushups
+  name: Pushup Tracker
+  icon: barbell
+  archetype: tracker
+  accent: orange
+  description: Log pushup sets and see when during the day you do them.
+permissions:
+  notify: Remind you to do pushups during the day
+  schedule: Check your progress every hour
+settings:
+  daily_goal: { type: int, default: 100, label: Daily goal, min: 1 }
+  remind_every: { type: duration, default: 60m, label: Remind me every }
+data:
+  sets:
+    reps: int!
+    at: datetime = now
+queries:
+  today: SELECT coalesce(sum(reps),0) AS total, count(*) AS n FROM sets WHERE is_today(at)
+  per_hour: SELECT local_hour(at) AS hour, sum(reps) AS reps FROM sets WHERE is_today(at) GROUP BY hour
+  recent: SELECT id, reps, at FROM sets ORDER BY at DESC LIMIT 15
+state:
+  draft: { reps: 15 }
+actions:
+  log:
+    params: { reps: int }
+    do:
+      - sql: INSERT INTO sets (reps) VALUES (:reps)
+      - toast: "+{{params.reps}} logged"
+  remove:
+    params: { id: int }
+    confirm: Delete this set?
+    do:
+      - sql: DELETE FROM sets WHERE id = :id
+views:
+  main:
+    - stat: { label: Today, value: "{{today.total}}", caption: "{{today.n}} sets · goal {{settings.daily_goal}}" }
+    - progress: { value: "{{today.total}}", max: "{{settings.daily_goal}}" }
+    - quick_actions:
+        - { label: "+10", action: log, params: { reps: 10 } }
+        - { label: "+20", action: log, params: { reps: 20 } }
+        - { label: "+30", action: log, params: { reps: 30 } }
+    - form:
+        fields: [ { bind: state.draft.reps, label: Reps, type: number } ]
+        submit: { label: Log set, action: log, params: "{{state.draft}}" }
+    - chart: { kind: bar, data: per_hour, x: hour, y: reps, x_domain: "0..23", title: Reps per hour }
+    - list:
+        data: recent
+        title: "{{row.reps}} reps"
+        caption: "{{row.at | time}}"
+        row_actions: [ { icon: trash, label: Delete, action: remove, params: { id: "{{row.id}}" } } ]
+        empty: No sets yet
+triggers:
+  reminder:
+    every: "{{settings.remind_every}}"
+    when: SELECT (SELECT coalesce(sum(reps),0) FROM sets WHERE is_today(at)) < (SELECT daily_goal FROM settings)
+    do:
+      - notify: { title: Pushup break, body: "{{today.total}}/{{settings.daily_goal}} today" }
+checks:
+  - do: { action: log, params: { reps: 20 } }
+    expect: { today.total: 20, today.n: 1 }

@@ -1,0 +1,20 @@
+[package]
+name = "r1-link"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+anyhow = "1.0.104"
+getrandom = "0.4.3"
+# Only rustls with ring (r1d already has it): no metrics, no UPnP port mapping (ADR-0048; the size, phase 0).
+iroh = { version = "1.3.0", default-features = false, features = ["tls-ring", "metrics"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+sha2 = "0.10"
+tokio = { version = "1.53.2", features = ["rt-multi-thread", "macros", "net", "sync", "time", "io-util"] }
+tracing = "0.1.44"
+# The phase-0 test program (src/bin/r1-link-pc.rs): its QR page and its log.
+qrcode = { version = "0.14.1", default-features = false, features = ["svg"] }
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "fmt"] }

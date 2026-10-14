@@ -1,0 +1,401 @@
+/* The agent character's states (Character.tsx). Transforms and opacity only. */
+
+.ch {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+.ch svg {
+  overflow: visible;
+}
+.ch-body,
+.ch-eyes,
+.ch-orbit,
+.ch-halo,
+.ch-mouth {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+/* The body turns and scales about the box's middle, as on the R1, so what it wears doesn't move the pivot. */
+.ch-float {
+  transform-box: view-box;
+  transform-origin: 100px 100px;
+}
+.ch-fill {
+  filter: drop-shadow(0 6px 18px color-mix(in srgb, var(--ch) 45%, transparent));
+}
+.ch-screen {
+  fill: rgb(0 0 0 / 0.55);
+}
+.ch-antenna {
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+.ch-mouth {
+  fill: #141414;
+  opacity: 0;
+  transform: scaleY(0.4);
+}
+.ch-bot .ch-mouth {
+  fill: var(--ch);
+}
+.ch-halo {
+  fill: none;
+  stroke: var(--ch);
+  stroke-width: 2;
+  opacity: 0;
+}
+.ch-orbit {
+  fill: var(--ch);
+  opacity: 0;
+  transform-origin: 100px 100px;
+  transform-box: view-box;
+}
+
+/* idle: breathe and blink */
+.st-idle .ch-float {
+  animation: ch-breathe 3.6s ease-in-out infinite;
+}
+.st-idle .ch-eyes,
+.st-listening .ch-eyes,
+.st-working .ch-eyes {
+  animation: ch-blink 5.2s infinite;
+}
+@keyframes ch-breathe {
+  50% {
+    transform: translateY(-5px) scale(1.02);
+  }
+}
+@keyframes ch-blink {
+  0%, 46%, 50%, 100% {
+    transform: scaleY(1);
+  }
+  48% {
+    transform: scaleY(0.1);
+  }
+}
+/* Eyes that don't blink (happy, sleepy, calm, swirly: the wardrobe's `blink: false`) still look around. */
+.ch-shut.st-idle .ch-eyes,
+.ch-shut.st-listening .ch-eyes,
+.ch-shut.st-working:not(.act-search):not(.act-files):not(.act-shell) .ch-eyes {
+  animation: none;
+}
+
+/* listening: lean in, pulsing halo */
+.st-listening .ch-float {
+  transform: scale(1.06);
+  transition: transform 200ms;
+}
+.st-listening .ch-halo {
+  animation: ch-pulse 1.1s ease-out infinite;
+}
+@keyframes ch-pulse {
+  0% {
+    opacity: 0.8;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.18);
+  }
+}
+
+/* thinking: eyes wander, slow sway */
+.st-thinking .ch-eyes {
+  animation: ch-look 2.4s ease-in-out infinite;
+}
+.st-thinking .ch-float {
+  animation: ch-sway 2.4s ease-in-out infinite;
+}
+@keyframes ch-look {
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+  30% {
+    transform: translate(-8px, -6px);
+  }
+  65% {
+    transform: translate(8px, -4px);
+  }
+}
+@keyframes ch-sway {
+  50% {
+    transform: rotate(-4deg) translateY(-3px);
+  }
+}
+
+/* speaking: mouth moves, little bounce */
+.st-speaking .ch-mouth {
+  opacity: 1;
+  animation: ch-talk 0.32s ease-in-out infinite alternate;
+}
+.st-speaking .ch-float {
+  animation: ch-bounce 0.64s ease-in-out infinite;
+}
+@keyframes ch-talk {
+  from {
+    transform: scaleY(0.35);
+  }
+  to {
+    transform: scaleY(1.2);
+  }
+}
+@keyframes ch-bounce {
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+/* working: orbiting dots */
+.st-working .ch-orbit {
+  opacity: 0.9;
+  animation: ch-spin 1.6s linear infinite;
+}
+.st-working .ch-float {
+  animation: ch-breathe 2s ease-in-out infinite;
+}
+@keyframes ch-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* sleeping: eyes closed, dim */
+.st-sleeping .ch-eyes {
+  transform: scaleY(0.12);
+}
+.st-sleeping .ch-float {
+  opacity: 0.55;
+  animation: ch-breathe 6s ease-in-out infinite;
+}
+
+/* error: one shake, red halo */
+.st-error .ch-float {
+  animation: ch-shake 0.5s ease-in-out 2;
+}
+.st-error .ch-halo {
+  opacity: 0.8;
+  stroke: #f2555a;
+}
+@keyframes ch-shake {
+  25% {
+    transform: translateX(-6px);
+  }
+  75% {
+    transform: translateX(6px);
+  }
+}
+
+/* ---- finishes: a texture over the body (noise.ts makes the images once) ---- */
+.ch-texture {
+  pointer-events: none;
+}
+.ch-tex-noise {
+  image-rendering: pixelated;
+}
+
+/* ---- thinking: dots rising like a thought bubble ---- */
+.ch-thought {
+  fill: var(--ch);
+  opacity: 0;
+}
+.ch-thought circle {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.st-thinking .ch-thought {
+  opacity: 1;
+}
+.st-thinking .ch-thought circle {
+  animation: ch-think 1.5s ease-in-out infinite;
+}
+.st-thinking .ch-thought circle:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.st-thinking .ch-thought circle:nth-child(3) {
+  animation-delay: 0.4s;
+}
+@keyframes ch-think {
+  0%,
+  100% {
+    opacity: 0;
+    transform: translateY(4px) scale(0.6);
+  }
+  35%,
+  70% {
+    opacity: 0.9;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ---- working and waiting: a badge with what it's doing ---- */
+.ch-badge {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation:
+    ch-pop 260ms cubic-bezier(0.2, 1.4, 0.5, 1) both,
+    ch-bob 1.6s ease-in-out 260ms infinite;
+}
+.ch-badge-bg {
+  fill: #0e1013;
+  stroke: var(--ch);
+  stroke-width: 3;
+}
+.ch-icon {
+  fill: none;
+  stroke: var(--ch);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.ch-icon .ch-icon-fill {
+  fill: var(--ch);
+  stroke: none;
+}
+@keyframes ch-pop {
+  from {
+    transform: scale(0);
+  }
+}
+@keyframes ch-bob {
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+/* Searching: the eyes scan side to side, the magnifier sweeps. */
+.st-working.act-search .ch-eyes {
+  animation: ch-scan 1.6s ease-in-out infinite;
+}
+.act-search .ch-icon {
+  animation: ch-sweep 1.6s ease-in-out infinite;
+}
+@keyframes ch-scan {
+  0%,
+  100% {
+    transform: translateX(-9px);
+  }
+  50% {
+    transform: translateX(9px);
+  }
+}
+@keyframes ch-sweep {
+  0%,
+  100% {
+    transform: translateX(-2px) rotate(-12deg);
+  }
+  50% {
+    transform: translateX(2px) rotate(12deg);
+  }
+}
+
+/* Building: a little hammering nod, the hammer swings. */
+.st-working.act-build .ch-float {
+  animation: ch-nod 0.7s ease-in-out infinite;
+}
+.act-build .ch-icon {
+  animation: ch-swing 0.7s ease-in-out infinite;
+}
+@keyframes ch-nod {
+  50% {
+    transform: translateY(3px) rotate(2deg);
+  }
+}
+@keyframes ch-swing {
+  50% {
+    transform: rotate(-28deg);
+  }
+}
+
+/* Remembering: a soft glow, the sparkle twinkles. */
+.st-working.act-memory .ch-halo {
+  animation: ch-glow 1.8s ease-in-out infinite;
+}
+.act-memory .ch-icon {
+  animation: ch-twinkle 1.8s ease-in-out infinite;
+}
+@keyframes ch-glow {
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.02);
+  }
+}
+@keyframes ch-twinkle {
+  50% {
+    transform: scale(1.3) rotate(45deg);
+  }
+}
+
+/* Files: reading down a page. Shell: a quick look down at the keys. */
+.st-working.act-files .ch-eyes {
+  animation: ch-read 2s steps(1) infinite;
+}
+.st-working.act-shell .ch-eyes {
+  animation: ch-type 1s ease-in-out infinite;
+}
+@keyframes ch-read {
+  0% {
+    transform: translate(-6px, -3px);
+  }
+  33% {
+    transform: translate(0, 0);
+  }
+  66% {
+    transform: translate(6px, 3px);
+  }
+}
+@keyframes ch-type {
+  50% {
+    transform: translateY(5px) scaleY(0.7);
+  }
+}
+
+/* waiting: room to run is coming (another agent is busy); drowsy, an hourglass turns. */
+.st-waiting .ch-float {
+  opacity: 0.85;
+  animation: ch-breathe 4.8s ease-in-out infinite;
+}
+.st-waiting .ch-eyes {
+  transform: scaleY(0.5);
+}
+.act-waiting .ch-icon {
+  animation: ch-flip 2.4s ease-in-out infinite;
+}
+@keyframes ch-flip {
+  0%,
+  40% {
+    transform: rotate(0);
+  }
+  60%,
+  100% {
+    transform: rotate(180deg);
+  }
+}
+
+/* ---- unread replies: a count on the left shoulder (the right one is for thinking and working) ---- */
+.ch-unread {
+  position: absolute;
+  top: 4%;
+  left: 6%;
+  min-width: 1.7em;
+  height: 1.7em;
+  padding: 0 0.45em;
+  border-radius: 0.85em;
+  display: grid;
+  place-items: center;
+  font-size: max(10px, calc(var(--sz) * 0.11));
+  font-weight: 800;
+  line-height: 1;
+  color: #111;
+  background: var(--ch);
+  box-shadow: 0 0 0 3px #000;
+  animation: ch-pop 300ms cubic-bezier(0.2, 1.4, 0.5, 1) both;
+}

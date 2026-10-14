@@ -1,0 +1,919 @@
+/* Day-to-day screens: agent home, launcher, onboarding, setup, chat (docs/specs/experience.md). */
+
+/* ---- home: the wheel of agents (home.tsx) ---- */
+.agent-home {
+  --bar: 40px; /* room for the corner buttons: the wheel centres a little above the middle */
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+/* The wheel fills home, under the corner buttons too, so the next agent peeks up between them. */
+.wheel {
+  position: absolute;
+  inset: 0 14px;
+  overflow: hidden;
+}
+/* Each agent sits on the wheel at its offset from the one on screen; moving retargets the transform,
+   so a fast spin glides instead of queueing. */
+.slide {
+  position: absolute;
+  left: 50%;
+  top: calc(50% - var(--bar) / 2);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  transition:
+    transform 340ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 340ms ease;
+  will-change: transform, opacity;
+}
+.slide-name {
+  font-size: 14px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.slide-status {
+  font-size: 17px;
+  font-weight: 650;
+  min-height: 24px;
+  padding: 0 28px;
+}
+.slide-status.error {
+  color: var(--bad);
+}
+.slide-status.idle {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.slide-name,
+.slide-status {
+  transition: opacity 260ms 80ms;
+}
+.slide:not(.on) .slide-name,
+.slide:not(.on) .slide-status {
+  opacity: 0;
+  transition: opacity 140ms;
+}
+/* Only the agent on screen animates: the neighbours hold still (the A53's budget). */
+.slide:not(.on) * {
+  animation-play-state: paused !important;
+}
+.new-ring {
+  width: 150px;
+  height: 150px;
+  margin: 13px;
+  border-radius: 50%;
+  border: 3px dashed #3a3e46;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+}
+.slide.new.on .new-ring {
+  border-color: #6a707b;
+  color: var(--fg);
+}
+/* Page dots by the wheel (the R1's wheel is on the right edge): the agent's colour, pulsing while it works. */
+.wheel-dots {
+  position: absolute;
+  right: 0;
+  top: calc(50% - var(--bar) / 2);
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+}
+.wheel-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  background: #33363d;
+  transition:
+    height 260ms ease,
+    background 260ms ease;
+}
+.wheel-dots span.on {
+  height: 18px;
+  background: var(--dot, var(--muted));
+}
+.wheel-dots span.busy {
+  background: var(--dot);
+  animation: dot-pulse 1.2s ease-in-out infinite;
+}
+.wheel-dots span.new {
+  border-radius: 1px;
+}
+/* Unread replies: the dot gets a ring in the agent's colour. */
+.wheel-dots span.unread {
+  background: var(--dot);
+  box-shadow: 0 0 0 2px #000, 0 0 0 3.5px var(--dot);
+}
+
+/* Apps and Sleep: frosted-glass buttons in the bottom corners, over the wheel. The blur is small and
+   only covers the two circles, and the frost is a still, faint texture (light specks at half a CSS
+   pixel: noise.ts), so they're light on the A53. Near-opaque where blur isn't supported. */
+.home-corner {
+  position: absolute;
+  bottom: 14px;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #dfe3e8;
+  background:
+    var(--frost),
+    rgb(26 28 33 / 0.5);
+  background-size:
+    64px 64px,
+    auto;
+  -webkit-backdrop-filter: blur(10px) saturate(1.4);
+  backdrop-filter: blur(10px) saturate(1.4);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.09),
+    inset 0 0 0 1px rgb(255 255 255 / 0.06);
+  transition: transform 120ms ease;
+}
+.home-corner.left {
+  left: 14px;
+}
+.home-corner.right {
+  right: 14px;
+}
+.home-corner:active {
+  transform: scale(0.92);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .home-corner {
+    background:
+      var(--frost),
+      rgb(26 28 33 / 0.94);
+    background-size:
+      64px 64px,
+      auto;
+  }
+}
+@keyframes dot-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* The simulator's stand-in for a display that's off (App.tsx). */
+.asleep {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  z-index: 50;
+}
+
+/* ---- launcher ---- */
+.launcher {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2px 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.l-section {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 12px 6px 4px;
+}
+.l-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  font-size: 19px;
+  padding: 10px;
+  border-radius: 14px;
+}
+.l-item.r1-focus,
+.l-item:active {
+  background: #15171b;
+}
+.l-new {
+  font-weight: 700;
+}
+.l-glyph {
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  background: color-mix(in srgb, var(--accent, #9aa4b2) 20%, transparent);
+  color: var(--accent, #c9ced6);
+  flex: none;
+}
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+.ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- onboarding ---- */
+.onboarding {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.onboarding-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  animation: ob-in 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes ob-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+.progress-dots {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  padding: 4px 0 2px;
+}
+.progress-dots span {
+  width: 22px;
+  height: 4px;
+  border-radius: 2px;
+  background: #2a2d33;
+}
+.progress-dots span.on {
+  background: var(--accent);
+}
+.hello {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  text-align: center;
+  padding: 0 20px;
+}
+.hatch {
+  opacity: 0;
+  transform: scale(0.6);
+  transition:
+    opacity 700ms,
+    transform 900ms cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.hatch.in {
+  opacity: 1;
+  transform: none;
+}
+.hello-text,
+.hello .hint {
+  opacity: 0;
+  transition: opacity 600ms 500ms;
+}
+.hello-text.in,
+.hello .hint.in {
+  opacity: 1;
+}
+.hello-title {
+  font-size: 30px;
+  font-weight: 800;
+}
+
+/* ---- setup (Wi-Fi, agent design, accounts) ---- */
+.setup {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 6px 14px 14px;
+  overflow-y: auto;
+  min-height: 0;
+}
+.setup.designer,
+.setup.pair {
+  align-items: center;
+  text-align: center;
+}
+.setup-title {
+  font-size: 22px;
+  font-weight: 750;
+}
+.setup-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.setup-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  font-size: 18px;
+  padding: 12px;
+  border-radius: 14px;
+  background: #121418;
+}
+.row.on {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+button.primary {
+  font-size: 19px;
+  font-weight: 700;
+  padding: 13px;
+  border-radius: 14px;
+  background: var(--accent);
+  color: #1d0d02;
+  width: 100%;
+}
+button.primary:disabled {
+  opacity: 0.35;
+}
+button.ghost {
+  font-size: 16px;
+  padding: 10px;
+  border-radius: 12px;
+  color: var(--muted);
+  width: 100%;
+}
+button.ghost.small {
+  width: auto;
+  padding: 6px 10px;
+  font-size: 14px;
+}
+.field {
+  width: 100%;
+  font: inherit;
+  font-size: 18px;
+  color: var(--fg);
+  background: #15171b;
+  border: 1px solid #2a2d33;
+  border-radius: 14px;
+  padding: 12px;
+}
+.picker {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.picker .arrow {
+  font-size: 30px;
+  color: var(--muted);
+  width: 40px;
+}
+.picker-label {
+  font-size: 22px;
+  font-weight: 700;
+  min-width: 110px;
+  text-transform: capitalize;
+}
+.dots {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #3a3d44;
+}
+.dots span.on {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chip {
+  font-size: 17px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #15171b;
+}
+.chip.on {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+.bars {
+  width: 16px;
+  height: 14px;
+  display: inline-block;
+  border-radius: 2px;
+  background: currentColor;
+  opacity: 0.3;
+}
+.bars.b2 {
+  opacity: 0.6;
+}
+.bars.b3,
+.bars.b4 {
+  opacity: 1;
+  color: var(--ok);
+}
+.wifi-ok {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 650;
+  padding: 14px;
+  border-radius: 14px;
+  background: #121418;
+}
+.brain {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+  padding: 14px;
+  border-radius: 16px;
+  background: #121418;
+  width: 100%;
+}
+.brain.on {
+  box-shadow: inset 0 0 0 2px var(--ok);
+}
+.brain-name {
+  font-size: 20px;
+  font-weight: 750;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.brain-sub {
+  color: var(--muted);
+  font-size: 15px;
+}
+.badge.talks {
+  background: var(--accent);
+  color: #1d0d02;
+}
+.qr {
+  width: 190px;
+  height: 190px;
+  border-radius: 14px;
+  background: #fff;
+  padding: 6px;
+}
+.pair-code {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+}
+.pair-state {
+  font-size: 16px;
+  font-weight: 600;
+}
+.pair-state.error {
+  color: var(--bad);
+}
+.pair-done {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 70px;
+  background: color-mix(in srgb, var(--ok) 20%, transparent);
+  color: var(--ok);
+}
+
+/* ---- chat ---- */
+.chat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.chat-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 0 6px;
+}
+.chat-name {
+  font-size: 18px;
+  font-weight: 700;
+}
+.chat-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 2px 8px;
+}
+.chat-empty {
+  margin: auto;
+  text-align: center;
+  max-width: 80%;
+}
+.bubble {
+  max-width: 86%;
+  padding: 9px 12px;
+  border-radius: 16px;
+  font-size: 16px;
+  line-height: 1.35;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.bubble.user {
+  align-self: flex-end;
+  background: var(--accent);
+  color: #1d0d02;
+  border-bottom-right-radius: 6px;
+}
+.bubble.assistant {
+  align-self: flex-start;
+  background: #1a1c21;
+  border-bottom-left-radius: 6px;
+}
+.bubble.error {
+  align-self: center;
+  color: var(--bad);
+  font-size: 14px;
+}
+.tool-chip {
+  align-self: flex-start;
+  font-size: 13px;
+  color: var(--muted);
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px dashed #3a3d44;
+}
+.build-card {
+  align-self: stretch;
+  padding: 12px;
+  border-radius: 16px;
+  background: #121418;
+  box-shadow: inset 0 0 0 1px #2a2d33;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.build-card.done {
+  box-shadow: inset 0 0 0 2px var(--ok);
+}
+.build-card.failed {
+  box-shadow: inset 0 0 0 2px var(--bad);
+}
+.build-title {
+  font-weight: 700;
+}
+.typing {
+  display: flex;
+  gap: 5px;
+  padding: 8px 12px;
+}
+.typing span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+  animation: typing 1s infinite;
+}
+.typing span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.typing span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes typing {
+  50% {
+    opacity: 0.25;
+    transform: translateY(-3px);
+  }
+}
+/* No keyboard: you talk by holding the button (voice.tsx). */
+.chat-talk {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 0 2px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.talk-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 60%, transparent);
+  animation: talk-dot 2.4s ease-out infinite;
+}
+@keyframes talk-dot {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 8px transparent;
+  }
+}
+
+/* ---- push-to-talk (voice.tsx) ---- */
+.ptt {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 34px 22px 18px;
+  gap: 18px;
+  background: var(--bg);
+  animation: ptt-in 180ms ease-out;
+}
+@keyframes ptt-in {
+  from {
+    opacity: 0;
+  }
+}
+.ptt-sending {
+  animation: ptt-out 650ms ease-in forwards;
+}
+@keyframes ptt-out {
+  0%,
+  45% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-18px);
+  }
+}
+.ptt-agent {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 128px;
+  height: 128px;
+  flex: none;
+}
+/* The ring breathes with your voice: --lvl is 0..1 from r1d's voice_level. */
+.ptt-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 38%, transparent) 0%, transparent 68%);
+  transform: scale(calc(0.78 + var(--lvl, 0) * 0.5));
+  opacity: calc(0.35 + var(--lvl, 0) * 0.65);
+  transition:
+    transform 90ms linear,
+    opacity 90ms linear;
+}
+.ptt-words {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-width: none;
+  text-align: center;
+  font-weight: 650;
+  line-height: 1.28;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+/* Centred while it fits; once it overflows, the auto margins collapse and it scrolls. */
+.ptt-text {
+  margin: auto 0;
+}
+.ptt-l {
+  font-size: 28px;
+}
+.ptt-m {
+  font-size: 23px;
+}
+.ptt-s {
+  font-size: 19px;
+}
+.ptt-placeholder {
+  color: var(--muted);
+  font-weight: 500;
+  animation: ptt-breathe 1.6s ease-in-out infinite;
+}
+@keyframes ptt-breathe {
+  50% {
+    opacity: 0.45;
+  }
+}
+.ptt-sending .ptt-words {
+  color: var(--accent);
+}
+.ptt-error .ptt-words {
+  color: #ffb4b4;
+  font-size: 22px;
+}
+.ptt-foot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+}
+.ptt-bars {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+}
+.ptt-bars span {
+  width: 5px;
+  height: 22px;
+  border-radius: 3px;
+  background: var(--accent);
+  transform-origin: center;
+  transition: transform 90ms linear;
+}
+.ptt-hint {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* ---- managing apps (manage.tsx) ---- */
+.manage-empty {
+  margin: 24px 8px;
+  text-align: center;
+}
+.manage-msg {
+  font-size: 15px;
+  color: #c9ced6;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #121418;
+}
+.l-item.trashed {
+  opacity: 0.75;
+}
+.l-item.danger {
+  color: var(--bad);
+  box-shadow: inset 0 0 0 2px var(--bad);
+}
+.app-info .create-talk {
+  margin: 4px 0;
+}
+.info-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 4px 4px;
+}
+.info-name {
+  font-size: 21px;
+  font-weight: 750;
+}
+.history-row {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  padding: 6px 10px;
+  font-size: 15px;
+  flex-wrap: wrap;
+}
+.history-row .muted.small {
+  flex: none;
+  min-width: 64px;
+}
+.build-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.build-actions .primary {
+  flex: 1;
+}
+.build-card.undone {
+  opacity: 0.6;
+}
+
+/* ---- an agent's space (space.tsx) ---- */
+.space-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 2px 4px 6px;
+}
+.space-role {
+  font-size: 16px;
+  font-weight: 650;
+}
+.chat-row .grow {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 1px;
+}
+.chat-row-title {
+  display: block;
+  font-size: 18px;
+}
+.chat-row-last {
+  display: block;
+}
+.manage-hint {
+  padding: 2px 8px 4px;
+}
+.l-item.memory {
+  font-size: 16px;
+}
+
+/* r1d tidied a long chat into a fresh session here (chat.tsx). */
+.chat-note {
+  align-self: stretch;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  padding: 6px 12px;
+  margin: 4px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+/* Unread chats in an agent's space. */
+.chat-row.unread .chat-row-title {
+  font-weight: 750;
+}
+.chat-row .unread-count {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: #111;
+  background: var(--accent);
+}
+
+/* "Nova replied": a reply landed in a chat that isn't on screen (App.tsx). */
+.toast {
+  position: absolute;
+  top: 34px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 18px;
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--fg);
+  background: rgb(28 30 35 / 0.92);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 60%, transparent);
+  animation: toast-in 280ms cubic-bezier(0.2, 1.2, 0.4, 1) both;
+  white-space: nowrap;
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -10px);
+  }
+}
+.toast-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex: none;
+}
+/* The status bar's unread count, off home. */
+.unread-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 750;
+  color: var(--fg);
+}

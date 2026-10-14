@@ -1,0 +1,484 @@
+{
+  "enee": 1,
+  "app": {
+    "id": "pushups",
+    "name": "Pushup Tracker",
+    "icon": "barbell",
+    "archetype": "tracker",
+    "design": "enee/default@^1",
+    "accent": "orange",
+    "theme": "dark",
+    "description": "Log pushup sets and see when during the day you do them."
+  },
+  "permissions": [
+    {
+      "id": "notify",
+      "reason": "Remind you to do pushups during the day"
+    },
+    {
+      "id": "schedule",
+      "reason": "Check your progress every hour"
+    }
+  ],
+  "settings": {
+    "daily_goal": {
+      "type": "int",
+      "default": 100,
+      "label": "Daily goal",
+      "min": 1
+    },
+    "remind_every": {
+      "type": "duration",
+      "default": 3600,
+      "label": "Remind me every"
+    }
+  },
+  "tables": [
+    {
+      "name": "sets",
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "notNull": true,
+          "primaryKey": true
+        },
+        {
+          "name": "reps",
+          "type": "int",
+          "notNull": true
+        },
+        {
+          "name": "at",
+          "type": "datetime",
+          "notNull": false,
+          "default": "now"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime",
+          "notNull": true,
+          "default": "now"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime",
+          "notNull": true,
+          "default": "now"
+        }
+      ]
+    }
+  ],
+  "ddl": [
+    "CREATE TABLE IF NOT EXISTS sets (id INTEGER PRIMARY KEY, reps INTEGER NOT NULL, at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')), created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')), updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')))",
+    "CREATE TRIGGER IF NOT EXISTS sets_touch AFTER UPDATE ON sets FOR EACH ROW WHEN NEW.updated_at IS OLD.updated_at BEGIN UPDATE sets SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = NEW.id; END",
+    "CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY CHECK (id = 1), daily_goal INTEGER, remind_every INTEGER)",
+    "INSERT OR IGNORE INTO settings (id, daily_goal, remind_every) VALUES (1, 100, 3600)"
+  ],
+  "queries": [
+    {
+      "name": "today",
+      "sql": "SELECT coalesce(sum(reps),0) AS total, count(*) AS n FROM sets WHERE is_today(at)",
+      "params": {},
+      "tables": [
+        "sets"
+      ],
+      "columns": [
+        "total",
+        "n"
+      ]
+    },
+    {
+      "name": "per_hour",
+      "sql": "SELECT local_hour(at) AS hour, sum(reps) AS reps FROM sets WHERE is_today(at) GROUP BY hour",
+      "params": {},
+      "tables": [
+        "sets"
+      ],
+      "columns": [
+        "hour",
+        "reps"
+      ]
+    },
+    {
+      "name": "recent",
+      "sql": "SELECT id, reps, at FROM sets ORDER BY at DESC LIMIT 15",
+      "params": {},
+      "tables": [
+        "sets"
+      ],
+      "columns": [
+        "id",
+        "reps",
+        "at"
+      ]
+    }
+  ],
+  "state": {
+    "draft": {
+      "reps": 15
+    }
+  },
+  "actions": {
+    "log": {
+      "params": {
+        "reps": {
+          "type": "int",
+          "required": true
+        }
+      },
+      "steps": [
+        {
+          "sql": "INSERT INTO sets (reps) VALUES (:reps)",
+          "params": [
+            "reps"
+          ]
+        },
+        {
+          "toast": {
+            "t": [
+              "+",
+              {
+                "p": "/params/reps"
+              },
+              " logged"
+            ]
+          }
+        }
+      ]
+    },
+    "remove": {
+      "params": {
+        "id": {
+          "type": "int",
+          "required": true
+        }
+      },
+      "confirm": "Delete this set?",
+      "steps": [
+        {
+          "sql": "DELETE FROM sets WHERE id = :id",
+          "params": [
+            "id"
+          ]
+        }
+      ]
+    }
+  },
+  "views": [
+    {
+      "name": "main",
+      "spec": {
+        "root": "main",
+        "elements": {
+          "main": {
+            "type": "Stack",
+            "props": {
+              "gap": "md"
+            },
+            "children": [
+              "main/stat-1",
+              "main/progress-1",
+              "main/quick_actions-1",
+              "main/form-1",
+              "main/chart-1",
+              "main/list-1"
+            ]
+          },
+          "main/stat-1": {
+            "type": "Stat",
+            "props": {
+              "label": "Today",
+              "value": {
+                "$state": "/q/today/0/total"
+              },
+              "caption": {
+                "$x": {
+                  "t": [
+                    {
+                      "p": "/q/today/0/n"
+                    },
+                    " sets · goal ",
+                    {
+                      "p": "/settings/daily_goal"
+                    }
+                  ]
+                }
+              }
+            },
+            "children": []
+          },
+          "main/progress-1": {
+            "type": "Progress",
+            "props": {
+              "value": {
+                "$state": "/q/today/0/total"
+              },
+              "max": {
+                "$state": "/settings/daily_goal"
+              }
+            },
+            "children": []
+          },
+          "main/quick_actions-1": {
+            "type": "Row",
+            "props": {
+              "gap": "sm",
+              "wrap": true
+            },
+            "children": [
+              "main/quick_actions-1/button-1",
+              "main/quick_actions-1/button-2",
+              "main/quick_actions-1/button-3"
+            ]
+          },
+          "main/quick_actions-1/button-1": {
+            "type": "Button",
+            "props": {
+              "label": "+10",
+              "variant": "secondary"
+            },
+            "children": [],
+            "on": {
+              "press": {
+                "action": "run",
+                "params": {
+                  "name": "log",
+                  "args": {
+                    "reps": 10
+                  }
+                }
+              }
+            }
+          },
+          "main/quick_actions-1/button-2": {
+            "type": "Button",
+            "props": {
+              "label": "+20",
+              "variant": "secondary"
+            },
+            "children": [],
+            "on": {
+              "press": {
+                "action": "run",
+                "params": {
+                  "name": "log",
+                  "args": {
+                    "reps": 20
+                  }
+                }
+              }
+            }
+          },
+          "main/quick_actions-1/button-3": {
+            "type": "Button",
+            "props": {
+              "label": "+30",
+              "variant": "secondary"
+            },
+            "children": [],
+            "on": {
+              "press": {
+                "action": "run",
+                "params": {
+                  "name": "log",
+                  "args": {
+                    "reps": 30
+                  }
+                }
+              }
+            }
+          },
+          "main/form-1": {
+            "type": "Card",
+            "props": {},
+            "children": [
+              "main/form-1/input-1",
+              "main/form-1/submit"
+            ]
+          },
+          "main/form-1/input-1": {
+            "type": "Input",
+            "props": {
+              "label": "Reps",
+              "type": "number",
+              "value": {
+                "$bindState": "/state/draft/reps"
+              }
+            },
+            "children": []
+          },
+          "main/form-1/submit": {
+            "type": "Button",
+            "props": {
+              "label": "Log set",
+              "variant": "primary"
+            },
+            "children": [],
+            "on": {
+              "press": {
+                "action": "run",
+                "params": {
+                  "name": "log",
+                  "args": {
+                    "$state": "/state/draft"
+                  }
+                }
+              }
+            }
+          },
+          "main/chart-1": {
+            "type": "BarChart",
+            "props": {
+              "data": {
+                "$state": "/q/per_hour"
+              },
+              "x": "hour",
+              "y": "reps",
+              "xDomain": [
+                0,
+                23
+              ],
+              "title": "Reps per hour"
+            },
+            "children": []
+          },
+          "main/list-1": {
+            "type": "List",
+            "props": {
+              "items": {
+                "$state": "/q/recent"
+              },
+              "itemKey": "id",
+              "title": {
+                "t": [
+                  {
+                    "i": "reps"
+                  },
+                  " reps"
+                ]
+              },
+              "caption": {
+                "i": "at",
+                "f": "time"
+              },
+              "rowActions": [
+                {
+                  "icon": "trash",
+                  "label": "Delete",
+                  "action": "remove",
+                  "args": {
+                    "id": {
+                      "i": "id"
+                    }
+                  }
+                }
+              ],
+              "empty": "No sets yet"
+            },
+            "children": []
+          }
+        }
+      }
+    }
+  ],
+  "triggers": [
+    {
+      "name": "reminder",
+      "every": {
+        "p": "/settings/remind_every"
+      },
+      "when": "SELECT (SELECT coalesce(sum(reps),0) FROM sets WHERE is_today(at)) < (SELECT daily_goal FROM settings)",
+      "steps": [
+        {
+          "notify": {
+            "title": "Pushup break",
+            "body": {
+              "t": [
+                {
+                  "p": "/q/today/0/total"
+                },
+                "/",
+                {
+                  "p": "/settings/daily_goal"
+                },
+                " today"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "do": {
+        "action": "log",
+        "args": {
+          "reps": 20
+        }
+      },
+      "expect": {
+        "/q/today/0/total": 20,
+        "/q/today/0/n": 1
+      }
+    }
+  ],
+  "sourcemap": {
+    "main/stat-1": {
+      "path": "views.main[0]",
+      "line": 38,
+      "block": "stat"
+    },
+    "main/progress-1": {
+      "path": "views.main[1]",
+      "line": 39,
+      "block": "progress"
+    },
+    "main/quick_actions-1": {
+      "path": "views.main[2]",
+      "line": 40,
+      "block": "quick_actions"
+    },
+    "main/quick_actions-1/button-1": {
+      "path": "views.main[2].quick_actions[0]",
+      "line": 41,
+      "block": "quick_actions"
+    },
+    "main/quick_actions-1/button-2": {
+      "path": "views.main[2].quick_actions[1]",
+      "line": 42,
+      "block": "quick_actions"
+    },
+    "main/quick_actions-1/button-3": {
+      "path": "views.main[2].quick_actions[2]",
+      "line": 43,
+      "block": "quick_actions"
+    },
+    "main/form-1": {
+      "path": "views.main[3]",
+      "line": 44,
+      "block": "form"
+    },
+    "main/form-1/input-1": {
+      "path": "views.main[3].form.fields[0]",
+      "line": 45,
+      "block": "form"
+    },
+    "main/form-1/submit": {
+      "path": "views.main[3].form.submit",
+      "line": 46,
+      "block": "form"
+    },
+    "main/chart-1": {
+      "path": "views.main[4]",
+      "line": 47,
+      "block": "chart"
+    },
+    "main/list-1": {
+      "path": "views.main[5]",
+      "line": 48,
+      "block": "list"
+    }
+  }
+}

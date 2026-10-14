@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  r1os's local manifest on AOSP android-14.0.0_r55 (ADR-0013). TrebleDroid's GSI device tree,
+  hardware overlays and interfaces, which is what makes a generic system image boot on Rabbit's
+  vendor. Taken from ponces/treble_aosp (android-14.0) minus his own projects (vendor_ponces,
+  GApps, face unlock, weather, LineageOS's launcher): r1os ships none of them.
+-->
+<manifest>
+  <remote name="github" fetch="https://github.com" />
+
+  <project name="TrebleDroid/device_phh_treble" path="device/phh/treble" remote="github" revision="android-14.0" />
+  <project name="TrebleDroid/vendor_hardware_overlay" path="vendor/hardware_overlay" remote="github" revision="pie" />
+  <project name="TrebleDroid/vendor_interfaces" path="vendor/interfaces" remote="github" revision="android-14.0" />
+  <project name="phhusson/vendor_magisk" path="vendor/magisk" remote="github" revision="android-10.0" />
+  <project name="AndyCGYan/android_packages_apps_QcRilAm" path="packages/apps/QcRilAm" remote="github" revision="master" />
+  <project name="platform/prebuilts/vndk/v28" path="prebuilts/vndk/v28" remote="aosp" revision="204f1bad00aaf480ba33233f7b8c2ddaa03155dd" clone-depth="1" />
+</manifest>

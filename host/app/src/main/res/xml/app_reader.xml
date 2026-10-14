@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The app window's reader (AppReader, ADR-0061): the screen of the app an agent drives, as text. It reads when asked,
+  every view (not only those marked important), their ids, and every display's windows. An accessibility tool: views
+  an app marks sensitive (Android 14) stay readable to it.
+
+  It takes content changes and scrolls too, and does nothing with them: an app's web pages (Chrome's WebView) kept
+  their tree current only for a service that listens for them. Every kind of event made apps do more for nothing. Without, Uber Eats' search results and store stayed
+  blank or stale to the reader while drawn (2026-10-12).
+-->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowsChanged|typeWindowContentChanged|typeWindowStateChanged|typeViewScrolled"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagRetrieveInteractiveWindows|flagIncludeNotImportantViews|flagReportViewIds"
+    android:canRetrieveWindowContent="true"
+    android:description="@string/app_reader_about"
+    android:isAccessibilityTool="true"
+    android:notificationTimeout="100" />

@@ -1,0 +1,30 @@
+# Hand-written for r1os's web data (ADR-0023): the weather where the R1 is, from wttr.in (located by the network,
+# no key), with a 3-day outlook. It asks for `net.http` the first time it opens.
+enee: 1
+app: { id: weather-live, name: Weather now, icon: cloud-sun, archetype: widget, accent: cyan, description: The weather where you are. }
+permissions:
+  net.http: { hosts: [wttr.in], reason: Get the weather where you are }
+services:
+  now: { use: http.json, url: "https://wttr.in/?format=j1", every: 30m }
+views:
+  main:
+    - stat:
+        label: "{{services.now.nearest_area.0.areaName.0.value | default:Weather}}"
+        value: "{{services.now.current_condition.0.temp_C | default:–}}°"
+        caption: "{{services.now.current_condition.0.weatherDesc.0.value | default:Waiting for the forecast}}"
+    - row:
+        - stat: { label: Feels like, value: "{{services.now.current_condition.0.FeelsLikeC | default:–}}°" }
+        - stat: { label: Wind, value: "{{services.now.current_condition.0.windspeedKmph | default:–}} km/h" }
+    - list:
+        data: services.now.weather
+        title: "{{row.date | date}}"
+        caption: "{{row.mintempC}}° to {{row.maxtempC}}°"
+        empty: The outlook shows up here
+    - text: { text: "{{services.now.error}}", tone: muted, visible: "{{services.now.error}}" }
+glance:
+  type: weather
+  place: "{{services.now.nearest_area.0.areaName.0.value | default:Here}}"
+  temp: "{{services.now.current_condition.0.temp_C}}"
+  condition: "{{services.now.current_condition.0.weatherDesc.0.value}}"
+  feels: "{{services.now.current_condition.0.FeelsLikeC}}"
+  days: { each: services.now.weather, take: 2, day: "{{row.date | date}}", high: "{{row.maxtempC}}", low: "{{row.mintempC}}", condition: "{{row.hourly.4.weatherDesc.0.value}}" }

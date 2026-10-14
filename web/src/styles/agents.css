@@ -1,0 +1,37 @@
+/* Make them yours (Agents.tsx): one big agent turning into the next, a glow of its colour behind it, its name and job
+   under it, and the set of eight in a row, the accent's focus on the one shown. Four across on a phone, two rows. */
+
+.agents { position: relative; display: flex; flex-direction: column; align-items: center; margin-top: 30px; --glow: 26%; --glow-edge: 9%; }
+:root[data-mode="light"] .agents { --glow: 30%; --glow-edge: 11%; }
+
+/* A soft disc of the agent's colour, fading out at its own edge, so it never needs clipping or a blur. */
+.agents-glow {
+  position: absolute; left: 50%; top: 130px; translate: -50% -50%;
+  width: min(480px, 100%); aspect-ratio: 1; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(closest-side,
+    color-mix(in srgb, var(--agent) var(--glow), transparent) 0%,
+    color-mix(in srgb, var(--agent) var(--glow-edge), transparent) 55%,
+    transparent 100%);
+}
+
+.agents-stage { position: relative; width: 260px; max-width: 100%; height: 260px; }
+.agents-big { position: absolute; inset: 0; display: grid; place-items: center; }
+
+.agents-says { position: relative; display: flex; flex-direction: column; align-items: center; min-height: 68px; margin: 6px 0 28px; text-align: center; }
+.agents-line { display: flex; flex-direction: column; align-items: center; }
+.agents-name { font-size: 34px; font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: var(--fg); }
+.agents-role { margin-top: 4px; font-size: 16px; line-height: 1.4; color: var(--sub); }
+.agents-dot { margin: 0 .4em; color: var(--muted); }
+.agents-brain { color: var(--accent-text); }
+
+.agents-row { position: relative; display: grid; grid-template-columns: repeat(8, 60px); gap: 8px; justify-content: center; }
+.agents-pick {
+  position: relative; display: grid; place-items: center; width: 60px; height: 60px; padding: 0;
+  border: 0; border-radius: 18px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line);
+}
+.agents-pick > .ch { position: relative; pointer-events: none; }
+.agents-ring { position: absolute; inset: 0; border-radius: inherit; background: var(--accent-soft); box-shadow: inset 0 0 0 2.5px var(--accent); }
+
+@media (max-width: 620px) {
+  .agents-row { grid-template-columns: repeat(4, 60px); gap: 10px; }
+}

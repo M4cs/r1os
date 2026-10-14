@@ -1,0 +1,177 @@
+/* r1os's website: the R1's look on a page, as the companion carries it to the desktop (companion/src/styles.css).
+   Rubik, lowercase, black (or the R1's light paper), and the accent filling whatever's chosen, as the R1's focus does. */
+
+@import "@companion/fonts/r1/fonts.css";
+
+@font-face { font-family: "Rubik"; src: url("@companion/fonts/rubik_regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Rubik"; src: url("@companion/fonts/rubik_medium.ttf") format("truetype"); font-weight: 500 600; font-display: swap; }
+@font-face { font-family: "Rubik"; src: url("@companion/fonts/rubik_bold.ttf") format("truetype"); font-weight: 700 900; font-display: swap; }
+
+/* Text in four steps: --fg for words, --sub for the line under a head and captions (≥ 10:1), --muted for labels and
+   meta (≥ 7:1), --faint only for what isn't read (dots, anchors). The accent's shades follow below. */
+:root {
+  --bg: #000; --bg2: #08080a; --fg: #f2f2f2; --sub: #c4c7cc; --muted: #a3a8b0; --faint: #787d86;
+  --panel: #111215; --panel2: #1a1c21; --line: #22252b;
+  --accent: #ff8a3d; --ink: #0b0b0c;
+  --good: #3ddc84; --bad: #f2555a;
+  --font: Rubik, system-ui, sans-serif;
+  --mono: "R1 Droid Sans Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --max: 1220px;
+  --gutter: clamp(16px, 4vw, 40px);
+  --r: 18px;
+  color-scheme: dark;
+}
+:root[data-mode="light"] {
+  --bg: #f3f2ef; --bg2: #ecebe7; --fg: #16171a; --sub: #33363b; --muted: #464a52; --faint: #646971;
+  --panel: #ffffff; --panel2: #e9e8e4; --line: #dcdcd8;
+  color-scheme: light;
+}
+
+/* The accent's shades, worked out on every element from the --accent it has there, so a part of the page that sets
+   its own --accent (a section, a glow) gets shades of that one. Declared on :root alone, they'd keep the root's.
+   --accent-text is the accent where it's text: the accent itself on black; on the light paper, where the R1's accents
+   are too pale to read, a darker shade of it (oklch lightness .46), at least 4.6:1 for every accent on every surface
+   it sits on, its own soft fill included, whether the browser clips it into sRGB or maps it. */
+*, ::before, ::after {
+  --accent-text: var(--accent);
+  --on-accent-sub: color-mix(in srgb, var(--ink) 80%, var(--accent));
+  --accent-soft: color-mix(in srgb, var(--accent) 18%, transparent);
+  --accent-line: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+:root[data-mode="light"], :root[data-mode="light"] *, :root[data-mode="light"] ::before, :root[data-mode="light"] ::after {
+  --accent-text: color-mix(in srgb, var(--accent) 42%, var(--fg));
+}
+@supports (color: oklch(from red l c h)) {
+  :root[data-mode="light"], :root[data-mode="light"] *, :root[data-mode="light"] ::before, :root[data-mode="light"] ::after {
+    --accent-text: oklch(from var(--accent) 0.46 c h);
+  }
+}
+
+* { box-sizing: border-box; }
+/* Rubik comes in 400, 500 and 700, the mono in 400 alone (as on the R1): nothing between them is faked. */
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: 88px; font-kerning: normal; font-synthesis-weight: none; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--fg);
+  font: 500 16px/1.5 var(--font);
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  transition: background-color .4s ease, color .4s ease;
+}
+/* Thin strokes suit light words on black; on the paper, the platform's own smoothing keeps dark words from thinning.
+   What stays dark in light mode (code, the R1's screen) keeps the thin strokes itself (code.css, device.css). */
+:root[data-mode="light"] body { -webkit-font-smoothing: auto; -moz-osx-font-smoothing: auto; }
+::selection { background: var(--accent); color: var(--ink); }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; cursor: pointer; }
+img, svg { display: block; }
+h1, h2, h3, h4 { margin: 0; font-weight: 700; letter-spacing: -0.02em; text-wrap: balance; }
+/* Room between wrapped lines for Rubik's descenders and ascenders (its glyphs stand 1.185em tall). */
+h1, h2 { line-height: 1.08; }
+h3 { line-height: 1.2; }
+h4 { line-height: 1.25; letter-spacing: 0; }
+h1, h2, h3 { text-rendering: optimizeLegibility; }
+p { text-wrap: pretty; }
+p { margin: 0; }
+code, pre, kbd { font-family: var(--mono); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+
+.muted { color: var(--muted); }
+.mono { font-family: var(--mono); text-transform: none; }
+.wrap { width: 100%; max-width: var(--max); margin: 0 auto; padding: 0 var(--gutter); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---- the frame ------------------------------------------------------------------------------------------------ */
+
+.site { min-height: 100vh; display: flex; flex-direction: column; }
+.site > main { flex: 1; }
+/* Nothing on a page scrolls it sideways (a turning R1's corners, a long line); clip makes no scroll container, so sticky
+   parts still stick. */
+main { overflow-x: clip; }
+
+.top { position: sticky; top: 0; z-index: 40; text-transform: lowercase; }
+.top-bar { display: flex; align-items: center; gap: 6px; height: 64px; }
+.top::before { content: ""; position: absolute; inset: 0; background: color-mix(in srgb, var(--bg) 72%, transparent); backdrop-filter: blur(16px) saturate(1.3); -webkit-backdrop-filter: blur(16px) saturate(1.3); border-bottom: 1px solid transparent; transition: border-color .3s; z-index: -1; }
+.top.scrolled::before { border-bottom-color: var(--line); }
+.brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 19px; letter-spacing: -0.01em; margin-right: 14px; }
+.brand-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 14px var(--accent); transition: background .4s, box-shadow .4s; }
+.nav { display: flex; gap: 2px; }
+.nav-item { position: relative; padding: 8px 14px; border-radius: 12px; font-weight: 700; font-size: 15px; color: var(--muted); transition: color .2s; }
+.nav-item:hover { color: var(--fg); }
+.nav-item.on { color: var(--ink); }
+.nav-item > span:last-child { position: relative; z-index: 1; }
+.nav-fill { position: absolute; inset: 0; border-radius: 12px; background: var(--accent); }
+.nav-hover { position: absolute; inset: 0; border-radius: 12px; background: var(--panel2); }
+.grow { flex: 1; }
+.menu-btn { display: none; width: 40px; height: 40px; border: 0; border-radius: 12px; background: var(--panel2); place-items: center; }
+@media (max-width: 860px) {
+  .nav.wide { display: none; }
+  .menu-btn { display: grid; }
+}
+/* The narrowest phones: a little less room around the brand and the link, so the menu button stays in the gutter. */
+@media (max-width: 340px) { .top .brand { margin-right: 0; } .top .btn.small { padding: 9px 11px; } }
+.menu-btn, .look-btn { flex-shrink: 0; }
+.sheet-nav { position: fixed; inset: 64px 0 auto 0; z-index: 39; padding: 10px var(--gutter) 22px; background: color-mix(in srgb, var(--bg) 94%, transparent); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px; text-transform: lowercase; }
+.sheet-nav a { padding: 12px 14px; border-radius: 14px; font-weight: 700; font-size: 20px; }
+.sheet-nav a.on { background: var(--accent); color: var(--ink); }
+
+/* The look: dark or light, and an accent. */
+.look-btn { position: relative; width: 40px; height: 40px; border: 0; border-radius: 12px; background: transparent; display: grid; place-items: center; color: var(--muted); transition: background .15s, color .15s; }
+.look-btn:hover { background: var(--panel2); color: var(--fg); }
+.look-pop { position: absolute; right: 0; top: 50px; width: 252px; padding: 14px; border-radius: 20px; background: var(--panel); box-shadow: 0 30px 70px -20px rgba(0, 0, 0, .55), inset 0 0 0 1px var(--line); text-transform: lowercase; z-index: 50; }
+.look-pop h4 { font-size: 13px; font-weight: 700; line-height: 1.2; color: var(--muted); margin: 2px 2px 8px; }
+.look-pop h4 + * { margin-bottom: 14px; }
+/* On a narrow bar the get-started link and the menu sit right of the look button: the popover hangs from the screen's
+   edge instead, so it all fits. */
+@media (max-width: 860px) { .look-pop { position: fixed; top: 62px; right: var(--gutter); max-width: calc(100vw - 2 * var(--gutter)); } }
+.swatches { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; padding: 2px; }
+.swatch { position: relative; width: 28px; height: 28px; border-radius: 50%; border: 0; padding: 0; }
+.swatch-ring { position: absolute; inset: -5px; border-radius: 50%; border: 2.5px solid; pointer-events: none; }
+
+.seg { position: relative; display: inline-flex; gap: 2px; padding: 3px; border-radius: 13px; background: var(--panel2); }
+.seg.wide { display: flex; }
+.seg.wide .seg-item { flex: 1; justify-content: center; }
+.seg-item { position: relative; display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; padding: 7px 12px; border-radius: 10px; font-size: 13px; font-weight: 700; color: var(--muted); transition: color .2s; white-space: nowrap; text-transform: lowercase; }
+.seg-item > span:last-child, .seg-item > svg { position: relative; z-index: 1; }
+.seg-item.on { color: var(--ink); }
+.seg-fill { position: absolute; inset: 0; border-radius: 10px; background: var(--accent); }
+
+/* ---- buttons and chips ------------------------------------------------------------------------------------------ */
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 16px; padding: 14px 22px; font-weight: 700; font-size: 17px; background: var(--panel2); color: var(--fg); white-space: nowrap; text-transform: lowercase; transition: filter .15s, background .2s, transform .15s; }
+.btn:hover { filter: brightness(1.12); }
+.btn:active { transform: scale(.97); }
+.btn.primary { background: var(--accent); color: var(--ink); }
+.btn.ghost { background: transparent; box-shadow: inset 0 0 0 1.5px var(--line); }
+.btn.small { padding: 9px 14px; font-size: 14px; border-radius: 12px; }
+.chip { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 999px; background: color-mix(in srgb, var(--panel) 80%, transparent); box-shadow: inset 0 0 0 1px var(--line); font-size: 14px; font-weight: 500; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); text-transform: lowercase; white-space: nowrap; }
+.chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--good); box-shadow: 0 0 8px color-mix(in srgb, var(--good) 60%, transparent); }
+/* A readout: the R1's mono boxes (the Translator's "load", the Recorder's counter). */
+.readout { display: inline-flex; align-items: center; gap: 10px; padding: 6px 11px; border-radius: 8px; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--fg) 22%, transparent); font: 14px/1.3 var(--mono); color: var(--fg); text-transform: none; }
+.readout b { font-weight: 400; color: var(--accent-text); }
+.kbd { display: inline-grid; place-items: center; min-width: 26px; height: 26px; padding: 0 7px; border-radius: 8px; background: var(--panel2); box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--fg) 10%, transparent); font: 12px var(--mono); }
+
+/* ---- the footer ---------------------------------------------------------------------------------------------- */
+
+.foot { margin-top: 120px; border-top: 1px solid var(--line); padding: 48px 0 56px; text-transform: lowercase; }
+.foot-grid { display: grid; grid-template-columns: 1.4fr repeat(3, 1fr); gap: 32px; }
+.foot-col { display: flex; flex-direction: column; gap: 10px; }
+.foot-col h4 { font-size: 14px; color: var(--muted); margin-bottom: 4px; }
+.foot-col a { font-weight: 500; color: var(--fg); opacity: .85; }
+.foot-col a:hover { opacity: 1; color: var(--accent-text); }
+.foot-note { margin-top: 40px; font-size: 14px; line-height: 1.55; color: var(--muted); max-width: 46em; }
+@media (max-width: 760px) { .foot-grid { grid-template-columns: 1fr 1fr; } .foot-col.first { grid-column: 1 / -1; } }
+
+/* ---- the lost page --------------------------------------------------------------------------------------------- */
+
+.lost { min-height: 70vh; display: grid; place-items: center; text-align: center; text-transform: lowercase; padding: 40px var(--gutter); }
+.lost h1 { font-size: clamp(40px, 7vw, 72px); margin: 18px 0 10px; }
+.lost p { margin-bottom: 26px; }
+
+/* A part of the page that's scrolled away, or in a hidden tab, rests: its looping CSS animations (the characters'
+   breathing and blinking, floating screens) pause until it's seen again (site/seen.ts). */
+[data-rest] *, [data-rest] *::before, [data-rest] *::after { animation-play-state: paused !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+}

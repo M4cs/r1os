@@ -1,0 +1,37 @@
+enee: 1
+app: { id: radio, name: Radio, icon: radio, archetype: feed, accent: purple, description: "Internet radio by genre, playing on in the background." }
+permissions:
+  net.http: { hosts: [de1.api.radio-browser.info], reason: Find stations to play }
+  audio.play: Play the station you pick
+settings:
+  genre: { type: text, label: Genre, default: jazz }
+services:
+  stations:
+    use: http.json
+    url: "https://de1.api.radio-browser.info/json/stations/search?tag={{settings.genre}}&limit=15&order=clickcount&reverse=true&hidebroken=true"
+actions:
+  listen:
+    params: { name: text, url: text, country: text? }
+    do:
+      - play: { url: "{{params.url}}", title: "{{params.name}}", subtitle: "{{params.country}}" }
+  pause_or_play:
+    do:
+      - toggle: true
+  off:
+    do:
+      - stop: true
+views:
+  main:
+    - heading: { text: "{{player.title | default:Pick a station}}" }
+    - text: { text: "{{player.song}}" }
+    - text: { text: "{{player.state}}" }
+    - row:
+        items:
+          - button: { label: "Pause / play", action: pause_or_play }
+          - button: { label: "Stop", action: off }
+    - list:
+        data: "{{services.stations.items}}"
+        title: "{{row.name}}"
+        caption: "{{row.country}}"
+        row_actions: [ { icon: play, label: Play, action: listen, params: { name: "{{row.name}}", url: "{{row.url_resolved}}", country: "{{row.country}}" } } ]
+        empty: Finding stations…

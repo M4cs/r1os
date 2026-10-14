@@ -1,0 +1,10 @@
+# The boot (T-029, T-101): what init and Android's boot animation need for r1os's.
+
+# /metadata/r1os, made at post-fs.
+allow init r1os_metadata_file:dir create_dir_perms;
+
+# The boot animation r1d keeps, bound over the image's own at post-fs-data (r1os.rc), read there by bootanim.
+allow init r1os_boot_file:dir create_dir_perms;
+allow init r1os_boot_file:file getattr;
+allow init system_file:file mounton;
+allow bootanim r1os_boot_file:file { getattr open read map };

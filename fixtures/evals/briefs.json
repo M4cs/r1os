@@ -1,0 +1,21 @@
+[
+  { "brief": "A water tracker: log glasses, with a daily goal of 8", "expect": { "perms": [], "no_perms": ["net.http"] } },
+  { "brief": "A shopping list I add to by telling you, and tick off in the store", "expect": { "perms": [], "no_perms": ["net.http"] } },
+  { "brief": "Weather in London now and for the next three days", "expect": { "perms": ["net.http"] } },
+  { "brief": "Apple's stock price, kept up to date while it's open", "expect": { "perms": ["net.http"] } },
+  { "brief": "The Hacker News front page; clicking a story opens it", "expect": { "perms": ["net.http", "open.url"] } },
+  { "brief": "A pomodoro timer: 25 minutes of work, then a 5 minute break", "expect": { "perms": [] } },
+  { "brief": "Remind me to stretch at 3pm on weekdays, and count the days I did", "expect": { "perms": ["notify", "schedule"] } },
+  { "brief": "Convert US dollars to euros at today's rate", "expect": { "perms": ["net.http"] } },
+  { "brief": "Track reading, meditating and running each day, with streaks", "expect": { "perms": [], "no_perms": ["net.http"] } },
+  { "brief": "A packing list for a weekend trip that I can copy as text", "expect": { "perms": ["clipboard.write"] } },
+  { "brief": "A tip calculator: the bill, the tip and how many of us, set with the wheel", "expect": { "perms": [], "no_perms": ["net.http"], "blocks": ["wheel"] } },
+  { "brief": "A little game where I steer a paddle with the wheel to catch falling dots, and it keeps my best score", "expect": { "perms": [], "no_perms": ["net.http"], "blocks": ["game"] } },
+  { "brief": "An internet radio: pick a genre, then a station, and it keeps playing when I leave the app", "expect": { "perms": ["audio.play", "net.http"], "steps": ["play"] } },
+  { "brief": "Rain and white noise sounds to fall asleep to, with a sleep timer that stops them", "expect": { "perms": ["audio.play"], "steps": ["play", "stop"] } },
+  { "brief": "A dice game: roll five dice and score them like Yahtzee, keeping my best game", "big": true, "expect": { "perms": [], "no_perms": ["net.http"], "logic": true } },
+  { "brief": "A trip helper: pick a city and see its weather now and what 100 US dollars is in its local currency", "big": true, "expect": { "perms": ["net.http"] } },
+  { "brief": "A mortgage calculator: price, deposit, interest rate and years set with the wheel, showing the monthly payment and the total interest", "expect": { "perms": [], "no_perms": ["net.http"], "blocks": ["wheel"] } },
+  { "brief": "A widget for my glance screen showing how many push-ups I did today and this week", "expect": { "perms": [], "no_perms": ["net.http"], "glance": true } },
+  { "brief": "A widget with the top 3 BBC News headlines", "expect": { "perms": ["net.http"], "glance": true } }
+]

@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Only to reach r1d on 127.0.0.1 (cleartext allowed for loopback only). -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Push-to-talk: the host lends the mic to r1d (Mic.kt, ADR-0009). Asked for at first launch. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!--
+      Push-to-talk over other apps (ADR-0027): a foreground service of type microphone keeps the mic
+      while another app is in front (MicService), and an overlay window shows the talking, the volume and
+      the agent's answer over it. r1d grants the overlay's app-op (POST /api/android/overlay).
+    -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <!-- Apps' audio playing on in the background (Player, ADR-0040). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <!-- Other apps' media on the glance screen (MediaSessions): privileged, granted by r1os's image from v0.2.12. -->
+    <uses-permission android:name="android.permission.MEDIA_CONTENT_CONTROL" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!-- The camera (ADR-0031): photos for agents, the Camera app, System One's "what am I looking at". -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <!-- The Recorder keeps the CPU awake while it records with the screen off (ADR-0033). -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Haptics: a touch from the motor with the shell's sounds. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Bluetooth (R7): the list, scanning and pairing (r1d grants these), and connecting, forgetting and switching it
+         (privileged: image v0.2.14 allows it). -->
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_PRIVILEGED" />
+    <!--
+      Settings › Display & sound, and agents with your approval (ADR-0045): the display's brightness and how long until
+      it sleeps. Granted to preinstalled apps; r1d grants its app-op if Android hasn't (POST /api/android/settings-access).
+    -->
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+    <!-- Home's Wi-Fi signal (ADR-0015): the default network's transport and strength. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!--
+      No status bar or notification shade on the R1 (ADR-0014): the home app turns them off while it
+      runs. A privileged permission: r1os's image grants it (privapp-permissions-r1os.xml).
+    -->
+    <uses-permission android:name="android.permission.STATUS_BAR" />
+    <!-- Answering Android's "allow USB debugging?" itself (AdbConfirmActivity): privileged, granted by r1os's image. -->
+    <uses-permission android:name="android.permission.MANAGE_DEBUGGING" />
+    <!--
+      The app window (AgentApps, ADR-0061): an Android app an agent drives, on a display of the host's own, which you
+      watch in the chat and take over. Signature permissions: the host has them because it's signed with r1os's
+      platform key (ADR-0062). The display (trusted, its own focus and power group, no lock screen on it), launching
+      the app there, tapping and typing into it, and turning its reader (an accessibility service) on and off.
+    -->
+    <uses-permission android:name="android.permission.ADD_TRUSTED_DISPLAY" />
+    <uses-permission android:name="android.permission.ADD_ALWAYS_UNLOCKED_DISPLAY" />
+    <uses-permission android:name="android.permission.INTERNAL_SYSTEM_WINDOW" />
+    <uses-permission android:name="android.permission.INJECT_EVENTS" />
+    <uses-permission android:name="android.permission.START_ACTIVITIES_FROM_BACKGROUND" />
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
+    <!--
+      An app already open on the R1's own screen comes into the window as it is, and goes back when you take it (T-139):
+      finding its tasks (MANAGE_ACTIVITY_TASKS, signature|recents) and moving them (INTERNAL_SYSTEM_WINDOW, above). If the
+      move fails, it's closed there and opened again in the window (FORCE_STOP_PACKAGES).
+    -->
+    <uses-permission android:name="android.permission.MANAGE_ACTIVITY_TASKS" />
+    <uses-permission android:name="android.permission.FORCE_STOP_PACKAGES" />
+    <!-- The app window's display put to sleep with the R1's own screen (T-149): awake, it kept the R1 from waking. -->
+    <uses-permission android:name="android.permission.DEVICE_POWER" />
+    <!-- Android apps you've left alone closed in the background (T-150): which are cached and when each was used. -->
+    <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
+    <!-- From Android 14, the above kills only the host's own: other apps' need this (platform-signed). -->
+    <uses-permission android:name="android.permission.KILL_ALL_BACKGROUND_PROCESSES" />
+    <uses-permission android:name="android.permission.REAL_GET_TASKS" />
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" />
+
+    <!-- The Android apps the launcher lists (AndroidApps): anything with a launcher entry, and Aurora Store. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+        <package android:name="com.aurora.store" />
+    </queries>
+
+    <!-- HostApp: r1d's events for the whole process, whatever started it (T-142). -->
+    <application
+        android:name=".HostApp"
+        android:allowBackup="false"
+        android:label="r1os"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:supportsRtl="false"
+        android:theme="@style/R1os">
+
+        <!-- The R1's home screen: there is no launcher besides this. -->
+        <activity
+            android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboard|keyboardHidden|navigation|uiMode|density|fontScale"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:resumeWhilePausing="true"
+            android:screenOrientation="portrait"
+            android:stateNotNeeded="true"
+            android:windowSoftInputMode="stateAlwaysHidden|adjustPan">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!--
+          Over another app, where Android hides overlay windows (its settings, Files): the shell's
+          talking, volume, reply and reminder layer in a see-through activity on top (ADR-0027, Dock).
+          Its own task, out of recents; only the host starts it.
+        -->
+        <activity
+            android:name=".OverActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboard|keyboardHidden|navigation|uiMode|density|fontScale"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleInstance"
+            android:noHistory="true"
+            android:screenOrientation="portrait"
+            android:taskAffinity="dev.r1os.host.over"
+            android:theme="@style/R1os.Over" />
+
+        <!--
+          Android's adb confirmations (a computer's key, wireless debugging on a network): r1os's image points the
+          framework here instead of SystemUI's dialog. Only the system can start it (MANAGE_DEBUGGING).
+        -->
+        <activity
+            android:name=".AdbConfirmActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:noHistory="true"
+            android:permission="android.permission.MANAGE_DEBUGGING"
+            android:theme="@android:style/Theme.NoDisplay" />
+
+        <service
+            android:name=".MicService"
+            android:exported="false"
+            android:foregroundServiceType="microphone" />
+        <!-- Android apps' notifications, shown in r1os (Notifications): the system binds it once access is granted. -->
+        <service
+            android:name=".NotificationListener"
+            android:exported="true"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+        <!-- r1os's keyboard (ADR-0055): the input method for every text box on the R1. -->
+        <service
+            android:name=".ime.R1Keyboard"
+            android:exported="true"
+            android:label="@string/keyboard_name"
+            android:permission="android.permission.BIND_INPUT_METHOD">
+            <intent-filter>
+                <action android:name="android.view.InputMethod" />
+            </intent-filter>
+            <meta-data
+                android:name="android.view.im"
+                android:resource="@xml/method" />
+        </service>
+        <service
+            android:name=".PlayerService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+        <!--
+          The app window's reader (AgentApps, ADR-0061): the screen of the app an agent drives, as text. On only while
+          an app window is open (every app does accessibility work while one runs, ADR-0027); an accessibility tool, so
+          views apps mark sensitive stay readable to it, and it reads only the app window's display.
+        -->
+        <service
+            android:name=".AppReader"
+            android:exported="true"
+            android:label="@string/app_reader_name"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/app_reader" />
+        </service>
+    </application>
+</manifest>

@@ -1,0 +1,62 @@
+# Device images and dumps: large, and backups hold device-unique data (IMEI, radio calibration).
+# Never commit these.
+firmware/
+backups/
+out/
+*.img
+*.img.gz
+*.img.xz
+*.bin
+*.apk
+*.zip
+
+# Build output
+target/
+node_modules/
+build/
+.gradle/
+local.properties
+
+# Secrets
+.env
+*.keystore
+*.jks
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Android host app (Gradle)
+host/.gradle/
+host/app/build/
+host/build/
+host/local.properties
+.kotlin/
+
+# Harness output
+artifacts/
+
+# Shell build output (tools/deploy.sh rebuilds it)
+shell/dist/
+
+# Desktop simulator data (r1d --sim)
+.r1os-sim/
+
+# Obsidian vault (docs/): share the vault's config, not its secrets or per-user state
+docs/.obsidian/plugins/
+docs/.obsidian/workspace.json
+docs/.obsidian/workspace-mobile.json
+docs/.obsidian/cache
+
+# Internal, kept on this machine only (Max, 2026-10-14): the vault (docs/; the public docs live on the website,
+# web/), and research and demo output.
+/docs/
+/brag-output/
+/reports/
+/research_notes/

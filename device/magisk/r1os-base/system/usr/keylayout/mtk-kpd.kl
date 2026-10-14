@@ -1,0 +1,6 @@
+# r1os: the R1's side button is the power key on mtk-kpd (scancode 116). BUTTON_1 stops it from
+# turning the screen off; WAKE keeps a press waking the screen. r1d reads the button straight from
+# evdev and owns tap / double-tap / hold (double-tap on home turns the screen off). The PMIC's
+# hardware long-press power-off is unaffected. (Remap from r1ptt / ClawPTT; see NOTICE.md.)
+key 116   BUTTON_1      WAKE
+key 114   VOLUME_DOWN

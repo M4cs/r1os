@@ -1,0 +1,20 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "The companion's window: its own title bar (drag, minimise, maximise, close), the start-with-Windows setting, sign-in pages opened in the browser, and what it saved shown in Explorer.",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-start-dragging",
+    "core:window:allow-minimize",
+    "core:window:allow-toggle-maximize",
+    "core:window:allow-close",
+    "core:window:allow-hide",
+    "autostart:allow-enable",
+    "autostart:allow-disable",
+    "autostart:allow-is-enabled",
+    "opener:allow-open-url",
+    "opener:allow-reveal-item-in-dir",
+    "dialog:allow-open"
+  ]
+}

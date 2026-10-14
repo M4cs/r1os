@@ -1,0 +1,19 @@
+# Scripts run in Git Bash on Windows and on the R1 itself (Magisk modules, sh on Android):
+# they must keep LF line endings.
+* text=auto
+*.sh text eol=lf
+*.py text eol=lf
+*.prop text eol=lf
+*.kl text eol=lf
+update-binary text eol=lf
+updater-script text eol=lf
+# Everything we push to the R1 (Magisk modules, keylayouts, XML, scripts) is read by Android: LF only.
+device/** text eol=lf
+# Shell scripts without a .sh extension (tools/r1h, Gradle's wrapper) must stay LF too.
+tools/** text eol=lf
+gradlew text eol=lf
+*.bat text eol=crlf
+# Compared byte-for-byte (enee-spec's golden tests) or compiled into r1d (prompts): keep LF everywhere.
+fixtures/** text eol=lf
+prompts/** text eol=lf
+crates/enee-spec/data/** text eol=lf

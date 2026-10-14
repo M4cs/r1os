@@ -1,0 +1,83 @@
+# Hand-written for r1os ADR-0038: a game in the sandboxed lane. The wheel steers, the app keeps the scores.
+enee: 1
+app: { id: catch, name: Catch, icon: game-controller, accent: orange, description: "Catch the falling dots with a paddle you steer with the wheel." }
+data:
+  games:
+    score: int!
+queries:
+  best: SELECT coalesce(max(score), 0) AS score, count(*) AS played FROM games
+  recent: SELECT id, score, created_at FROM games ORDER BY id DESC LIMIT 5
+state:
+  _persist: [ best ]
+  best: 0
+actions:
+  finish:
+    params: { score: int }
+    do:
+      - sql: INSERT INTO games (score) VALUES (:score)
+views:
+  main:
+    - game:
+        label: catch
+        actions: [ finish ]
+        script: |
+          // Steer the paddle with the wheel; three misses and it's over.
+          const W = r1.width, H = r1.height, ctx = r1.ctx, t = r1.theme;
+          const PADDLE = 70, R = 8, Y = H - 30;
+          let x = W / 2, dots = [], score = 0, misses = 0, wait = 0, speed = 110;
+
+          r1.on("wheel", (d) => {
+            x = Math.max(PADDLE / 2, Math.min(W - PADDLE / 2, x + d * 24));
+          });
+
+          r1.loop((dt) => {
+            wait -= dt;
+            if (wait <= 0) {
+              dots.push({ x: R + Math.random() * (W - 2 * R), y: -R });
+              wait = Math.max(0.45, 1.2 - score * 0.03);
+            }
+            speed += dt * 3;
+            for (const d of dots) d.y += speed * dt;
+            dots = dots.filter((d) => {
+              if (d.y >= Y - R && d.y <= Y + 10 && Math.abs(d.x - x) <= PADDLE / 2 + R) { score++; return false; }
+              if (d.y > H + R) { misses++; return false; }
+              return true;
+            });
+            if (misses >= 3) {
+              const best = Math.max(r1.load("best") || 0, score);
+              r1.save("best", best);
+              r1.action("finish", { score }).catch(() => {});
+              r1.end({ score, text: `score ${score} · best ${best}` });
+              return;
+            }
+            ctx.fillStyle = t.bg;
+            ctx.fillRect(0, 0, W, H);
+            ctx.fillStyle = t.accent;
+            for (const d of dots) {
+              ctx.beginPath();
+              ctx.arc(d.x, d.y, R, 0, Math.PI * 2);
+              ctx.fill();
+            }
+            ctx.fillStyle = t.fg;
+            ctx.fillRect(x - PADDLE / 2, Y, PADDLE, 10);
+            ctx.font = `700 24px ${t.font}`;
+            ctx.textBaseline = "top";
+            ctx.textAlign = "left";
+            ctx.fillText(String(score), 16, 14);
+            ctx.textAlign = "right";
+            ctx.fillStyle = t.muted;
+            ctx.fillText("○".repeat(misses) + "●".repeat(3 - misses), W - 16, 14);
+          });
+    - row:
+        - stat: { label: Best, value: "{{best.0.score}}" }
+        - stat: { label: Played, value: "{{best.0.played}}" }
+    - list:
+        data: recent
+        title: "{{row.score}}"
+        caption: "{{row.created_at | relative}}"
+        empty: No games yet
+checks:
+  - do:
+      - { action: finish, params: { score: 7 } }
+      - { action: finish, params: { score: 3 } }
+    expect: { best.0.score: 7, best.0.played: 2 }

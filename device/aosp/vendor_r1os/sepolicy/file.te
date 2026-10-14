@@ -1,0 +1,30 @@
+# r1os's files in /data/r1os (ADR-0035). Labeled by file_contexts; init relabels the tree once per policy
+# change (r1os.rc), and tools/deploy.sh and tools/agent-box.sh relabel what they push.
+
+# r1d's state: its database, apps, media, logs, models and the shell's files. Only r1d's.
+type r1os_data_file, file_type, data_file_type, core_data_file_type;
+
+# r1d and its libraries (/data/r1os/bin, /data/r1os/lib): tools/deploy.sh puts them there rather than in
+# the image, so a new r1d doesn't need a flash. r1d runs them and can't write them.
+type r1os_code_file, file_type, data_file_type, core_data_file_type, r1os_data_exec;
+
+# The agent box's Alpine userland (/data/r1os/agent/rootfs). The agent reads and runs it, never writes it.
+type r1os_agent_root_file, file_type, data_file_type, core_data_file_type, r1os_data_exec;
+
+# The rest of the agent box: the agent user's home (the CLIs and their logins), the workspaces and the
+# agents' chat stores. The agent's own; it runs what's here (the CLIs update themselves in the home).
+type r1os_agent_file, file_type, data_file_type, core_data_file_type, r1os_data_exec;
+
+# Rabbit's motor node (sysfs `orientation`; the charger's shipping-mode switches carry the same label). A
+# vendor type, declared here too so r1d can name it: on the R1 the two declarations merge (init compiles
+# the policy with multiple declarations allowed), the way TrebleDroid's mediatek.te names MediaTek's types.
+type sysfs_motor, fs_type, sysfs_type;
+
+# The boot animation r1d keeps (/data/r1os/boot, T-029): the host's drawing of your agents. init binds it over the
+# image's own (/product/media/bootanimation.zip) at post-fs-data; Android's boot animation reads it there.
+type r1os_boot_file, file_type, data_file_type, core_data_file_type;
+
+# r1os's files on /metadata (/metadata/r1os), mounted before /data: verbose boot's flag (T-101), which r1d sets and
+# r1os-bootlog reads at `on init`.
+type r1os_metadata_file, file_type;
+

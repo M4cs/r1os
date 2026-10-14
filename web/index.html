@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="An agent-first OS with Claude and Codex built in: talk to agents that build apps and use your Android apps for you, on a full Android 15 device." />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>r1os</title>
+    <script>
+      // The look before the first paint (src/site/look.ts keeps it after): no flash of the wrong mode.
+      try {
+        const l = JSON.parse(localStorage.getItem("r1os-look") || "{}");
+        const mode = l.mode && l.mode !== "system" ? l.mode : matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+        document.documentElement.dataset.mode = mode;
+        if (l.accent) document.documentElement.style.setProperty("--accent", l.accent);
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

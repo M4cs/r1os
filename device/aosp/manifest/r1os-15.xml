@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  r1os's local manifest on AOSP android-15.0.0_r36 (BP1A, security patch 2025-05-05; ADR-0013, Q10).
+  TrebleDroid's GSI device tree, hardware overlays and interfaces, from ponces/treble_aosp
+  (android-15.0, synced with TrebleDroid 2025-07-24) minus his own projects (vendor_ponces and its
+  private keys, GApps, face unlock, weather, treble_adapter): r1os ships none of them.
+-->
+<manifest>
+  <remote name="github" fetch="https://github.com" />
+
+  <project path="device/phh/treble" name="TrebleDroid/device_phh_treble" remote="github" revision="android-15.0" />
+  <project path="vendor/hardware_overlay" name="TrebleDroid/vendor_hardware_overlay" remote="github" revision="pie" />
+  <project path="vendor/interfaces" name="TrebleDroid/vendor_interfaces" remote="github" revision="android-15.0" />
+  <project path="vendor/magisk" name="phhusson/vendor_magisk" remote="github" revision="android-10.0" />
+  <project path="packages/apps/QcRilAm" name="AndyCGYan/android_packages_apps_QcRilAm" remote="github" revision="master" />
+  <project path="prebuilts/vndk/v28" name="platform/prebuilts/vndk/v28" remote="aosp" revision="204f1bad00aaf480ba33233f7b8c2ddaa03155dd" clone-depth="1" />
+  <project path="prebuilts/vndk/v29" name="platform/prebuilts/vndk/v29" remote="aosp" revision="bef5d37dda9360940964f097d612c8032e140961" clone-depth="1" />
+</manifest>

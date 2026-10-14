@@ -1,0 +1,30 @@
+# Hand-written for M2: the "CPU/GPU monitor" of the milestone's exit list, on live `system.*` services.
+enee: 1
+app:
+  id: system-monitor
+  name: System
+  icon: cpu
+  archetype: monitor
+  accent: green
+  description: How busy the processor and graphics card are, live, with memory and network.
+permissions:
+  system.cpu: Show how busy the processor is
+  system.gpu: Show how busy the graphics card is
+  system.memory: Show how much memory is in use
+  system.network: Show how much the network is used
+services:
+  cpu: { use: system.cpu, every: 1s, keep: 2m }
+  gpu: { use: system.gpu, every: 1s, keep: 2m }
+  memory: { use: system.memory, every: 2s }
+  net: { use: system.network, every: 1s }
+views:
+  main:
+    - row:
+        - gauge: { label: CPU, value: "{{services.cpu.usage}}", unit: "%" }
+        - gauge: { label: GPU, value: "{{services.gpu.usage}}", unit: "%" }
+    - chart: { kind: line, data: services.cpu.history, x: t, y: usage, title: CPU }
+    - chart: { kind: line, data: services.gpu.history, x: t, y: usage, title: GPU }
+    - row:
+        - stat: { label: Memory, value: "{{services.memory.percent | number:0}}%", caption: "{{services.memory.used | bytes}} of {{services.memory.total | bytes}}" }
+        - stat: { label: Video memory, value: "{{services.gpu.vram_used | bytes}}", caption: "GPU at {{services.gpu.temperature | default:–}} °C" }
+        - stat: { label: Network, value: "{{services.net.rx_bps | bytes}}/s", caption: "{{services.net.tx_bps | bytes}}/s up" }

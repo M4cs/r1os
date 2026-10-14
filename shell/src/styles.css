@@ -1,0 +1,449 @@
+/* r1os shell: dark, big type, built for a 2.88" 480×640 panel (≈427×569 CSS px at density 180). */
+
+:root {
+  --bg: #000;
+  --fg: #f2f2f2;
+  --muted: #8a8f98;
+  --line: #22252b;
+  --accent: #ff8a3d;
+  --ok: #3ddc84;
+  --bad: #ff5a5a;
+  font-family: system-ui, "Roboto", sans-serif;
+  color: var(--fg);
+  background: var(--bg);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+}
+/* The wheel draws its own ring (.r1-focus); the WebView's default one showed up on home's buttons. */
+button:focus-visible {
+  outline: none;
+}
+
+.screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 14px 4px;
+  font-size: 14px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.status-right {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.dot.up {
+  background: var(--ok);
+}
+.dot.down {
+  background: var(--bad);
+}
+.badge {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: #2a2d33;
+  color: #c9ced6;
+}
+
+/* ---- home wheel ---- */
+
+.home {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.wheel {
+  position: relative;
+  flex: 1;
+}
+.wheel-item {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: 82%;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 18px;
+  border-radius: 18px;
+  transition:
+    transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 180ms;
+  will-change: transform, opacity;
+}
+.wheel-item.focused {
+  background: #15171b;
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+.glyph {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--accent);
+}
+.label {
+  font-size: 24px;
+  font-weight: 600;
+}
+.hint {
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  padding: 6px 0 10px;
+}
+
+/* ---- apps ---- */
+
+.app {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0 14px 12px;
+}
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  padding: 2px 0 8px;
+}
+.back {
+  font-size: 28px;
+  line-height: 1;
+  width: 32px;
+  color: var(--muted);
+}
+.center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.center.col {
+  align-items: center;
+}
+.fill {
+  flex: 1;
+  min-height: 0;
+}
+.muted {
+  color: var(--muted);
+}
+.small {
+  font-size: 12px;
+}
+.big {
+  font-size: 56px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.error {
+  color: var(--bad);
+  font-size: 13px;
+}
+
+.clock-time {
+  font-size: 84px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.clock-sec {
+  font-size: 22px;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.gauge {
+  width: 80%;
+}
+.gauge-track {
+  fill: none;
+  stroke: #2a2d33;
+  stroke-width: 10;
+  stroke-linecap: round;
+}
+.gauge-needle {
+  stroke: #ff8a3d;
+  stroke-width: 6;
+  stroke-linecap: round;
+  transition: all 200ms;
+}
+.gauge-hub {
+  fill: #ff8a3d;
+}
+
+.log {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  overflow: hidden;
+  flex: 1;
+  font-size: 15px;
+}
+.ev {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--line);
+}
+.ev .t {
+  color: var(--muted);
+  width: 64px;
+  font-variant-numeric: tabular-nums;
+}
+.ev-gesture .k {
+  color: var(--accent);
+  font-weight: 600;
+}
+.ev-wheel_suppressed .k {
+  color: var(--bad);
+}
+
+.kv {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.kv div {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+}
+.kv dt {
+  color: var(--muted);
+}
+.kv dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.list li {
+  font-size: 22px;
+  padding: 12px 14px;
+  border-radius: 14px;
+}
+.list li.sel {
+  background: #15171b;
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.offline {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  background: #2a1214;
+  color: #ffb4b4;
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+
+/* ---- desktop simulator ---- */
+
+.sim {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  background: #101114;
+}
+.sim-device {
+  width: 427px;
+  height: 569px;
+  border-radius: 28px;
+  overflow: hidden;
+  outline: 14px solid #ff6a13;
+  box-shadow: 0 30px 80px rgb(0 0 0 / 0.6);
+}
+.sim-help {
+  max-width: 280px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.sim-help h1 {
+  color: var(--fg);
+  font-size: 20px;
+}
+kbd {
+  background: #22252b;
+  border-radius: 4px;
+  padding: 1px 6px;
+  color: var(--fg);
+}
+
+/* ---- installed apps (ported runtime, rendered in the shell: ADR-0006) ---- */
+
+.enee-host {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin: 0 -14px -12px;
+}
+.enee-host > .enee-app {
+  min-height: 100%;
+}
+/* The wheel's focus ring (apps/focus.ts). */
+.r1-focus {
+  outline: 3px solid var(--accent, #ff8a3d) !important;
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+
+/* ---- New app (create.tsx) ---- */
+
+.create {
+  gap: 10px;
+}
+.create-talk {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  padding: 14px;
+  border-radius: 14px;
+  background: #121418;
+}
+.create-input {
+  width: 100%;
+  font: inherit;
+  font-size: 18px;
+  color: var(--fg);
+  background: #15171b;
+  border: 1px solid #2a2d33;
+  border-radius: 14px;
+  padding: 10px 12px;
+  resize: none;
+}
+.create-go {
+  font-size: 20px;
+  font-weight: 700;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--accent);
+  color: #1d0d02;
+}
+.create-go:disabled {
+  opacity: 0.4;
+}
+.examples button {
+  width: 100%;
+  text-align: left;
+  font-size: 16px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #15171b;
+}
+.create-progress {
+  text-align: center;
+  gap: 12px;
+}
+.create-brief {
+  font-size: 15px;
+  color: var(--muted);
+  max-width: 90%;
+}
+.create-stage {
+  font-size: 22px;
+  font-weight: 700;
+}
+.big-ok {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ok);
+}
+/* The New app screen's progress orb (create.tsx). */
+.orb {
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ffb27a, #ff6a00 60%, #7a2a00);
+}
+@keyframes pulse {
+  50% {
+    transform: scale(1.12);
+  }
+}
+.orb.small {
+  width: 72px;
+  height: 72px;
+}
+.orb.small.live {
+  animation: pulse 1.1s ease-in-out infinite;
+}
+.sim-mic {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+}

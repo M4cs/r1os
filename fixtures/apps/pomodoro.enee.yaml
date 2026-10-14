@@ -1,0 +1,72 @@
+# Hand-written for the M2 exit (a pomodoro with live data, triggers and permissions): focus and break sessions, a
+# notification when one ends, and today's finished pomodoros. The minute trigger keeps the time left current.
+enee: 1
+app: { id: pomodoro, name: Pomodoro, icon: timer, archetype: timer, accent: red, description: Focus in 25 minute sessions with short breaks. }
+permissions:
+  notify: Tell you when a focus session or a break ends
+  schedule: Check every minute whether a session has ended, while eneeware runs
+settings:
+  focus_min: { type: int, default: 25, label: Focus (minutes), min: 1, max: 120 }
+  break_min: { type: int, default: 5, label: Break (minutes), min: 1, max: 60 }
+data:
+  sessions:
+    kind: enum(focus|break) = focus
+    started_at: datetime = now
+    ended_at: datetime
+    finished: bool = false
+  _indexes: [ sessions(started_at) ]
+queries:
+  active:
+    sql: >
+      SELECT s.id, s.kind, s.started_at,
+        datetime(s.started_at, '+' || (CASE s.kind WHEN 'focus' THEN t.focus_min ELSE t.break_min END) || ' minutes') AS ends_at,
+        max(0, CAST(round((CASE s.kind WHEN 'focus' THEN t.focus_min ELSE t.break_min END)
+          - (julianday(now()) - julianday(s.started_at)) * 1440) AS INTEGER)) AS minutes_left
+      FROM sessions s, settings t
+      WHERE s.ended_at IS NULL
+      ORDER BY s.started_at DESC LIMIT 1
+  today: SELECT count(*) AS done FROM sessions WHERE kind = 'focus' AND finished AND is_today(started_at)
+  recent: SELECT id, kind, started_at, ended_at, finished FROM sessions WHERE ended_at IS NOT NULL ORDER BY started_at DESC LIMIT 10
+actions:
+  focus:
+    do:
+      - sql: UPDATE sessions SET ended_at = now() WHERE ended_at IS NULL
+      - sql: INSERT INTO sessions (kind) VALUES ('focus')
+  break:
+    do:
+      - sql: UPDATE sessions SET ended_at = now() WHERE ended_at IS NULL
+      - sql: INSERT INTO sessions (kind) VALUES ('break')
+  stop:
+    do:
+      - sql: UPDATE sessions SET ended_at = now() WHERE ended_at IS NULL
+views:
+  main:
+    - timer: { label: "{{active.0.kind | default:Ready}}", until: "{{active.0.ends_at}}", caption: left, done: Time's up }
+    - stat: { label: Today, value: "{{today.done}}", caption: pomodoros }
+    - row:
+        - button: { label: Focus, action: focus }
+        - button: { label: Break, action: break, variant: secondary }
+        - button: { label: Stop, action: stop, variant: secondary }
+    - list:
+        data: recent
+        title: "{{row.kind}}"
+        caption: "{{row.started_at | relative}}"
+        empty: Finished sessions show here
+triggers:
+  focus_done:
+    every: 1m
+    when: SELECT EXISTS (SELECT 1 FROM sessions, settings WHERE ended_at IS NULL AND kind = 'focus' AND (julianday(now()) - julianday(started_at)) * 1440 >= focus_min)
+    do:
+      - sql: UPDATE sessions SET ended_at = now(), finished = 1 WHERE ended_at IS NULL AND kind = 'focus'
+      - notify: { title: Focus session done, body: "Time for a break · {{today.done}} today" }
+  break_done:
+    every: 1m
+    when: SELECT EXISTS (SELECT 1 FROM sessions, settings WHERE ended_at IS NULL AND kind = 'break' AND (julianday(now()) - julianday(started_at)) * 1440 >= break_min)
+    do:
+      - sql: UPDATE sessions SET ended_at = now(), finished = 1 WHERE ended_at IS NULL AND kind = 'break'
+      - notify: { title: Break's over, body: Ready for the next focus session? }
+checks:
+  - do: [ { action: focus } ]
+    expect: { active.0.kind: focus, active.0.minutes_left: 25 }
+  - do: [ { action: focus }, { action: stop } ]
+    expect: { today.done: 0, recent.0.kind: focus }

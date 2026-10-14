@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      The shell draws its own focus (the wheel's highlight and ring), and the R1 never leaves
+      keyboard mode (there's no touch until you touch it), so Android's default focus highlight
+      would grey out whichever view happens to hold focus.
+    -->
+    <style name="R1os" parent="@android:style/Theme.DeviceDefault.NoActionBar.Fullscreen">
+        <item name="android:defaultFocusHighlightEnabled">false</item>
+        <item name="android:windowBackground">@android:color/black</item>
+    </style>
+
+    <!--
+      Over another app (ADR-0027, OverActivity): see-through, no window animation, no dimming. The app
+      underneath stays on screen.
+    -->
+    <style name="R1os.Over" parent="R1os">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowShowWallpaper">false</item>
+    </style>
+</resources>

@@ -1,0 +1,20 @@
+# Verbose boot (T-101): /system/bin/r1os-bootlog, which init starts at `on init`. With the flag on /metadata, it
+# draws the kernel's log on the framebuffer until SurfaceFlinger starts; without it, it exits at once.
+type r1os_bootlog, domain, coredomain;
+type r1os_bootlog_exec, system_file_type, exec_type, file_type;
+init_daemon_domain(r1os_bootlog)
+
+# Waiting for /metadata to be mounted (/proc/mounts), then looking for the flag.
+allow r1os_bootlog proc:file r_file_perms;
+allow r1os_bootlog metadata_file:dir search;
+allow r1os_bootlog r1os_metadata_file:dir search;
+allow r1os_bootlog r1os_metadata_file:file getattr;
+
+# The kernel's log (reading /dev/kmsg also takes syslog_read: v0.2.15's first boot was refused it), and the screen.
+allow r1os_bootlog kmsg_device:chr_file r_file_perms;
+allow r1os_bootlog kernel:system syslog_read;
+allow r1os_bootlog graphics_device:dir search;
+allow r1os_bootlog graphics_device:chr_file { rw_file_perms map };
+
+# When SurfaceFlinger is up (init.svc.surfaceflinger), it stops: the display is SurfaceFlinger's.
+get_prop(r1os_bootlog, init_service_status_prop)

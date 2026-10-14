@@ -1,0 +1,52 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "r1os Companion",
+  "version": "0.1.0",
+  "identifier": "dev.r1os.companion",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "r1os",
+        "width": 1120,
+        "height": 740,
+        "minWidth": 880,
+        "minHeight": 600,
+        "center": true,
+        "decorations": false,
+        "visible": false,
+        "dragDropEnabled": false,
+        "backgroundColor": "#0b0b0c"
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "nsis"
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico"
+    ],
+    "publisher": "r1os",
+    "shortDescription": "Your R1, on your computer",
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "displayLanguageSelector": false
+      }
+    }
+  }
+}

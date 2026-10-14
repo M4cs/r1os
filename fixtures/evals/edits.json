@@ -1,0 +1,26 @@
+[
+  {
+    "name": "water: a weekly total",
+    "app": "fixtures/apps/water.enee.yaml",
+    "as": "eval-water",
+    "seed": [{"action": "drink", "params": {"count": 2}}, {"action": "drink", "params": {"count": 3}}],
+    "request": "Also show how many glasses I drank this week in total",
+    "rows": {"query": "recent", "count": 2}
+  },
+  {
+    "name": "water: water or tea",
+    "app": "fixtures/apps/water.enee.yaml",
+    "as": "eval-water",
+    "seed": [{"action": "drink", "params": {"count": 1}}, {"action": "drink", "params": {"count": 2}}, {"action": "drink", "params": {"count": 1}}],
+    "request": "Let me log whether each glass was water or tea, water by default",
+    "rows": {"query": "recent", "count": 3}
+  },
+  {
+    "name": "expenses: a payee",
+    "app": "fixtures/apps/expenses.enee.yaml",
+    "as": "eval-expenses",
+    "seed": [{"action": "add", "params": {"amount": 12.5, "category": "food"}}, {"action": "add", "params": {"amount": 30, "category": "bills", "note": "phone"}}],
+    "request": "Add who I paid to each expense, and show it in the list",
+    "rows": {"query": "recent", "count": 2}
+  }
+]

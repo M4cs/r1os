@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="starting">Starting r1os…</string>
+    <string name="keyboard_name">r1os keyboard</string>
+    <string name="app_reader_name">r1os app window</string>
+    <string name="app_reader_about">Reads the app an agent is using in r1os\'s app window, only while it\'s open.</string>
+    <string name="waiting_for_r1d">Waiting for r1d…</string>
+</resources>

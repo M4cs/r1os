@@ -1,0 +1,23 @@
+[package]
+name = "r1-usb"
+description = "The companion's USB layer for installing r1os on an R1 (ADR-0065, T-167): platform-tools, the R1 in each mode, and what may be written"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = "0.10"
+ureq = "2"
+zip = { version = "2", default-features = false, features = ["deflate"] }
+
+# The R1s plugged in, whatever their driver: Windows' configuration manager lists a device with none (nusb doesn't);
+# elsewhere, nusb.
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Devices_DeviceAndDriverInstallation"] }
+
+[target.'cfg(not(windows))'.dependencies]
+nusb = "0.1"

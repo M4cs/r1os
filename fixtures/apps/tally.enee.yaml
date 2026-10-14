@@ -1,0 +1,35 @@
+enee: 1
+app: { id: tally, name: Tally, icon: hash, accent: orange, description: "Counters, laid out by the app's own logic." }
+data:
+  counts: { name: text!, n: int = 0 }
+queries:
+  all: SELECT id, name, n FROM counts ORDER BY id
+actions:
+  add:
+    params: { name: text }
+    do: [ { sql: "INSERT INTO counts (name) VALUES (:name)" } ]
+  bump:
+    params: { id: int }
+    do: [ { sql: "UPDATE counts SET n = n + 1 WHERE id = :id" } ]
+  seed:
+    do: [ { run: seed } ]
+views:
+  main:
+    - logic_view: board
+    - button: { label: Add counters, action: seed }
+logic:
+  values: [board]
+  actions: [seed]
+  script: |
+    r1.on("change", () => {
+      const rows = r1.q.all;
+      r1.set("board", rows.length
+        ? { type: "Stack", gap: "sm", children: rows.map((r) => ({ type: "Row", children: [
+            { type: "Stat", label: r.name, value: r.n },
+            { type: "Button", label: "+1", press: "bump", args: { id: r.id } },
+          ] })) }
+        : { type: "EmptyState", text: "No counters yet", icon: "hash" });
+    });
+    r1.action("seed", async () => {
+      for (const name of ["coffee", "water", "steps"]) await r1.run("add", { name });
+    });

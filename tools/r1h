@@ -1,0 +1,248 @@
+#!/usr/bin/env bash
+# r1h: the r1os harness CLI (the R1's counterpart of eneeware's enee-harness, ADR-0013 there).
+# Talks to r1d's /api and /harness endpoints: on the R1 through `adb forward` (local port 7172, so
+# the simulator can keep 7171), or to the desktop simulator (tools/sim.sh) with R1H_TARGET=sim.
+#
+#   tools/r1h state                     r1d state + the last 50 events
+#   tools/r1h events [after-seq]        events after a sequence number
+#   tools/r1h wheel <n>                 n simulated detents (negative = up)
+#   tools/r1h button tap|double|down|up
+#   tools/r1h button hold [ms]          default 1000
+#   tools/r1h motor <deg>               0–180 (moves the camera: ask first on the device)
+#   tools/r1h screen on|off
+#   tools/r1h open settings|wifi|bluetooth|developer|about
+#   tools/r1h launch <app-id>           open an installed app on screen
+#   tools/r1h screenshot [name]         → artifacts/screenshots/<name>.png (device only)
+#   tools/r1h logs [lines]              tail of /data/r1os/log/r1d.log (device only)
+#   tools/r1h apps                      installed enee apps
+#   tools/r1h install <file.enee.yaml>  compile + install a spec (prints diagnostics if it's rejected)
+#   tools/r1h remove <app-id>           remove an app and its data
+#   tools/r1h export <app-id> [file] [--data]   save an app's spec (default <app-id>.enee.yaml); --data: with its
+#                                       data and settings (<app-id>.enee.json, which install puts back; T-048)
+#   tools/r1h create "<brief>" [model]  build an app in the agent box and follow its progress (device only)
+#   tools/r1h power [seconds] [--json]  battery, CPU per process, suspends and wakeups over a window (default 60 s; T-032)
+#   tools/r1h power mark <name>         a snapshot in artifacts/power (across an unplug: mark, unplug, plug back, mark)
+#   tools/r1h power diff <a> <b>        what was used between two marks
+#   tools/r1h perf [reset]              r1d's latency marks and the host's frame times (since the last reset)
+#   tools/r1h bootanim [default]        the host draws the boot animation now (T-029); `default`: r1os's own cast,
+#                                       pulled into out/bootanim for the image (device only)
+set -euo pipefail
+source "$(dirname "$0")/lib.sh"
+need curl
+PY=$(command -v python3 || command -v python || true)
+AUTH=() # r1d's token on the device (ADR-0026); the simulator is open
+
+TARGET=${R1H_TARGET:-device}
+BASE=http://127.0.0.1:7171
+if [ "$TARGET" = device ]; then
+  need adb
+  adb_ready || die "No R1 over adb (or use R1H_TARGET=sim for the simulator)."
+  BASE=$(r1d_forward)
+  TOKEN=$(r1d_token)
+  [ -n "$TOKEN" ] && AUTH=(-H "Authorization: Bearer $TOKEN")
+fi
+
+pretty() { if [ -n "$PY" ]; then "$PY" -m json.tool; else cat; fi; }
+get() { curl -sf -m 10 "${AUTH[@]}" "$BASE$1" || die "GET $1 failed (is r1d running with --harness?)"; }
+post() { curl -sf -m 40 "${AUTH[@]}" -H 'Content-Type: application/json' -d "$2" "$BASE$1" || die "POST $1 failed (is r1d running with --harness?)"; }
+
+events_table() {
+  [ -n "$PY" ] || { cat; return; }
+  "$PY" -c '
+import json, sys
+data = json.load(sys.stdin)
+for e in (data["events"] if isinstance(data, dict) else data):
+    seq, t, src, typ = e.pop("seq"), e.pop("t_ms") / 1000, e.pop("source"), e.pop("type")
+    print(f"{seq:>5} {t:>9.3f}s {src:<4} {typ:<17} {e or str()}")'
+}
+
+# The device's own counters, one per line (tools/power.py reads two of them).
+power_snap() {
+  adb shell 'b=/sys/class/power_supply/battery
+echo "T $(cut -d" " -f1 /proc/uptime)"
+echo "B $(cat $b/charge_counter) $(cat $b/current_now) $(cat $b/voltage_now) $(cat $b/capacity) $(cat $b/charge_full) $(cat $b/status)"
+echo "S $(cat /sys/power/suspend_stats/success)"
+echo "G $(cat /sys/class/power_supply/mtk-gauge/coulomb_get 2>/dev/null) $(cat /sys/class/power_supply/mtk-gauge/battery_current_get 2>/dev/null)"
+echo "D $(dumpsys power 2>/dev/null | grep -m1 mWakefulness=) $(dumpsys display 2>/dev/null | grep -m1 mScreenState=)"
+echo "C $(head -1 /proc/stat)"
+cd /sys/class/wakeup && for w in wakeup*; do read c < $w/wakeup_count; read e < $w/event_count; read n < $w/name; echo "W $c $e $n"; done 2>/dev/null
+cat /proc/[0-9]*/stat 2>/dev/null | sed "s/^/P /"' | tr -d '\r'
+}
+
+cmd=${1:-state}
+shift || true
+case "$cmd" in
+  power)
+    [ "$TARGET" = device ] || die "power: on the R1 only"
+    [ -n "$PY" ] || die "power needs python"
+    # Windows' python reads Git Bash's /tmp by its Windows path.
+    win() { if command -v cygpath >/dev/null; then cygpath -w "$1"; else printf '%s' "$1"; fi; }
+    marks="$ROOT/artifacts/power"
+    case "${1:-}" in
+      # Across an unplug (no adb in between, so nothing of ours runs): mark, unplug, leave it, plug back in, mark, diff.
+      mark)
+        mkdir -p "$marks"
+        power_snap > "$marks/${2:?power mark <name>}.txt"
+        say "marked ${2} ($(grep '^B ' "$marks/${2}.txt" | cut -d' ' -f5,7-)%)"
+        ;;
+      diff)
+        "$PY" "$(dirname "$0")/power.py" "$(win "$marks/${2:?power diff <a> <b>}.txt")" "$(win "$marks/${3:?power diff <a> <b>}.txt")" ${4:-}
+        ;;
+      *)
+        secs=${1:-60}
+        json=; [ "${2:-}" = --json ] && json=--json
+        A=$(mktemp); B=$(mktemp)
+        power_snap > "$A"
+        say "measuring for ${secs} s (for a drain figure: unplugged, or r1h power mark/diff across an unplug)…" >&2
+        sleep "$secs"
+        adb_ready >/dev/null 2>&1 || true
+        power_snap > "$B"
+        "$PY" "$(dirname "$0")/power.py" "$(win "$A")" "$(win "$B")" $json
+        rm -f "$A" "$B"
+        ;;
+    esac
+    ;;
+  perf)
+    if [ "${1:-}" = reset ]; then
+      curl -sf -m 10 -X DELETE "${AUTH[@]}" "$BASE/harness/perf" >/dev/null || die "DELETE /harness/perf failed"
+      [ "$TARGET" = device ] && adb shell dumpsys gfxinfo dev.r1os.host reset >/dev/null
+      say "perf reset"
+    else
+      get /harness/perf | "${PY:-cat}" -c '
+import json, sys
+d = json.load(sys.stdin)
+print("%-32s %4s %8s %8s %8s %8s   (ms)" % ("mark", "n", "last", "p50", "p90", "max"))
+for n, s in d["stats"].items():
+    print("%-32s %4d %8d %8d %8d %8d" % (n, s["n"], s["last"], s["p50"], s["p90"], s["max"]))
+if not d["stats"]:
+    print("no marks yet: talk to an agent, or `r1h perf reset` then use the R1")'
+      if [ "$TARGET" = device ]; then
+        echo "-- frames (dev.r1os.host, since the last reset)"
+        adb shell dumpsys gfxinfo dev.r1os.host | tr -d '\r' | grep -E "Total frames rendered|Janky frames:|50th percentile|90th percentile|95th percentile|99th percentile|Number Missed Vsync|Number Slow UI thread" | head -9
+      fi
+    fi
+    ;;
+  state)
+    S=$(get /harness/state)
+    printf '%s' "$S" | "${PY:-cat}" -c 'import json,sys; s=json.load(sys.stdin); s.pop("events",None); print(json.dumps(s, indent=2))' 2>/dev/null || printf '%s\n' "$S"
+    echo "-- last events"
+    printf '%s' "$S" | events_table
+    ;;
+  events) get "/harness/events?after=${1:-0}" | events_table ;;
+  wheel) post /harness/wheel "{\"delta\":${1:?wheel <n>}}" >/dev/null && say "wheel ${1}" ;;
+  button)
+    a=${1:?button tap|double|hold [ms]|down|up}
+    if [ "$a" = hold ]; then post /harness/button "{\"action\":\"hold\",\"ms\":${2:-1000}}" >/dev/null
+    else post /harness/button "{\"action\":\"$a\"}" >/dev/null; fi
+    say "button $a"
+    ;;
+  motor) post /api/motor "{\"deg\":${1:?motor <deg>}}" | pretty ;;
+  screen)
+    case "${1:-}" in on) post /api/screen '{"on":true}' | pretty ;; off) post /api/screen '{"on":false}' | pretty ;; *) die "screen on|off" ;; esac
+    ;;
+  open) post /api/android/open "{\"screen\":\"${1:?open <screen>}\"}" | pretty ;;
+  launch) post /harness/open "{\"app\":\"${1:?launch <app-id>}\"}" >/dev/null && say "launched ${1}" ;;
+  bootanim)
+    [ "$TARGET" = device ] || die "The boot animation needs the device."
+    d=false; [ "${1:-}" = default ] && d=true
+    key=$([ "$d" = true ] && echo default || echo animation)
+    before=$(get /api/boot)
+    post /harness/bootanim "{\"default\":$d}" >/dev/null
+    say "drawing it (a few seconds)…"
+    for _ in $(seq 1 60); do
+      sleep 2
+      now=$(get /api/boot)
+      [ "$now" != "$before" ] && printf '%s' "$now" | grep -q "\"$key\":{" && break
+    done
+    [ "$now" != "$before" ] || die "the host didn't draw it (is the shell up?)"
+    if [ "$d" = true ]; then
+      mkdir -p "$OUT/bootanim"
+      adb pull /data/r1os/boot/default.zip "$OUT/bootanim/bootanimation.zip" >/dev/null
+      say "$OUT/bootanim/bootanimation.zip ($(( $(stat -c %s "$OUT/bootanim/bootanimation.zip") / 1024 )) KiB)"
+    else
+      printf '%s
+' "$now"
+    fi
+    ;;
+  screenshot)
+    [ "$TARGET" = device ] || die "Screenshots need the device; in the simulator, use the browser."
+    mkdir -p "$ROOT/artifacts/screenshots"
+    f="$ROOT/artifacts/screenshots/${1:-shot-$(date +%Y%m%d-%H%M%S)}.png"
+    # r1d's own capture, else adb's (r1d's screencap hangs on images before v0.2.6: SELinux).
+    if ! curl -sf -m 20 "${AUTH[@]}" "$BASE/harness/screenshot" -o "$f"; then
+      adb exec-out screencap -p > "$f" && [ -s "$f" ] || die "screenshot failed"
+    fi
+    echo "$f"
+    ;;
+  logs)
+    [ "$TARGET" = device ] || die "In the simulator, r1d logs to its own terminal."
+    detect_root || die "Needs root over adb."
+    root_sh "tail -n ${1:-60} /data/r1os/log/r1d.log" | tr -d '\r'
+    ;;
+  apps) get /api/apps | pretty ;;
+  install)
+    f=${1:?install <file.enee.yaml|file.enee.json>}
+    [ -f "$f" ] || die "no such file: $f"
+    [ -n "$PY" ] || die "install needs python (to JSON-encode the spec)"
+    # A spec, or an export with its data (`export --data`: its rows and settings go back in too).
+    body=$("$PY" -c 'import json,sys
+t = open(sys.argv[1], encoding="utf-8").read()
+if sys.argv[1].endswith(".json"):
+    b = json.loads(t)
+    print(json.dumps({k: b[k] for k in ("source", "data", "settings") if k in b}))
+else:
+    print(json.dumps({"source": t}))' "$f")
+    out=$(curl -s -m 40 "${AUTH[@]}" -H 'Content-Type: application/json' -d "$body" "$BASE/api/apps") || die "POST /api/apps failed"
+    printf '%s' "$out" | pretty
+    printf '%s' "$out" | grep -q '"ok": *true' || exit 1
+    ;;
+  remove) curl -sf -m 20 "${AUTH[@]}" -X DELETE "$BASE/api/apps/${1:?remove <app-id>}" | pretty ;;
+  export)
+    # An app's spec, to share or keep (install it with `install`); --data: with its data and settings (T-048).
+    data=0; rest=(); for a in "$@"; do if [ "$a" = --data ]; then data=1; else rest+=("$a"); fi; done; set -- "${rest[@]}"
+    id=${1:?export <app-id> [file] [--data]}
+    [ -n "$PY" ] || die "export needs python"
+    if [ "$data" = 1 ]; then
+      f=${2:-$id.enee.json}
+      get "/api/apps/$id/export" | "$PY" -c 'import json,sys; json.dump(json.load(sys.stdin), sys.stdout, indent=1, ensure_ascii=False)' > "$f" || die "no app $id"
+    else
+      f=${2:-$id.enee.yaml}
+      get "/api/apps/$id" | "$PY" -c 'import json,sys; sys.stdout.write(json.load(sys.stdin)["source"])' > "$f" || die "no app $id"
+    fi
+    say "wrote $f"
+    ;;
+  create)
+    brief=${1:?create "<brief>" [model]}
+    [ -n "$PY" ] || die "create needs python"
+    since=$(get "/harness/events?after=0" | "$PY" -c 'import json,sys; e=json.load(sys.stdin); print(e[-1]["seq"] if e else 0)')
+    body=$("$PY" -c 'import json,sys; d={"brief": sys.argv[1]}; d.update({"model": sys.argv[2]} if len(sys.argv) > 2 and sys.argv[2] else {}); print(json.dumps(d))' "$brief" "${2:-}")
+    out=$(curl -s -m 20 "${AUTH[@]}" -H 'Content-Type: application/json' -d "$body" "$BASE/api/create")
+    id=$(printf '%s' "$out" | "$PY" -c 'import json,sys; print(json.load(sys.stdin).get("build",""))' 2>/dev/null || true)
+    [ -n "$id" ] || die "create failed: $out"
+    say "build $id started"
+    while sleep 1; do
+      evs=$(get "/harness/events?after=$since")
+      res=$(printf '%s' "$evs" | "$PY" -c '
+import json, sys
+bid, since = int(sys.argv[1]), int(sys.argv[2])
+last, end = since, ""
+for e in json.load(sys.stdin):
+    last = max(last, e["seq"])
+    if e.get("type") != "build" or e.get("id") != bid:
+        continue
+    st = e["stage"]
+    extra = " ".join(f"{k}={e[k]}" for k in ("section", "chars", "app", "cost_usd", "seconds", "error") if e.get(k) is not None)
+    t = e["t_ms"] / 1000
+    print(f"  {t:8.1f}s {st:<10} {extra}", file=sys.stderr)
+    for p in e.get("problems") or []:
+        print(f"             - {p}", file=sys.stderr)
+    if st in ("done", "failed"):
+        end = st
+print(last, end)' "$id" "$since")
+      since=${res%% *}
+      case "$res" in *" done") say "built"; break ;; *" failed") die "build failed" ;; esac
+    done
+    ;;
+  -h|--help|help) sed -n '2,21p' "$0" | sed 's/^# \{0,1\}//' ;;
+  *) die "unknown command '$cmd' (tools/r1h help)" ;;
+esac

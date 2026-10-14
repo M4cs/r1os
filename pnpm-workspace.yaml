@@ -1,0 +1,5 @@
+packages:
+  - "shell"
+  - "companion"
+  - "web"
+  - "packages/*"

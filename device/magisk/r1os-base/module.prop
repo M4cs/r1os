@@ -1,0 +1,6 @@
+id=r1os_base
+name=r1os base
+version=v0.2.2
+versionCode=4
+author=Max
+description=r1os on Rabbit R1: starts r1d, side button -> BUTTON_1 (no longer power), declares app widgets (fixes the Launcher3 crash loop), Rabbit's USB CUA mode off.

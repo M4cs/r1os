@@ -1,0 +1,60 @@
+# The agent box (ADR-0003, ADR-0035): the `claude` and `codex` CLIs and everything they run, as uid 2950 in
+# r1d's jail (a chroot into an Alpine userland, its own mount namespace, no capabilities, no_new_privs,
+# seccomp). This domain is the jail's SELinux half: the box's files, its own /tmp and /dev, the network,
+# and r1d's pipes and API. Nothing of Android's: no binder, no properties, no devices beyond /dev's few
+# nodes, no other app's or r1d's data, and it can't write the code r1d runs.
+#
+# r1d enters it by setcon (dyntransition) at the end of the jail's setup, just before the exec: Android
+# allows entrypoints only from /system and /vendor files, and the box's programs live in /data. Permissive
+# in v0.2.7 like r1d, enforced from v0.2.8.
+type r1d_agent, domain, coredomain;
+
+# ---- Its files
+# The Alpine userland: read and run, never written (its owner, root, installs it).
+allow r1d_agent r1os_agent_root_file:dir r_dir_perms;
+allow r1d_agent r1os_agent_root_file:{ file lnk_file } r_file_perms;
+allow r1d_agent r1os_agent_root_file:file rx_file_perms;
+# The home (the CLIs, which update themselves there, and their logins and settings), the workspace and
+# its own chat stores: its own, and it runs what it builds.
+allow r1d_agent r1os_agent_file:dir create_dir_perms;
+allow r1d_agent r1os_agent_file:{ file lnk_file sock_file fifo_file } create_file_perms;
+allow r1d_agent r1os_agent_file:file rx_file_perms;
+
+# /tmp and /dev are tmpfs (r1d mounts them for each jail). Nothing on them runs: Android's neverallow on
+# executing from tmpfs stands.
+allow r1d_agent tmpfs:dir create_dir_perms;
+allow r1d_agent tmpfs:{ file lnk_file sock_file fifo_file } create_file_perms;
+# Its own devpts (pseudo-terminals); /dev/null, zero, random, urandom and tty come with every domain.
+allow r1d_agent devpts:dir r_dir_perms;
+allow r1d_agent devpts:chr_file { rw_file_perms setattr };
+# Opening one: the box's /dev/ptmx is its devpts's own ptmx, labeled devpts, where Android allows only
+# the terminal ioctls (unpriv_tty_ioctls). Unlocking the pair and naming the other end need two more.
+allowxperm r1d_agent devpts:chr_file ioctl { TIOCSPTLCK TIOCGPTN FIONBIO FIONREAD };
+
+# Its /proc: its own processes come with every domain; these are what Node, Bun and Codex read (and, seen
+# on v0.2.7, Bun's memory setup and ripgrep: overcommit_memory, mmap_min_addr).
+allow r1d_agent { proc proc_meminfo proc_version proc_stat proc_loadavg proc_uptime proc_overcommit_memory proc_security }:file r_file_perms;
+
+# The JIT of the CLIs' JavaScript runtimes.
+allow r1d_agent self:process execmem;
+
+# ---- r1d
+# Its stdin, stdout and stderr are r1d's pipes; it calls r1d's API and MCP tools on 127.0.0.1:7171.
+allow r1d_agent r1d:fd use;
+allow r1d_agent r1d:fifo_file { read write getattr ioctl };
+allow r1d_agent r1d:process sigchld;
+
+# ---- Ioctls
+# Android allows only a short list on files, pipes and sockets (FIOCLEX, TCGETS, ...). The box's
+# programs make the usual calls on theirs, seen on v0.2.7: is it a terminal, how wide, which process
+# group (the CLIs, bash, getconf), non-blocking and bytes waiting (libuv), and FICLONE before a copy
+# (Bun). Refused, they'd get EACCES where the kernel answers ENOTTY or EOPNOTSUPP, which not every
+# program takes as "no".
+allowxperm r1d_agent { r1d r1d_agent }:fifo_file ioctl { TCGETS TIOCGWINSZ TIOCGPGRP TIOCGPTN FIONBIO FIONREAD };
+allowxperm r1d_agent r1d_agent:{ unix_stream_socket unix_dgram_socket } ioctl { TIOCGPGRP FIONBIO };
+allowxperm r1d_agent { r1os_agent_file r1os_agent_root_file tmpfs }:file ioctl { TCGETS TIOCGWINSZ TIOCGPGRP FIONBIO FIONREAD 0x9409 };
+
+# ---- Network
+# The model providers' APIs, package registries, and whatever the agent fetches: like an app with INTERNET
+# (the jail adds the inet group). DNS from the box's resolv.conf, straight to the network's servers.
+net_domain(r1d_agent)

@@ -1,0 +1,28 @@
+[package]
+name = "r1os-companion"
+description = "r1os Companion: your R1, on your computer (ADR-0047)"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+anyhow = "1.0.104"
+axum = "0.8.9"
+base64 = "0.22"
+getrandom = "0.4.3"
+qrcode = { version = "0.14.1", default-features = false, features = ["svg"] }
+r1-link = { version = "0.1.0", path = "../../crates/r1-link" }
+r1-usb = { version = "0.1.0", path = "../../crates/r1-usb" }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-autostart = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
+tokio = { version = "1.53.2", features = ["rt-multi-thread", "macros", "sync", "time", "process", "io-util", "net"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "fmt"] }

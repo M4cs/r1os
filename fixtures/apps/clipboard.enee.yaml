@@ -1,0 +1,86 @@
+# Hand-written for ADR-0022 (Max asked for a clipboard history with text, images and copied files): the clipboard
+# service records each copy into `clips`, keeping the newest 500 and every pinned one. The lists show a short preview;
+# copying an item back reads it whole by id, so a long text never crosses the bridge in a list.
+enee: 1
+app: { id: clipboard, name: Clipboard, icon: clipboard-text, archetype: list, accent: purple, description: "Everything you copy: text, images and files, ready to copy again." }
+permissions:
+  clipboard.read: Keep a history of what you copy, on this PC only
+data:
+  clips:
+    kind: enum(text|image|files)!
+    text: text
+    files: text
+    image: text
+    thumb: text
+    source: text
+    pinned: bool = false
+  _indexes: [ clips(pinned) ]
+queries:
+  counts: SELECT count(*) AS total, count(*) FILTER (WHERE pinned) AS pinned, count(*) FILTER (WHERE NOT pinned) AS unpinned FROM clips
+  pinned:
+    sql: SELECT id, substr(text, 1, 200) AS text, thumb, created_at, coalesce(' · ' || source, '') AS source FROM clips WHERE pinned AND (:q = '' OR text LIKE '%' || :q || '%' OR files LIKE '%' || :q || '%') ORDER BY id DESC
+    params: { q: "{{state.query}}" }
+  recent:
+    sql: SELECT id, substr(text, 1, 200) AS text, thumb, created_at, coalesce(' · ' || source, '') AS source FROM clips WHERE NOT pinned AND (:q = '' OR text LIKE '%' || :q || '%' OR files LIKE '%' || :q || '%') ORDER BY id DESC LIMIT 100
+    params: { q: "{{state.query}}" }
+  chosen:
+    sql: SELECT text, image, files FROM clips WHERE id = :id
+    params: { id: "{{state.chosen}}" }
+state:
+  query: ""
+  chosen: 0
+services:
+  history: { use: clipboard, into: clips, limit: 500 }
+actions:
+  copy_clip:
+    params: { id: int }
+    do:
+      - set: { state.chosen: "{{params.id}}" }
+      - refresh: chosen
+      - copy: { text: "{{chosen.text}}", image: "{{chosen.image}}", files: "{{chosen.files}}" }
+      - toast: Copied
+  pin:
+    params: { id: int }
+    do:
+      - sql: UPDATE clips SET pinned = 1 WHERE id = :id
+  unpin:
+    params: { id: int }
+    do:
+      - sql: UPDATE clips SET pinned = 0 WHERE id = :id
+  remove:
+    params: { id: int }
+    do:
+      - sql: DELETE FROM clips WHERE id = :id
+  clear:
+    confirm: Clear the history? Pinned items stay.
+    do:
+      - sql: DELETE FROM clips WHERE NOT pinned
+views:
+  main:
+    - input: { bind: state.query, label: Search, placeholder: Text or file names }
+    - heading: { text: Pinned, visible: { when: counts.pinned, gt: 0 } }
+    - list:
+        data: pinned
+        title: "{{row.text}}"
+        caption: "{{row.created_at | relative}}{{row.source}}"
+        image: "{{row.thumb}}"
+        row_actions:
+          - { icon: copy, label: Copy, action: copy_clip, params: { id: "{{row.id}}" } }
+          - { icon: push-pin-slash, label: Unpin, action: unpin, params: { id: "{{row.id}}" } }
+        visible: { when: counts.pinned, gt: 0 }
+    - heading: { text: Recent, visible: { when: counts.pinned, gt: 0 } }
+    - list:
+        data: recent
+        title: "{{row.text}}"
+        caption: "{{row.created_at | relative}}{{row.source}}"
+        image: "{{row.thumb}}"
+        row_actions:
+          - { icon: copy, label: Copy, action: copy_clip, params: { id: "{{row.id}}" } }
+          - { icon: push-pin, label: Pin, action: pin, params: { id: "{{row.id}}" } }
+          - { icon: trash, label: Delete, action: remove, params: { id: "{{row.id}}" } }
+        empty: Nothing copied yet
+    - button: { label: Clear history, action: clear, variant: ghost, visible: { when: counts.unpinned, gt: 0 } }
+checks:
+  - expect: { counts.total: 0 }
+  - do: { action: clear }
+    expect: { counts.total: 0, counts.pinned: 0 }

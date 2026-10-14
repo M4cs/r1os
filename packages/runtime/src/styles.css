@@ -1,0 +1,839 @@
+/*
+ * @r1os/runtime: default theme for the v0 core catalog.
+ * Tokens are scoped to .enee-app (never :root) so an app can't restyle the shell. Dark is the default inside the
+ * overlay panel (design-systems.md §5); apps pick a *named* accent via data-accent.
+ * Motion: only transform/opacity animate (compositor-friendly); everything respects prefers-reduced-motion.
+ */
+
+.enee-app {
+  --enee-bg: #0b0b0c;
+  --enee-surface: #141417;
+  --enee-surface-2: #1a1a1e;
+  --enee-surface-hover: #212126;
+  --enee-hairline: rgb(255 255 255 / 0.045);
+  --enee-line: #26262b;
+  --enee-line-strong: #323238;
+  --enee-text: #f4f4f5;
+  --enee-text-2: #c8c8ce;
+  --enee-muted: #8f8f99;
+  --enee-faint: #5f5f68;
+  --enee-track: #1f1f24;
+  --enee-danger: #f2555a;
+  --enee-danger-soft: rgb(242 85 90 / 0.13);
+  --enee-on-danger: #fff;
+  --enee-accent: #e8e8ea;
+  --enee-accent-soft: rgb(232 232 234 / 0.12);
+  --enee-on-accent: #0b0b0c;
+  --enee-shadow: 0 10px 30px rgb(0 0 0 / 0.5);
+  --enee-radius-sm: 10px;
+  --enee-radius: 12px;
+  --enee-radius-lg: 18px;
+  --enee-font: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --enee-font-display: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --enee-ease: cubic-bezier(0.23, 1, 0.32, 1);
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  color: var(--enee-text);
+  font-family: var(--enee-font);
+  font-size: 14px;
+  line-height: 1.4;
+  color-scheme: dark;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Named accents (dark). */
+.enee-app[data-accent="orange"] { --enee-accent: #ff8a3d; --enee-accent-soft: rgb(255 138 61 / 0.14); --enee-on-accent: #1d0d02; }
+.enee-app[data-accent="amber"] { --enee-accent: #f5b83d; --enee-accent-soft: rgb(245 184 61 / 0.14); --enee-on-accent: #1f1502; }
+.enee-app[data-accent="yellow"] { --enee-accent: #f0d04a; --enee-accent-soft: rgb(240 208 74 / 0.14); --enee-on-accent: #1d1802; }
+.enee-app[data-accent="red"] { --enee-accent: #f2555a; --enee-accent-soft: rgb(242 85 90 / 0.14); --enee-on-accent: #fff; }
+.enee-app[data-accent="pink"] { --enee-accent: #f06aa8; --enee-accent-soft: rgb(240 106 168 / 0.14); --enee-on-accent: #22030f; }
+.enee-app[data-accent="purple"] { --enee-accent: #b07cf6; --enee-accent-soft: rgb(176 124 246 / 0.15); --enee-on-accent: #140726; }
+.enee-app[data-accent="indigo"] { --enee-accent: #8b8cf8; --enee-accent-soft: rgb(139 140 248 / 0.15); --enee-on-accent: #0b0b2b; }
+.enee-app[data-accent="blue"] { --enee-accent: #4ea1ff; --enee-accent-soft: rgb(78 161 255 / 0.14); --enee-on-accent: #021226; }
+.enee-app[data-accent="cyan"] { --enee-accent: #3cc8e0; --enee-accent-soft: rgb(60 200 224 / 0.14); --enee-on-accent: #021b20; }
+.enee-app[data-accent="teal"] { --enee-accent: #2fc4a8; --enee-accent-soft: rgb(47 196 168 / 0.14); --enee-on-accent: #021c17; }
+.enee-app[data-accent="green"] { --enee-accent: #4cc76b; --enee-accent-soft: rgb(76 199 107 / 0.14); --enee-on-accent: #04190a; }
+.enee-app[data-accent="lime"] { --enee-accent: #a8d84a; --enee-accent-soft: rgb(168 216 74 / 0.14); --enee-on-accent: #141d03; }
+
+/* Light (and system → light). The overlay defaults to dark; light exists so app.theme is honoured. */
+.enee-app[data-theme="light"] {
+  --enee-bg: #ffffff;
+  --enee-surface: #f4f4f6;
+  --enee-surface-2: #ececf0;
+  --enee-surface-hover: #e4e4e9;
+  --enee-hairline: rgb(0 0 0 / 0.05);
+  --enee-line: #dcdce2;
+  --enee-line-strong: #cbcbd3;
+  --enee-text: #16161a;
+  --enee-text-2: #3a3a42;
+  --enee-muted: #6b6b75;
+  --enee-faint: #a0a0aa;
+  --enee-track: #e6e6eb;
+  --enee-shadow: 0 10px 30px rgb(0 0 0 / 0.12);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: light) {
+  .enee-app[data-theme="system"] {
+    --enee-bg: #ffffff;
+    --enee-surface: #f4f4f6;
+    --enee-surface-2: #ececf0;
+    --enee-surface-hover: #e4e4e9;
+    --enee-hairline: rgb(0 0 0 / 0.05);
+    --enee-line: #dcdce2;
+    --enee-line-strong: #cbcbd3;
+    --enee-text: #16161a;
+    --enee-text-2: #3a3a42;
+    --enee-muted: #6b6b75;
+    --enee-faint: #a0a0aa;
+    --enee-track: #e6e6eb;
+    --enee-shadow: 0 10px 30px rgb(0 0 0 / 0.12);
+    color-scheme: light;
+  }
+}
+
+.enee-app *,
+.enee-app *::before,
+.enee-app *::after {
+  box-sizing: border-box;
+}
+
+/* The scroller sits in a viewport whose edges fade into the panel (static overlays, no mask on the scroller). */
+.enee-viewport {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+.enee-viewport::before,
+.enee-viewport::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 10px;
+  z-index: 1;
+  pointer-events: none;
+}
+.enee-viewport::before { top: 0; height: 10px; background: linear-gradient(var(--enee-bg), transparent); }
+.enee-viewport::after { bottom: 0; height: 18px; background: linear-gradient(transparent, var(--enee-bg)); }
+
+.enee-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px 16px 24px;
+}
+/* Slim overlay-style scrollbar without arrow buttons (::-webkit-scrollbar wins only while the standard
+   scrollbar-width/scrollbar-color properties are unset). */
+.enee-scroll::-webkit-scrollbar { width: 10px; }
+.enee-scroll::-webkit-scrollbar-track { background: transparent; }
+.enee-scroll::-webkit-scrollbar-button { display: none; height: 0; }
+.enee-scroll::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.12) padding-box;
+}
+.enee-scroll::-webkit-scrollbar-thumb:hover { background-color: rgb(255 255 255 / 0.22); }
+.enee-app[data-theme="light"] .enee-scroll::-webkit-scrollbar-thumb { background-color: rgb(0 0 0 / 0.18); }
+
+/* ---- shared text styles ------------------------------------------------------------------------------------ */
+
+.enee-label {
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--enee-muted);
+}
+
+/* ---- layout ------------------------------------------------------------------------------------------------- */
+
+.enee-stack {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.enee-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  min-width: 0;
+}
+.enee-row[data-wrap="true"] { flex-wrap: wrap; }
+.enee-row[data-align="center"] { justify-content: center; }
+.enee-row[data-align="end"] { justify-content: flex-end; }
+.enee-row[data-align="between"] { justify-content: space-between; }
+/* Quick-action rows: buttons share the width (a segmented look in the narrow panel). */
+.enee-row[data-align="start"] > .enee-button { flex: 1 1 0; min-width: 64px; }
+
+.enee-stack[data-gap="none"], .enee-row[data-gap="none"] { gap: 0; }
+.enee-stack[data-gap="sm"], .enee-row[data-gap="sm"] { gap: 8px; }
+.enee-stack[data-gap="md"], .enee-row[data-gap="md"] { gap: 14px; }
+.enee-stack[data-gap="lg"], .enee-row[data-gap="lg"] { gap: 22px; }
+
+.enee-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 14px;
+  border-radius: var(--enee-radius-lg);
+  background: var(--enee-surface);
+  box-shadow: inset 0 0 0 1px var(--enee-hairline);
+}
+
+.enee-heading {
+  margin: 0;
+  font-family: var(--enee-font-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--enee-text);
+}
+.enee-heading[data-level="1"] { font-size: 22px; line-height: 1.2; }
+.enee-heading[data-level="2"] { font-size: 16px; line-height: 1.3; }
+.enee-heading[data-level="3"] {
+  font-size: 11.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--enee-muted);
+}
+
+.enee-text { margin: 0; font-size: 14px; line-height: 1.45; color: var(--enee-text-2); }
+.enee-text[data-tone="muted"] { color: var(--enee-muted); font-size: 13px; }
+.enee-text[data-tone="accent"] { color: var(--enee-accent); }
+.enee-text[data-tone="danger"] { color: var(--enee-danger); }
+
+/* ---- stat & progress ----------------------------------------------------------------------------------------- */
+
+.enee-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 2px 0;
+}
+/* --enee-fit < 1 when the value is wider than its column (fitStats in basic.tsx): a row's stats shrink together. */
+.enee-stat__value {
+  font-family: var(--enee-font-display);
+  font-size: calc(46px * var(--enee-fit, 1));
+  white-space: nowrap;
+  overflow: hidden;
+  line-height: 1.05;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--enee-text);
+  animation: enee-settle 260ms var(--enee-ease);
+}
+/* A countdown that reached its end. */
+.enee-timer[data-done] .enee-stat__value { color: var(--enee-accent); }
+
+.enee-stat__caption {
+  font-size: 13px;
+  color: var(--enee-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A row of stats (an app's summary; design-systems.md §5.2): equal columns, with the labels, values and captions of all
+   the stats on shared lines (subgrid), so a stat without a caption still lines up with its neighbours. The compiler
+   holds such rows to three stats. */
+.enee-row:has(> .enee-stat):not(:has(> :not(.enee-stat))) {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto auto;
+  align-items: start;
+  column-gap: 14px;
+  row-gap: 2px;
+}
+.enee-row:has(> .enee-stat):not(:has(> :not(.enee-stat))) > .enee-stat {
+  display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  min-width: 0;
+}
+.enee-row:has(> .enee-stat + .enee-stat):not(:has(> :not(.enee-stat))) .enee-stat__value {
+  font-size: calc(36px * var(--enee-fit, 1));
+}
+.enee-row:has(> .enee-stat + .enee-stat + .enee-stat):not(:has(> :not(.enee-stat))) .enee-stat__value {
+  font-size: calc(28px * var(--enee-fit, 1));
+}
+.enee-row:has(> .enee-stat):not(:has(> :not(.enee-stat))) .enee-stat__caption {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.enee-progress { display: flex; flex-direction: column; gap: 8px; }
+.enee-progress__head { display: flex; align-items: baseline; justify-content: space-between; }
+.enee-progress__value { font-size: 12px; color: var(--enee-muted); font-variant-numeric: tabular-nums; }
+.enee-progress__track {
+  position: relative;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--enee-track);
+  /* isolate the fill's layer so its transform never repaints the panel */
+  isolation: isolate;
+}
+.enee-progress__fill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--enee-accent);
+  transition: transform 520ms var(--enee-ease);
+  will-change: transform;
+}
+
+/* Gauges: a half circle with the value in its middle. A row of gauges gets equal columns. */
+.enee-gauge { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; text-align: center; }
+.enee-gauge__dial { position: relative; width: 100%; max-width: 156px; }
+.enee-gauge__dial svg { display: block; width: 100%; height: auto; overflow: visible; }
+.enee-gauge__track,
+.enee-gauge__fill { fill: none; stroke-width: 10; stroke-linecap: round; }
+.enee-gauge__track { stroke: var(--enee-track); }
+.enee-gauge__fill { stroke: var(--enee-accent); }
+.enee-gauge__value {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  font-size: 22px;
+  font-weight: 650;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+.enee-row:has(> .enee-gauge):not(:has(> :not(.enee-gauge))) {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+}
+
+/* ---- buttons ------------------------------------------------------------------------------------------------- */
+
+.enee-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--enee-radius);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 120ms ease-out, color 120ms ease-out, transform 140ms var(--enee-ease);
+}
+.enee-button:active { transform: scale(0.97); }
+.enee-button:focus-visible,
+.enee-icon-button:focus-visible,
+.enee-toggle:focus-visible,
+.enee-tab:focus-visible,
+.enee-number__step:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--enee-accent) 60%, transparent);
+  outline-offset: 2px;
+}
+.enee-button[data-variant="primary"] { background: var(--enee-accent); color: var(--enee-on-accent); }
+.enee-button[data-variant="primary"]:hover { background: color-mix(in srgb, var(--enee-accent) 88%, white); }
+.enee-button[data-variant="secondary"] {
+  background: var(--enee-surface-2);
+  color: var(--enee-text);
+  box-shadow: inset 0 0 0 1px var(--enee-hairline);
+}
+.enee-button[data-variant="secondary"]:hover { background: var(--enee-surface-hover); }
+.enee-button[data-variant="ghost"] { background: transparent; color: var(--enee-text-2); }
+.enee-button[data-variant="ghost"]:hover { background: var(--enee-surface-2); color: var(--enee-text); }
+.enee-button[data-variant="danger"] { background: var(--enee-danger-soft); color: var(--enee-danger); }
+.enee-button[data-variant="danger"]:hover { background: rgb(242 85 90 / 0.2); }
+.enee-button[data-variant="destructive"] { background: var(--enee-danger); color: var(--enee-on-danger); }
+.enee-button[data-variant="destructive"]:hover { background: color-mix(in srgb, var(--enee-danger) 88%, white); }
+
+.enee-icon-button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--enee-faint);
+  cursor: pointer;
+  transition: background-color 120ms ease-out, color 120ms ease-out;
+}
+.enee-icon-button:hover { background: var(--enee-surface-hover); color: var(--enee-text); }
+.enee-icon-button[data-icon="trash"]:hover { background: var(--enee-danger-soft); color: var(--enee-danger); }
+
+/* ---- inputs -------------------------------------------------------------------------------------------------- */
+
+.enee-field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.enee-field__label { font-size: 12px; font-weight: 600; color: var(--enee-muted); }
+.enee-input {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--enee-line);
+  border-radius: var(--enee-radius-sm);
+  background: var(--enee-bg);
+  color: var(--enee-text);
+  font: inherit;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+  user-select: text;
+  transition: border-color 120ms ease-out, box-shadow 120ms ease-out;
+}
+.enee-input::placeholder { color: var(--enee-faint); }
+.enee-input:hover { border-color: var(--enee-line-strong); }
+.enee-input:focus { border-color: var(--enee-accent); box-shadow: 0 0 0 3px var(--enee-accent-soft); }
+
+/* Input type "select": one tap per choice (the panel often has no keyboard). */
+.enee-choices { display: flex; flex-wrap: wrap; gap: 6px; }
+.enee-choice {
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--enee-line);
+  border-radius: 999px;
+  background: var(--enee-bg);
+  color: var(--enee-text);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.enee-choice:hover { border-color: var(--enee-line-strong); }
+.enee-choice[data-selected] { border-color: var(--enee-accent); background: var(--enee-accent-soft); color: var(--enee-accent); }
+.enee-choice:focus-visible { outline: 2px solid var(--enee-accent); outline-offset: 2px; }
+
+.enee-number { display: flex; align-items: stretch; gap: 6px; }
+.enee-number__input { flex: 1; text-align: center; font-weight: 600; }
+.enee-number__step {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--enee-radius-sm);
+  background: var(--enee-surface-2);
+  color: var(--enee-text-2);
+  box-shadow: inset 0 0 0 1px var(--enee-hairline);
+  cursor: pointer;
+  transition: background-color 120ms ease-out, transform 140ms var(--enee-ease);
+}
+.enee-number__step:hover { background: var(--enee-surface-hover); color: var(--enee-text); }
+.enee-number__step:active { transform: scale(0.94); }
+
+/* A value turned with the wheel (Wheel, number fields, long choices): a row at rest, a reel while it has the wheel. */
+.enee-wheel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 36px;
+  color: var(--enee-text);
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+}
+.enee-wheel__label { flex: 1 1 auto; min-width: 0; color: var(--enee-text); }
+.enee-wheel__reel { display: flex; flex-direction: column; align-items: flex-end; flex: 0 0 auto; }
+.enee-wheel__value { font-variant-numeric: tabular-nums; font-weight: 700; white-space: nowrap; }
+.enee-wheel__unit { margin-left: 5px; font-size: 0.7em; font-weight: 600; color: var(--enee-muted); }
+.enee-wheel__near {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--enee-faint);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  cursor: pointer;
+}
+.enee-wheel__near[data-empty] { visibility: hidden; }
+.enee-wheel[data-r1-engaged] { flex-direction: column; align-items: stretch; }
+.enee-wheel[data-r1-engaged] .enee-wheel__reel { align-items: center; }
+.enee-wheel__value[data-dir="1"] { animation: enee-wheel-down 140ms var(--enee-ease); }
+.enee-wheel__value[data-dir="-1"] { animation: enee-wheel-up 140ms var(--enee-ease); }
+@keyframes enee-wheel-down { from { transform: translateY(-30%); opacity: 0.4; } }
+@keyframes enee-wheel-up { from { transform: translateY(30%); opacity: 0.4; } }
+
+/* A game (r1os ADR-0038): its canvas in a sandboxed frame, and a cover while it isn't being played. */
+.enee-game {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--enee-radius-lg);
+  background: var(--enee-surface);
+  cursor: pointer;
+  outline: none;
+}
+.enee-game__frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; }
+.enee-game__cover {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  text-align: center;
+  background: color-mix(in srgb, var(--enee-surface) 82%, transparent);
+}
+.enee-game__title { font-size: 1.5em; font-weight: 700; }
+.enee-game__note { color: var(--enee-text-2); }
+.enee-game__hint { color: var(--enee-muted); font-size: 0.85em; }
+
+@media (prefers-reduced-motion: reduce) {
+  .enee-wheel__value { animation: none !important; }
+}
+
+.enee-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 36px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--enee-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.enee-switch {
+  position: relative;
+  flex: none;
+  width: 38px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--enee-line-strong);
+  transition: background-color 160ms ease-out;
+}
+.enee-switch::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 220ms var(--enee-ease);
+}
+.enee-toggle[aria-checked="true"] .enee-switch { background: var(--enee-accent); }
+.enee-toggle[aria-checked="true"] .enee-switch::after { transform: translateX(16px); }
+
+/* ---- charts -------------------------------------------------------------------------------------------------- */
+
+.enee-chart {
+  margin: 0;
+  padding: 14px 14px 10px;
+  border-radius: var(--enee-radius-lg);
+  background: var(--enee-surface);
+  box-shadow: inset 0 0 0 1px var(--enee-hairline);
+}
+.enee-chart__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.enee-chart__readout { font-size: 12px; color: var(--enee-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.enee-chart__plot { position: relative; }
+.enee-chart__plot svg { display: block; overflow: visible; }
+.enee-chart__grid { stroke: var(--enee-line); stroke-width: 1; stroke-dasharray: 2 3; }
+.enee-chart__base { stroke: var(--enee-line); stroke-width: 1; }
+.enee-chart__stub { fill: var(--enee-line-strong); }
+.enee-chart__bar {
+  fill: var(--enee-accent);
+  y: var(--y);
+  height: var(--h);
+  transition: y 380ms var(--enee-ease), height 380ms var(--enee-ease), fill-opacity 120ms ease-out;
+}
+.enee-chart__plot:hover .enee-chart__bar { fill-opacity: 0.55; }
+.enee-chart__plot:hover .enee-chart__bar[data-hover="true"] { fill-opacity: 1; }
+.enee-chart__line { fill: none; stroke: var(--enee-accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.enee-chart__dot { fill: var(--enee-accent); stroke: var(--enee-surface); stroke-width: 1.5; }
+.enee-chart__max,
+.enee-chart__min {
+  position: absolute;
+  top: -8px;
+  right: 0;
+  padding-left: 6px;
+  background: var(--enee-surface);
+  font-size: 10.5px;
+  line-height: 16px;
+  color: var(--enee-faint);
+  font-variant-numeric: tabular-nums;
+}
+/* A fitted axis (yRange) labels its floor too. */
+.enee-chart__min {
+  top: auto;
+  bottom: -8px;
+}
+.enee-chart__axis { position: relative; height: 18px; margin-top: 6px; font-size: 10.5px; color: var(--enee-faint); font-variant-numeric: tabular-nums; }
+.enee-chart__axis > span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
+.enee-chart__axis > span[data-edge="start"] { transform: translateX(-30%); }
+
+/* Donuts: the ring beside its legend. Slices are the app's accent fading toward the surface; Other is a neutral. */
+.enee-donut__body { display: flex; align-items: center; gap: 16px; }
+.enee-donut__ring { flex: none; width: 112px; height: 112px; transform: rotate(-90deg); }
+.enee-donut__track,
+.enee-donut__slice { fill: none; stroke-width: 15; }
+.enee-donut__track { stroke: var(--enee-track); }
+.enee-donut__legend { display: flex; flex: 1; flex-direction: column; gap: 7px; min-width: 0; margin: 0; padding: 0; list-style: none; }
+.enee-donut__legend li { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 12.5px; }
+.enee-donut__swatch { flex: none; width: 9px; height: 9px; border-radius: 3px; }
+.enee-donut__name { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.enee-donut__value { flex: none; color: var(--enee-muted); font-variant-numeric: tabular-nums; }
+[data-slice="0"] { --enee-slice: var(--enee-accent); }
+[data-slice="1"] { --enee-slice: color-mix(in srgb, var(--enee-accent) 72%, var(--enee-surface)); }
+[data-slice="2"] { --enee-slice: color-mix(in srgb, var(--enee-accent) 52%, var(--enee-surface)); }
+[data-slice="3"] { --enee-slice: color-mix(in srgb, var(--enee-accent) 36%, var(--enee-surface)); }
+[data-slice="4"] { --enee-slice: color-mix(in srgb, var(--enee-accent) 24%, var(--enee-surface)); }
+[data-slice="other"] { --enee-slice: var(--enee-line-strong); }
+.enee-donut__slice { stroke: var(--enee-slice); }
+.enee-donut__swatch { background: var(--enee-slice); }
+
+/* Calendar heatmaps: a column per week, Monday at the top; days shaded in four steps of the accent. */
+.enee-heatmap__grid { display: flex; justify-content: center; }
+.enee-heatmap__week { display: flex; flex-direction: column; }
+.enee-heatmap__day { display: block; border-radius: 3px; background: var(--enee-track); }
+.enee-heatmap__day[data-future] { background: transparent; }
+.enee-heatmap__day[data-level="1"] { background: color-mix(in srgb, var(--enee-accent) 30%, var(--enee-track)); }
+.enee-heatmap__day[data-level="2"] { background: color-mix(in srgb, var(--enee-accent) 55%, var(--enee-track)); }
+.enee-heatmap__day[data-level="3"] { background: color-mix(in srgb, var(--enee-accent) 78%, var(--enee-track)); }
+.enee-heatmap__day[data-level="4"] { background: var(--enee-accent); }
+
+/* ---- list ---------------------------------------------------------------------------------------------------- */
+
+.enee-list {
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  border-radius: var(--enee-radius-lg);
+  background: var(--enee-surface);
+  box-shadow: inset 0 0 0 1px var(--enee-hairline);
+}
+.enee-list__row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 6px 8px 6px 12px;
+  border-radius: 14px;
+  transition: background-color 120ms ease-out;
+  animation: enee-row-in 240ms var(--enee-ease);
+}
+.enee-list__row:hover { background: var(--enee-surface-hover); }
+.enee-list__row + .enee-list__row::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 12px;
+  right: 12px;
+  height: 1px;
+  background: var(--enee-hairline);
+}
+.enee-list__row:hover::before,
+.enee-list__row:hover + .enee-list__row::before { opacity: 0; }
+.enee-list__thumb {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--enee-radius-sm);
+  object-fit: cover;
+  background: var(--enee-surface-2);
+  outline: 1px solid var(--enee-hairline);
+  outline-offset: -1px;
+}
+.enee-list__text { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+.enee-list__title { font-size: 14px; font-weight: 500; color: var(--enee-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.enee-list__caption { font-size: 12px; color: var(--enee-muted); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.enee-list__actions { display: flex; gap: 2px; margin-left: auto; }
+
+/* ---- empty / unknown / failed --------------------------------------------------------------------------------- */
+
+.enee-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 26px 16px 24px;
+  color: var(--enee-muted);
+  font-size: 13px;
+  text-align: center;
+}
+.enee-empty__icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: var(--enee-surface-2);
+  color: var(--enee-faint);
+  box-shadow: inset 0 0 0 1px var(--enee-hairline);
+}
+
+.enee-unknown {
+  padding: 10px 12px;
+  border: 1px dashed var(--enee-line-strong);
+  border-radius: var(--enee-radius);
+  color: var(--enee-muted);
+  font-size: 12px;
+}
+
+.enee-failed {
+  margin: 16px;
+  padding: 14px;
+  border-radius: var(--enee-radius-lg);
+  background: var(--enee-danger-soft);
+}
+.enee-failed__title { font-weight: 600; color: var(--enee-text); }
+.enee-failed__message { margin-top: 4px; font-size: 13px; color: var(--enee-text-2); }
+
+/* ---- view tabs ------------------------------------------------------------------------------------------------ */
+
+.enee-tabs { display: flex; gap: 4px; padding: 0 16px 8px; }
+.enee-tab {
+  height: 30px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--enee-muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.enee-tab[aria-selected="true"] { background: var(--enee-surface-2); color: var(--enee-text); }
+
+/* ---- toasts --------------------------------------------------------------------------------------------------- */
+
+.enee-toasts {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 16px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+.enee-toast {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  max-width: calc(100% - 40px);
+  padding: 8px 14px 8px 12px;
+  border-radius: 999px;
+  background: #1e1e23;
+  box-shadow: inset 0 0 0 1px var(--enee-line-strong), var(--enee-shadow);
+  color: var(--enee-text);
+  font-size: 13px;
+  font-weight: 500;
+  pointer-events: auto;
+  cursor: default;
+  animation: enee-toast-in 240ms var(--enee-ease);
+}
+.enee-app[data-theme="light"] .enee-toast { background: #fff; }
+.enee-toast[data-leaving="true"] { animation: enee-toast-out 160ms ease-in forwards; }
+.enee-toast__dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--enee-accent); }
+.enee-toast[data-tone="danger"] .enee-toast__dot { background: var(--enee-danger); }
+.enee-toast__text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---- confirm dialog ------------------------------------------------------------------------------------------- */
+
+.enee-dialog-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgb(0 0 0 / 0.55);
+  animation: enee-fade-in 140ms ease-out;
+}
+.enee-dialog {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 300px;
+  padding: 18px;
+  border-radius: 22px;
+  background: #18181c;
+  box-shadow: inset 0 0 0 1px var(--enee-line-strong), 0 24px 60px rgb(0 0 0 / 0.6);
+  animation: enee-dialog-in 220ms var(--enee-ease);
+}
+.enee-app[data-theme="light"] .enee-dialog { background: #fff; }
+.enee-dialog__icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  background: var(--enee-danger-soft);
+  color: var(--enee-danger);
+}
+.enee-dialog__title { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.3; color: var(--enee-text); }
+.enee-dialog__message { margin: 4px 0 0; font-size: 13px; line-height: 1.45; color: var(--enee-muted); }
+.enee-dialog__actions { display: flex; gap: 8px; margin-top: 18px; }
+.enee-dialog__actions > .enee-button { flex: 1 1 0; }
+
+/* ---- keyframes ------------------------------------------------------------------------------------------------ */
+
+@keyframes enee-settle {
+  from { opacity: 0.5; transform: translateY(3px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes enee-row-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes enee-toast-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes enee-toast-out {
+  to { opacity: 0; transform: translateY(4px) scale(0.98); }
+}
+@keyframes enee-fade-in {
+  from { opacity: 0; }
+}
+@keyframes enee-dialog-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .enee-app *,
+  .enee-app *::before,
+  .enee-app *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+}

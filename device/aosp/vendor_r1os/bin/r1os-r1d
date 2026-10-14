@@ -1,0 +1,37 @@
+#!/system/bin/sh
+# Starts the r1d that tools/deploy.sh put in /data/r1os/bin, logging the way r1os-base's
+# service.sh did (/data/r1os/log/r1d.log, rotated at 1 MB). init restarts this when r1d exits.
+R1OS=/data/r1os
+BIN=$R1OS/bin/r1d
+LOG=$R1OS/log/r1d.log
+
+umask 077
+
+# The host app's WebView needs a provider, and on a fresh /data Android didn't pick one: the only
+# one installed is AOSP's (com.android.webview), and "Current WebView package is null" until it's
+# set by hand (v0.2.0, 2026-10-09). Once boot completes, select it if nothing is selected yet.
+#
+# No privacy chip either: r1d opens the mic on every button press (so push-to-talk catches your
+# first word), and Android's mic indicator then pulled the status bar down each time. The R1's own
+# UI shows when it's listening.
+#
+# Detached twice, so init adopts it: a plain `( ... ) &` became r1d's child after the exec below,
+# and r1d never reaped it (a zombie for r1d's lifetime, v0.2.9).
+( (
+  while [ "$(getprop sys.boot_completed)" != 1 ]; do sleep 2; done
+  device_config put privacy camera_mic_icons_enabled false >/dev/null 2>&1
+  if dumpsys webviewupdate 2>/dev/null | grep -q "Current WebView package is null"; then
+    cmd webviewupdate set-webview-implementation com.android.webview >/dev/null 2>&1
+    am force-stop dev.r1os.host
+    am start -a android.intent.action.MAIN -c android.intent.category.HOME >/dev/null 2>&1
+  fi
+) </dev/null >/dev/null 2>&1 & )
+
+if [ ! -x "$BIN" ]; then
+  # Nothing deployed yet: wait a little so init's restarts don't spin.
+  sleep 5
+  exit 1
+fi
+if [ -f "$LOG" ] && [ "$(stat -c %s "$LOG")" -gt 1048576 ]; then mv -f "$LOG" "$LOG.1"; fi
+echo "== r1d start $(date) (init service)" >>"$LOG"
+exec "$BIN" --harness >>"$LOG" 2>&1

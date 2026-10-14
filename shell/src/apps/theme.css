@@ -1,0 +1,385 @@
+/*
+ * Mini-apps in r1os's own look (ADR-0025, ADR-0021): the native shell's design language over the runtime's
+ * components. The runtime's styles (packages/runtime, shared with eneeware's desktop panel) stay as they are;
+ * this layer restyles them for the R1, in the R1's app page and in the simulator alike.
+ *
+ * - Big, bold, lowercase Rubik. One CSS px is one dp on the R1 (app.html zooms to the shell's density), so these
+ *   sizes are the native shell's: page titles 28, rows 19–21, buttons 20, captions 15.
+ * - Things rest as dark pills (#15171b) with coloured text; nothing is filled with the accent except what the
+ *   wheel is on. The wheel's focus is a solid fill in the app's accent, with ink text and icons on it, like the
+ *   native lists (no outline rings).
+ * - On black, no hairlines: space separates things.
+ */
+
+@font-face {
+  font-family: "Rubik";
+  font-weight: 400;
+  src: url("/fonts/Rubik-Regular.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Rubik";
+  font-weight: 500 600;
+  src: url("/fonts/Rubik-Medium.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Rubik";
+  font-weight: 700 900;
+  src: url("/fonts/Rubik-Bold.ttf") format("truetype");
+}
+
+/* ---- tokens: the native theme (host/…/ui/Theme.kt) ------------------------------------------------------------ */
+
+.enee-app {
+  --enee-bg: #000;
+  --enee-surface: #121418;
+  --enee-surface-2: #15171b;
+  --enee-surface-hover: #15171b;
+  --enee-hairline: transparent;
+  --enee-line: #22252b;
+  --enee-line-strong: #2c3038;
+  --enee-text: #f2f2f2;
+  --enee-text-2: #dfe2e7;
+  --enee-muted: #8a8f98;
+  --enee-faint: #5c616b;
+  --enee-track: #1f2228;
+  --enee-danger: #ff5a5a;
+  --enee-danger-soft: rgb(255 90 90 / 0.16);
+  --enee-on-danger: #0b0b0c;
+  --enee-on-accent: #0b0b0c;
+  --r1-pill: #15171b;
+  --r1-ink: #0b0b0c;
+  --enee-radius-sm: 12px;
+  --enee-radius: 16px;
+  --enee-radius-lg: 18px;
+  --enee-font: var(--r1-font, "Rubik"), system-ui, sans-serif;
+  --enee-font-display: var(--r1-font, "Rubik"), system-ui, sans-serif;
+
+  background: #000;
+  font-family: var(--enee-font);
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+/* Light mode (r1os ADR-0043): Theme.kt's light set. The page says so on <html> (app-main.tsx). */
+html[data-mode="light"] .enee-app {
+  --enee-bg: #f3f2ef;
+  --enee-surface: #e8e7e3;
+  --enee-surface-2: #e7e6e2;
+  --enee-surface-hover: #e7e6e2;
+  --enee-line: #dcdcd8;
+  --enee-line-strong: #cfcfca;
+  --enee-text: #16171a;
+  --enee-text-2: #2a2c31;
+  --enee-muted: #6c717a;
+  --enee-faint: #9a9ea6;
+  --enee-track: #dddcd8;
+  --r1-pill: #e7e6e2;
+
+  background: #f3f2ef;
+}
+/* The native palette's two that differ; every accent puts ink on its fill. */
+.enee-app[data-accent="green"] { --enee-accent: #3ddc84; --enee-accent-soft: rgb(61 220 132 / 0.16); }
+.enee-app[data-accent="lime"] { --enee-accent: #a3d65c; --enee-accent-soft: rgb(163 214 92 / 0.16); }
+.enee-app[data-accent] { --enee-on-accent: #0b0b0c; }
+/* r1os is dark: an app's light theme doesn't apply on the R1. */
+.enee-app[data-theme] { color-scheme: dark; }
+
+/* Lowercase, like everything the shell shows (ADR-0021). What you type stays as typed. */
+.enee-app,
+.enee-app *:not(input):not(textarea) {
+  text-transform: lowercase !important;
+}
+
+/* ---- the page ---------------------------------------------------------------------------------------------------- */
+
+/* No fades over the scroller's top and bottom, and no scrollbar or its gutter: the wheel scrolls, and the content
+   keeps the native header's 14 dp margins. */
+.enee-viewport::before,
+.enee-viewport::after {
+  display: none;
+}
+.enee-scroll {
+  scrollbar-width: none;
+  padding: 2px 14px 24px;
+}
+.enee-scroll::-webkit-scrollbar {
+  display: none;
+  width: 0;
+}
+
+/* Tight enough that a summary, its actions and one more block fit the screen (about 330 × 410 dp). */
+.enee-stack[data-gap="sm"], .enee-row[data-gap="sm"] { gap: 8px; }
+.enee-stack[data-gap="md"], .enee-row[data-gap="md"] { gap: 14px; }
+.enee-stack[data-gap="lg"], .enee-row[data-gap="lg"] { gap: 20px; }
+
+/* ---- text -------------------------------------------------------------------------------------------------------- */
+
+/* Captions: quiet lowercase, never tracked capitals (ADR-0021, 2026-10-09). */
+.enee-label,
+.enee-heading[data-level="3"],
+.enee-field__label {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: lowercase;
+  color: var(--enee-muted);
+}
+.enee-heading { font-weight: 700; letter-spacing: -0.01em; }
+.enee-heading[data-level="1"] { font-size: 28px; line-height: 1.15; }
+.enee-heading[data-level="2"] { font-size: 22px; line-height: 1.2; }
+.enee-text { font-size: 18px; line-height: 1.35; font-weight: 500; color: var(--enee-text-2); }
+.enee-text[data-tone="muted"] { font-size: 15px; color: var(--enee-muted); }
+.enee-text[data-tone="accent"] { font-weight: 700; color: var(--enee-accent); }
+.enee-text[data-tone="danger"] { color: var(--enee-danger); }
+
+/* ---- stats, timers, gauges, progress ----------------------------------------------------------------------------- */
+
+.enee-stat { gap: 2px; padding: 2px 0 0; }
+.enee-stat__value {
+  font-size: calc(60px * var(--enee-fit, 1));
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.025em;
+}
+.enee-row:has(> .enee-stat + .enee-stat):not(:has(> :not(.enee-stat))) .enee-stat__value {
+  font-size: calc(44px * var(--enee-fit, 1));
+}
+.enee-row:has(> .enee-stat + .enee-stat + .enee-stat):not(:has(> :not(.enee-stat))) .enee-stat__value {
+  font-size: calc(34px * var(--enee-fit, 1));
+}
+.enee-row:has(> .enee-stat):not(:has(> :not(.enee-stat))) { column-gap: 16px; }
+.enee-stat__caption { font-size: 15px; font-weight: 500; color: var(--enee-muted); }
+
+.enee-gauge__value { font-size: 30px; font-weight: 700; }
+.enee-gauge__track, .enee-gauge__fill { stroke-width: 12; }
+
+.enee-progress { gap: 8px; }
+.enee-progress__value { font-size: 15px; font-weight: 600; }
+.enee-progress__track { height: 10px; }
+
+/* ---- buttons: dark pills at rest, the accent only on focus -------------------------------------------------------- */
+
+.enee-button {
+  min-height: 50px;
+  height: auto;
+  padding: 8px 16px;
+  gap: 8px;
+  border-radius: 16px;
+  font-size: 20px;
+  font-weight: 700;
+  background: var(--r1-pill);
+  color: var(--enee-text);
+  box-shadow: none;
+}
+.enee-button .enee-icon { width: 21px !important; height: 21px !important; }
+.enee-button[data-variant="primary"] { background: var(--r1-pill); color: var(--enee-accent); }
+.enee-button[data-variant="secondary"] { background: var(--r1-pill); color: var(--enee-text); box-shadow: none; }
+/* A ghost button is a quiet, secondary action ("undo last"): smaller, so it doesn't take a big row. */
+.enee-button[data-variant="ghost"] { min-height: 40px; padding: 6px 14px; font-size: 17px; background: transparent; color: var(--enee-muted); }
+.enee-button[data-variant="ghost"] .enee-icon { width: 18px !important; height: 18px !important; }
+.enee-button[data-variant="danger"],
+.enee-button[data-variant="destructive"] { background: var(--r1-pill); color: var(--enee-danger); }
+.enee-button:hover,
+.enee-button[data-variant]:hover { filter: none; }
+.enee-button:active { transform: scale(0.97); }
+/* Quick actions share the width; three to a row get a little smaller. */
+.enee-row[data-align="start"] > .enee-button { flex: 1 1 0; min-width: 0; padding: 8px 8px; }
+.enee-row[data-align="start"]:has(> .enee-button + .enee-button + .enee-button) > .enee-button { font-size: 18px; }
+
+.enee-icon-button {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  color: var(--enee-muted);
+}
+.enee-icon-button .enee-icon { width: 22px !important; height: 22px !important; }
+.enee-icon-button:hover { background: transparent; color: var(--enee-muted); }
+
+/* ---- inputs (rare on the R1: you tell your agent instead, ADR-0025) ---------------------------------------------- */
+
+.enee-field { gap: 8px; }
+.enee-input {
+  height: 54px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--r1-pill);
+  font-size: 19px;
+  font-weight: 600;
+}
+.enee-input::placeholder { color: var(--enee-faint); text-transform: lowercase; }
+.enee-input:focus { box-shadow: inset 0 0 0 2px var(--enee-accent); }
+
+.enee-choices { gap: 8px; }
+.enee-choice {
+  height: 46px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--r1-pill);
+  color: var(--enee-text);
+  font-size: 18px;
+  font-weight: 700;
+}
+.enee-choice[data-selected] { background: var(--enee-accent-soft); color: var(--enee-accent); }
+
+.enee-number { gap: 8px; }
+.enee-number__step { width: 54px; height: 54px; border-radius: 16px; background: var(--r1-pill); box-shadow: none; color: var(--enee-text); }
+
+/* A wheel row: a dark pill like a toggle; the value big. While it has the wheel, the reel opens around it. */
+.enee-wheel {
+  min-height: 58px;
+  padding: 8px 16px;
+  border-radius: 16px;
+  background: var(--r1-pill);
+  font-size: 19px;
+  font-weight: 700;
+  transition: background-color 140ms ease-out, color 140ms ease-out;
+}
+.enee-wheel__value { font-size: 24px; color: var(--enee-accent); }
+.enee-wheel[data-r1-engaged] { padding: 6px 16px 10px; gap: 2px; }
+.enee-wheel[data-r1-engaged] .enee-wheel__label { font-size: 15px; color: var(--enee-muted); text-align: center; }
+.enee-wheel[data-r1-engaged] .enee-wheel__value { font-size: 44px; line-height: 1.15; }
+.enee-wheel__near { font-size: 20px; line-height: 1.3; }
+/* The wheel's focus: the accent fill, as everywhere; while turning, the fill stays and the value is ink. */
+.enee-wheel.r1-focus { background: var(--enee-accent); color: var(--enee-on-accent); }
+.enee-wheel.r1-focus .enee-wheel__value,
+.enee-wheel.r1-focus .enee-wheel__label { color: var(--enee-on-accent); }
+.enee-wheel.r1-focus .enee-wheel__unit,
+.enee-wheel.r1-focus .enee-wheel__near { color: rgb(11 11 12 / 0.5); }
+/* Inside a field (its label drawn above): just the value. */
+.enee-field .enee-wheel__value { font-size: 22px; }
+
+/* A game: on the screen's black, an outline in the accent when the wheel is on it (a fill would hide it). */
+.enee-game { background: #0d0f12; border-radius: 20px; font-size: 18px; }
+.enee-game.r1-focus { box-shadow: inset 0 0 0 3px var(--enee-accent); }
+.enee-game[data-r1-engaged].r1-focus { box-shadow: none; }
+.enee-game__title { font-size: 28px; text-transform: lowercase; }
+.enee-game__hint { font-size: 15px; text-transform: lowercase; }
+
+.enee-toggle {
+  min-height: 58px;
+  padding: 8px 16px;
+  border-radius: 16px;
+  background: var(--r1-pill);
+  font-size: 19px;
+  font-weight: 700;
+}
+.enee-switch { width: 48px; height: 28px; background: var(--enee-line-strong); }
+.enee-switch::after { top: 4px; left: 4px; width: 20px; height: 20px; }
+.enee-toggle[aria-checked="true"] .enee-switch::after { transform: translateX(20px); }
+
+/* ---- cards, charts ------------------------------------------------------------------------------------------------ */
+
+/* Pills inside a card sit a step lighter, so they don't vanish into it. */
+.enee-card { --r1-pill: #1d2026; }
+
+.enee-card { gap: 12px; padding: 14px; border-radius: 18px; background: var(--enee-surface); box-shadow: none; }
+.enee-chart { padding: 12px 14px 8px; border-radius: 18px; background: var(--enee-surface); box-shadow: none; }
+.enee-chart__head { margin-bottom: 10px; }
+.enee-chart__readout { font-size: 15px; font-weight: 600; }
+.enee-chart__max, .enee-chart__min { font-size: 13px; background: var(--enee-surface); }
+.enee-chart__axis { height: 18px; margin-top: 4px; font-size: 13px; }
+.enee-chart__grid { stroke: var(--enee-line); }
+.enee-donut__ring { width: 120px; height: 120px; }
+.enee-donut__legend { gap: 9px; }
+.enee-donut__legend li { font-size: 16px; font-weight: 600; }
+.enee-donut__swatch { width: 11px; height: 11px; border-radius: 4px; }
+
+/* ---- lists: rows on black, like the native lists ------------------------------------------------------------------ */
+
+.enee-list { padding: 0; gap: 2px; border-radius: 0; background: transparent; box-shadow: none; }
+.enee-list__row {
+  gap: 12px;
+  min-height: 56px;
+  padding: 7px 8px 7px 12px;
+  border-radius: 16px;
+  transition: background-color 140ms ease-out;
+}
+.enee-list__row + .enee-list__row::before { display: none; }
+.enee-list__row:hover { background: transparent; }
+.enee-list__thumb { width: 44px; height: 44px; border-radius: 12px; outline: 0; }
+.enee-list__text { gap: 2px; }
+.enee-list__title { font-size: 19px; font-weight: 700; color: var(--enee-text); }
+.enee-list__caption { font-size: 15px; font-weight: 500; }
+.enee-list__actions { gap: 4px; }
+
+.enee-empty { gap: 12px; padding: 22px 16px; font-size: 17px; font-weight: 500; line-height: 1.35; }
+.enee-empty__icon { width: 48px; height: 48px; border-radius: 14px; background: var(--r1-pill); box-shadow: none; color: var(--enee-muted); }
+.enee-empty__icon .enee-icon { width: 22px !important; height: 22px !important; }
+.enee-list[data-empty] { padding: 0; }
+
+/* ---- tabs, toasts, the confirm dialog ----------------------------------------------------------------------------- */
+
+.enee-tabs { gap: 6px; padding: 0 14px 10px; }
+.enee-tab { height: 42px; padding: 0 16px; border-radius: 14px; font-size: 17px; font-weight: 700; color: var(--enee-muted); }
+.enee-tab[aria-selected="true"] { background: var(--r1-pill); color: var(--enee-text); }
+
+.enee-toasts { bottom: 18px; }
+.enee-toast {
+  gap: 10px;
+  padding: 12px 18px 12px 14px;
+  border-radius: 18px;
+  background: rgb(28 30 35 / 0.96);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--enee-accent) 55%, transparent), var(--enee-shadow);
+  font-size: 17px;
+  font-weight: 650;
+}
+.enee-toast__dot { width: 9px; height: 9px; }
+
+.enee-dialog-layer { padding: 14px; align-items: flex-end; background: rgb(0 0 0 / 0.7); }
+.enee-dialog { max-width: none; padding: 20px; border-radius: 22px; background: var(--enee-surface); box-shadow: none; }
+.enee-dialog__icon { width: 48px; height: 48px; border-radius: 14px; }
+.enee-dialog__title { font-size: 23px; font-weight: 700; line-height: 1.2; }
+.enee-dialog__message { margin-top: 6px; font-size: 16px; color: var(--enee-muted); }
+/* Stacked, so the wheel goes straight down them. */
+.enee-dialog__actions { flex-direction: column-reverse; gap: 8px; margin-top: 18px; }
+
+.enee-failed { margin: 14px; padding: 16px; border-radius: 18px; }
+.enee-failed__title { font-size: 19px; font-weight: 700; }
+.enee-failed__message { font-size: 15px; }
+
+/* ---- the wheel's focus: one solid fill in the accent, ink on it --------------------------------------------------- */
+
+.enee-app .r1-focus {
+  outline: none !important;
+}
+.enee-button,
+.enee-tab,
+.enee-choice,
+.enee-toggle,
+.enee-number__step,
+.enee-input,
+.enee-icon-button {
+  transition: background-color 140ms ease-out, color 140ms ease-out, transform 140ms var(--enee-ease);
+}
+.enee-button.r1-focus,
+.enee-tab.r1-focus,
+.enee-choice.r1-focus,
+.enee-toggle.r1-focus,
+.enee-number__step.r1-focus,
+.enee-input.r1-focus:not(:focus) {
+  background: var(--enee-accent) !important;
+  color: var(--enee-on-accent) !important;
+  box-shadow: none !important;
+}
+.enee-input.r1-focus:not(:focus)::placeholder { color: rgb(11 11 12 / 0.55); }
+.enee-button[data-variant="danger"].r1-focus,
+.enee-button[data-variant="destructive"].r1-focus {
+  background: var(--enee-danger) !important;
+  color: var(--enee-on-danger) !important;
+}
+.enee-toggle.r1-focus .enee-switch { background: rgb(11 11 12 / 0.25); }
+.enee-toggle.r1-focus[aria-checked="true"] .enee-switch { background: var(--r1-ink); }
+
+/* A row's action: the whole row lights up, and the focused action's icon sits in a darker well. */
+.enee-list__row:has(.r1-focus) { background: var(--enee-accent); }
+.enee-list__row:has(.r1-focus) .enee-list__title,
+.enee-list__row:has(.r1-focus) .enee-list__caption,
+.enee-list__row:has(.r1-focus) .enee-icon-button {
+  color: var(--enee-on-accent);
+}
+.enee-list__row:has(.r1-focus) .enee-list__caption { opacity: 0.7; }
+.enee-list__row:has(.enee-icon-button[data-icon="trash"].r1-focus) { background: var(--enee-danger); }
+.enee-icon-button.r1-focus { background: rgb(11 11 12 / 0.14) !important; color: var(--enee-on-accent) !important; }

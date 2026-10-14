@@ -1,0 +1,28 @@
+/* Dock mode on the home page (home/Dock.tsx): the R1 turning onto its side as the section comes up, its docked story,
+   and four points beside it lighting in turn. The R1 is square either way up, so nothing moves around it as it turns. */
+
+.dock { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: center; gap: clamp(28px, 6vw, 88px); max-width: 1040px; margin: 56px auto 0; }
+.dock-device { width: min(460px, 100%); justify-self: center; }
+
+.dock-points { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.dock-point { position: relative; display: grid; grid-template-columns: 46px minmax(0, 1fr); column-gap: 16px; row-gap: 2px; align-items: start; padding: 16px 18px; border-radius: 22px; }
+.dock-point > :not(.dock-point-fill) { position: relative; }
+.dock-point-fill { position: absolute; inset: 0; border-radius: 22px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); }
+.dock-icon { grid-row: 1 / span 2; width: 46px; height: 46px; border-radius: 15px; display: grid; place-items: center; background: var(--panel2); color: var(--fg); transition: background-color .35s, color .35s; }
+.dock-point.on .dock-icon { background: var(--accent); color: var(--ink); }
+.dock-point b { font-size: 19px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.25; margin-top: 1px; }
+.dock-line { font-size: 16px; line-height: 1.5; color: var(--sub); }
+
+/* Turning, its corners reach 1.35× its width across: these widths keep them on the screen at 45°. */
+@media (min-width: 861px) and (max-width: 1180px) { .dock-device { width: 76%; } }
+@media (max-width: 860px) {
+  .dock { grid-template-columns: minmax(0, 1fr); gap: 40px; }
+  .dock-device { width: min(420px, 72vw); }
+  .dock-points { width: 100%; max-width: 560px; justify-self: center; }
+}
+@media (max-width: 420px) {
+  .dock-point { grid-template-columns: 40px minmax(0, 1fr); column-gap: 12px; padding: 14px 12px; }
+  .dock-icon { width: 40px; height: 40px; border-radius: 13px; }
+  .dock-point b { font-size: 17px; }
+  .dock-line { font-size: 15px; }
+}

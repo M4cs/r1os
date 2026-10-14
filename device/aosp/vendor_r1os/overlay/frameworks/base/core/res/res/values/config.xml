@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Framework settings r1os overrides (a build-time overlay of framework-res; r1os.mk's PRODUCT_PACKAGE_OVERLAYS).
+
+  Android's "allow USB debugging?" and "always allow wireless debugging on this network?" go to the host
+  (dev.r1os.host.AdbConfirmActivity), which asks in the shell's own look, instead of SystemUI's dialogs: the
+  first thing SystemUI did for r1os that r1os now does itself (roadmap R4's keep-list).
+-->
+<resources>
+    <string name="config_customAdbPublicKeyConfirmationComponent" translatable="false">dev.r1os.host/dev.r1os.host.AdbConfirmActivity</string>
+    <string name="config_customAdbWifiNetworkConfirmationComponent" translatable="false">dev.r1os.host/dev.r1os.host.AdbConfirmActivity</string>
+    <!--
+      The host reads Android apps' notifications (its NotificationListener) to show them in r1os: the status bar and
+      shade are hidden, so without it they'd be invisible. Granted on a fresh /data; r1d grants it on an R1 set up
+      before (cmd notification allow_listener).
+    -->
+    <string name="config_defaultListenerAccessPackages" translatable="false">dev.r1os.host</string>
+    <!--
+      No swipe from an edge for Android's own bars (T-127, ADR-0059): r1os hides them (ADR-0020), and a swipe in the
+      edge's strip only showed an empty, dim status bar while Android took the touch. r1os's own swipes start there
+      instead: the glance screen down from the top, home's launcher up from the bottom. An R1 set up before this image
+      gets the same from a fabricated overlay (cmd overlay fabricate, T-127).
+    -->
+    <dimen name="system_gestures_start_threshold">0dp</dimen>
+</resources>

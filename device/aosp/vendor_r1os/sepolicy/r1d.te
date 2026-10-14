@@ -1,0 +1,151 @@
+# r1d, r1os's core daemon (ADR-0002), started by init from /system/bin/r1os-r1d, a script that execs the
+# r1d tools/deploy.sh put in /data/r1os/bin.
+#
+# Its own rules since v0.2.7 (ADR-0035): what its code does and the denials it logged while it ran
+# permissive (v0.2.0 to v0.2.7). The agent box it runs is a domain of its own (r1d_agent.te). Enforced
+# from v0.2.8.
+#
+# r1d is root, but this domain is what limits it: its own files, the agent box, input and the motor, a
+# few named system services, and the Android tools it runs. Two things it needs are against AOSP's
+# neverallows, so r1os's patch to system/sepolicy (device/aosp/patches) exempts it by attribute:
+# executing code from /data (its own binary and libraries; r1os_data_exec on the file types) and, as
+# r1os_privileged, mounting the agent box's filesystems and dac_override over the agent user's files.
+type r1d, domain, coredomain, r1os_privileged;
+type r1d_exec, system_file_type, exec_type, file_type;
+
+init_daemon_domain(r1d)
+
+# ---- Its files
+# The launcher script, the tools it calls (toybox), and the binary and libraries it runs.
+allow r1d shell_exec:file rx_file_perms;
+allow r1d toolbox_exec:file rx_file_perms;
+allow r1d r1os_code_file:dir r_dir_perms;
+allow r1d r1os_code_file:{ file lnk_file } r_file_perms;
+allow r1d r1os_code_file:file rx_file_perms;
+
+# Its state: core.db (SQLite: locks), apps, media, logs, models, the shell's files. Never executed.
+allow r1d r1os_data_file:dir create_dir_perms;
+allow r1d r1os_data_file:{ file lnk_file } create_file_perms;
+
+# ---- The agent box (ADR-0003, crate::jail)
+# Its userland, home, workspaces and chat stores: r1d makes the agents' directories, writes the box's
+# resolv.conf and each agent's instructions, reads the CLIs' chat stores, and fixes ownership (`chown`).
+allow r1d { r1os_agent_root_file r1os_agent_file }:dir { create_dir_perms mounton };
+allow r1d { r1os_agent_root_file r1os_agent_file }:{ file lnk_file } create_file_perms;
+# Those files are the agent user's (uid 2950, mode 0600/0700): root needs these to read and fix them up.
+allow r1d self:global_capability_class_set { chown dac_override dac_read_search fowner fsetid };
+
+# Each agent process, between fork and exec: joins the agent memory cgroup, unshares its mount
+# namespace and makes / private, mounts a fresh /proc, a /tmp and a /dev (a tmpfs with /dev's few nodes
+# bound in, and its own devpts), binds the home and the workspace, chroots, drops every capability and
+# its uid, and becomes r1d_agent (setcon) just before it execs the CLI.
+allow r1d cgroup:dir create_dir_perms;
+allow r1d cgroup:file rw_file_perms;
+allow r1d rootfs:dir mounton;
+allow r1d { proc tmpfs devpts }:filesystem mount;
+allow r1d tmpfs:dir { create_dir_perms mounton };
+allow r1d tmpfs:file { create_file_perms mounton };
+allow r1d tmpfs:lnk_file create_file_perms;
+allow r1d self:global_capability_class_set { sys_admin sys_chroot setpcap setgid setuid kill };
+allow r1d self:process setcurrent;
+allow r1d r1d_agent:process dyntransition;
+# ...and afterwards: stops its processes, and reads their /proc (the harness's jail check).
+allow r1d r1d_agent:process { sigkill signal sigstop signull getattr };
+allow r1d r1d_agent:dir r_dir_perms;
+allow r1d r1d_agent:file r_file_perms;
+
+# ---- Hardware
+# The wheel and the button (evdev, found through /sys/class/input), the motor, the battery, memory.
+allow r1d input_device:dir r_dir_perms;
+allow r1d input_device:chr_file r_file_perms;
+allow r1d sysfs:dir r_dir_perms;
+allow r1d sysfs:{ file lnk_file } r_file_perms;
+allow r1d sysfs_motor:file rw_file_perms;
+allow r1d sysfs_batteryinfo:dir r_dir_perms;
+allow r1d sysfs_batteryinfo:file r_file_perms;
+allow r1d proc_meminfo:file r_file_perms;
+
+# Alarms and reminders wake the R1 from suspend (ADR-0024): a CLOCK_REALTIME_ALARM timerfd under
+# epoll with EPOLLWAKEUP.
+allow r1d self:global_capability2_class_set { wake_alarm block_suspend };
+
+# ---- Network
+# r1d's API (127.0.0.1:7171, the mic on :7173) and apps' web data (ADR-0023). Its sockets go through netd's
+# marking like an app's: without net_domain every connect failed with EMSGSIZE (2026-10-09).
+net_domain(r1d)
+
+# ---- Android's tools and services
+# r1d runs `cmd` (wifi, activity, alarm, appops, input), `dumpsys` (window, connectivity), `pm grant`,
+# `screencap`, `device_config` and `am` (the launcher's), and toybox's chown/chmod. They run in r1d's
+# domain and call the system server, which calls back and writes their answers into r1d's pipes.
+allow r1d system_file:file rx_file_perms;
+get_prop(r1d, boot_status_prop)
+binder_use(r1d)
+binder_call(r1d, system_server)
+allow r1d {
+  activity_service
+  alarm_service
+  appops_service
+  connectivity_service
+  device_config_service
+  deviceidle_service
+  input_service
+  notification_service
+  package_service
+  permissionmgr_service
+  power_service
+  settings_service
+  webviewupdate_service
+  wifi_service
+  window_service
+}:service_manager find;
+
+# r1d runs `cmd wifi`, `am`, `settings`, `dumpsys`...: the system server writes the answer into
+# r1d's pipes. Permissive covers r1d's side only; without these the system server is denied
+# (`avc: denied { use } ... scontext=system_server tcontext=r1d tclass=fd`, v0.2.0) and the output
+# is silently lost: onboarding's Wi-Fi list stayed empty. The same access Android gives `shell`.
+allow system_server r1d:fd use;
+allow system_server r1d:fifo_file { read write getattr };
+
+# ...and once it has written the answer, the system server calls back into the tool's process to
+# report the result (`cmd`'s result receiver). Without this (`avc: denied { call } ...
+# scontext=system_server tcontext=r1d tclass=binder`, v0.2.4) every tool did its work and then
+# hung forever: the display slept, but the request never answered and `cmd` processes piled up.
+allow system_server r1d:binder { call transfer };
+
+# `screencap` (the harness's screenshots): SurfaceFlinger, the graphics allocator, and the GPU mapper
+# it loads. SurfaceFlinger hands the capture back through a binder call into the tool's process, which
+# v0.2.5 refused (`avc: denied { call } ... scontext=surfaceflinger tcontext=r1d tclass=binder`), and
+# screencap hung forever.
+binder_call(r1d, surfaceflinger)
+allow r1d surfaceflinger_service:service_manager find;
+allow surfaceflinger r1d:binder { call transfer };
+allow surfaceflinger r1d:fd use;
+hwbinder_use(r1d)
+hal_client_domain(r1d, hal_graphics_allocator)
+allow r1d hal_graphics_allocator_server:fd use;
+allow r1d same_process_hal_file:file { execute read open getattr map };
+allow r1d gpu_device:dir search;
+allow r1d gpu_device:chr_file rw_file_perms;
+allow r1d ion_device:chr_file r_file_perms;
+
+# Seen on v0.2.7 and harmless refused: a library probing a vendor property; the dynamic linker checking
+# the directories its namespace config names (/data, /postinstall, /vendor/bin, /data/local/tmp,
+# /data/local/tests/product), which it then uses unresolved; and terminal-size probes on its tools' pipes.
+dontaudit r1d vendor_default_prop:file r_file_perms;
+dontaudit r1d { system_data_root_file vendor_file postinstall_mnt_dir shell_data_file shell_test_data_file }:dir r_dir_perms;
+dontaudit r1d r1d:fifo_file ioctl;
+
+# The per-boot token goes to whoever asks only if the kernel's socket table says the asking connection is
+# the host app's (ADR-0036): r1d reads /proc/net/tcp. (It used to write the token into the host's own files,
+# which AOSP refuses every daemon.)
+allow r1d proc_net_tcp_udp:file r_file_perms;
+
+# ---- The boot (T-029, T-101)
+# The boot animation the host draws, kept in /data/r1os/boot; verbose boot's flag in /metadata/r1os.
+allow r1d r1os_boot_file:dir create_dir_perms;
+allow r1d r1os_boot_file:file create_file_perms;
+allow r1d metadata_file:dir search;
+allow r1d r1os_metadata_file:dir rw_dir_perms;
+allow r1d r1os_metadata_file:file create_file_perms;
+

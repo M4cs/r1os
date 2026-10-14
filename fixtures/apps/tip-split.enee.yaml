@@ -1,0 +1,43 @@
+# Hand-written for r1os ADR-0038: values turned with the R1's wheel, and a query over them that follows as they turn.
+enee: 1
+app: { id: tip-split, name: Tip Split, icon: receipt, accent: green, description: "Split a bill and its tip: turn the bill, the tip and how many of you." }
+data:
+  splits:
+    bill: real!
+    tip: int!
+    people: int!
+queries:
+  split:
+    sql: >-
+      SELECT round(:bill * (100 + :tip) / 100.0 / :people, 2) AS each,
+             round(:bill * :tip / 100.0, 2) AS tip_total,
+             round(:bill * (100 + :tip) / 100.0, 2) AS total
+    params: { bill: "{{state.bill}}", tip: "{{state.tip}}", people: "{{state.people}}" }
+  recent: SELECT id, bill, tip, people, created_at FROM splits ORDER BY id DESC LIMIT 5
+state:
+  _persist: [ tip, people ]
+  bill: 40
+  tip: 18
+  people: 2
+actions:
+  keep:
+    do:
+      - sql: INSERT INTO splits (bill, tip, people) VALUES (:bill, :tip, :people)
+      - toast: Kept
+views:
+  main:
+    - stat: { label: Each pays, value: "{{split.0.each}}", format: "number:2", caption: "{{split.0.total | number:2}} with {{split.0.tip_total | number:2}} tip" }
+    - wheel: { bind: state.bill, label: Bill, min: 0, max: 500, step: 0.5 }
+    - wheel: { bind: state.tip, label: Tip, min: 0, max: 30, unit: "%" }
+    - wheel: { bind: state.people, label: People, min: 1, max: 12 }
+    - button: { label: Keep this split, action: keep }
+    - list:
+        data: recent
+        title: "{{row.bill | number:2}} · {{row.tip}}% · {{row.people | plural:person}}"
+        caption: "{{row.created_at | relative}}"
+        empty: Nothing kept yet
+checks:
+  - expect: { split.0.each: 23.6, split.0.tip_total: 7.2 }
+  - do:
+      - { action: keep }
+    expect: { recent.0.people: 2 }

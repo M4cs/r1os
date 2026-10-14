@@ -1,0 +1,39 @@
+# r1os on its own image (ADR-0013): what r1os-base did through Magisk, as init.
+
+# Rabbit's USB "CUA" mode is turned off by ro.vendor.cua.enable=0 in r1os.mk's product properties,
+# not here: the vendor sets it to 1 before any .rc runs, and ro. props can't change after that.
+
+# Verbose boot (T-101): the kernel's log on the screen until SurfaceFlinger starts, when it's on
+# (/metadata/r1os/verbose_boot, Settings › About). It looks for the flag itself and exits without it;
+# nothing waits on it.
+on init
+    start r1os_bootlog
+
+service r1os_bootlog /system/bin/r1os-bootlog
+    user root
+    group root graphics
+    oneshot
+    disabled
+    seclabel u:r:r1os_bootlog:s0
+
+on post-fs
+    mkdir /metadata/r1os 0700 root root
+
+on post-fs-data
+    mkdir /data/r1os 0700 root root
+    mkdir /data/r1os/log 0700 root root
+    mkdir /data/r1os/boot 0700 root root
+    # r1os's labels (ADR-0035): the whole tree, once after each policy change (a hash of file_contexts
+    # kept on the directory skips it otherwise). tools/deploy.sh and tools/agent-box.sh relabel what
+    # they push.
+    restorecon_recursive /data/r1os
+    # The boot animation with your agents (T-029), which the host draws and r1d keeps, over the image's
+    # own (r1os's cast) before the animation starts. Without one yet, this fails and the image's shows.
+    mount none /data/r1os/boot/bootanimation.zip /product/media/bootanimation.zip bind
+
+# The core daemon. Root, in the r1d domain (vendor/r1os/sepolicy). init restarts it when it
+# exits, which is also how tools/deploy.sh swaps in a new binary (pkill -x r1d).
+service r1d /system/bin/r1os-r1d
+    class late_start
+    user root
+    group root

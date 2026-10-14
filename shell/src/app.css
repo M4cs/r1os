@@ -1,0 +1,17 @@
+/* The page a mini-app runs in, inside the R1's native shell (ADR-0017). The app's own look, r1os's design
+   language over the runtime's components, is apps/theme.css (ADR-0025), shared with the simulator. */
+
+/* The shell's black, edge to edge: the runtime's #0b0b0c showed as a frame around the WebView. */
+html,
+body,
+#root {
+  background: #000;
+  font-family: var(--r1-font, "Rubik"), system-ui, sans-serif;
+}
+
+/* Light mode (r1os ADR-0043): the shell's light ground. */
+html[data-mode="light"],
+html[data-mode="light"] body,
+html[data-mode="light"] #root {
+  background: #f3f2ef;
+}

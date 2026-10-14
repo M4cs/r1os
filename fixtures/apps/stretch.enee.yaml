@@ -1,0 +1,32 @@
+# Hand-written for r1os's reminders (ADR-0024): a nudge to stretch, every hour outside quiet hours. It asks for
+# `schedule` and `notify` the first time it opens; the reminder wakes the R1 and shows over the glance screen.
+enee: 1
+app: { id: stretch, name: Stretch, icon: person-simple-tai-chi, archetype: habit, accent: green, description: A nudge to stand up and stretch. }
+permissions:
+  schedule: Remind you even when the app is closed
+  notify: Show the reminder
+settings:
+  every: { type: duration, default: 1h, label: Remind me every, min: 60 }
+  quiet: { type: time_range, default: "22:00-08:00", label: Quiet hours }
+data:
+  stretches:
+    at: datetime = now
+queries:
+  today: SELECT count(*) AS n FROM stretches WHERE is_today(at)
+actions:
+  done:
+    do:
+      - sql: INSERT INTO stretches DEFAULT VALUES
+      - toast: Nice
+views:
+  main:
+    - stat: { label: Today, value: "{{today.n}}", caption: stretches }
+    - button: { label: I stretched, action: done, icon: check }
+triggers:
+  nudge:
+    every: "{{settings.every}}"
+    skip: "{{settings.quiet}}"
+    do: [ { notify: { title: Time to stretch, body: "{{today.n}} so far today" } } ]
+checks:
+  - do: { action: done }
+    expect: { today.n: 1 }

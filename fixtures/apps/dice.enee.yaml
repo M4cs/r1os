@@ -1,0 +1,53 @@
+enee: 1
+app: { id: dice, name: Dice, icon: dice-five, accent: teal, description: "Rolls a die and keeps score, with logic of its own." }
+permissions:
+  net.http: { hosts: [wttr.in], reason: Show the weather beside your rolls }
+data:
+  rolls: { value: int! }
+queries:
+  recent: SELECT id, value FROM rolls ORDER BY id DESC LIMIT 20
+actions:
+  save:
+    params: { value: int }
+    do: [ { sql: "INSERT INTO rolls (value) VALUES (:value)" } ]
+  roll:
+    do: [ { run: roll } ]
+  clear:
+    confirm: Clear all rolls?
+    do: [ { sql: "DELETE FROM rolls" } ]
+views:
+  main:
+    - stat: { label: Last roll, value: "{{logic.last}}" }
+    - text: { text: "{{logic.summary}}" }
+    - text: { text: "{{logic.weather}}" }
+    - text: { text: "{{logic.clock}}" }
+    - row:
+        items:
+          - button: { label: Roll, action: roll }
+          - button: { label: Clear, action: clear }
+    - list: { data: "{{logic.rows}}", title: "{{row.label}}", empty: No rolls yet }
+logic:
+  values: [last, summary, weather, clock, rows]
+  actions: [roll]
+  script: |
+    const faces = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
+    r1.on("change", () => {
+      const v = r1.q.recent.map((r) => r.value);
+      r1.set("last", v.length ? v[0] : "none yet");
+      const avg = v.length ? (v.reduce((a, b) => a + b, 0) / v.length).toFixed(1) : "–";
+      r1.set("summary", `${v.length} rolls, average ${avg}`);
+      r1.set("rows", v.slice(0, 6).map((x) => ({ label: `${faces[x - 1]}  ${x}` })));
+    });
+    r1.every(1000, () => r1.set("clock", new Date().toLocaleTimeString()));
+    r1.action("roll", async () => {
+      await r1.run("save", { value: 1 + Math.floor(Math.random() * 6) });
+    });
+    r1.on("start", async () => {
+      try {
+        const w = await r1.fetch("https://wttr.in/?format=j1");
+        const now = w.body.current_condition[0];
+        r1.set("weather", `${now.temp_C}°C and ${now.weatherDesc[0].value.toLowerCase()} outside`);
+      } catch (e) {
+        r1.set("weather", "no weather: " + e.message);
+      }
+    });

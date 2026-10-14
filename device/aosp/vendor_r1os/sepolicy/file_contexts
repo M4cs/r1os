@@ -1,0 +1,13 @@
+/system/bin/r1os-r1d    u:object_r:r1d_exec:s0
+/system/bin/r1os-bootlog    u:object_r:r1os_bootlog_exec:s0
+
+# r1os's data (ADR-0035). The more specific path wins.
+/data/r1os(/.*)?                    u:object_r:r1os_data_file:s0
+/data/r1os/bin(/.*)?                u:object_r:r1os_code_file:s0
+/data/r1os/lib(/.*)?                u:object_r:r1os_code_file:s0
+/data/r1os/agent(/.*)?              u:object_r:r1os_agent_file:s0
+/data/r1os/agent/rootfs(/.*)?       u:object_r:r1os_agent_root_file:s0
+/data/r1os/boot(/.*)?               u:object_r:r1os_boot_file:s0
+
+# r1os's files on /metadata (T-101).
+/metadata/r1os(/.*)?                u:object_r:r1os_metadata_file:s0

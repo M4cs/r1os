@@ -1,0 +1,13 @@
+/* The R1's fonts (ui/Theme.kt FAMILIES), from its /system/fonts: see NOTICE.md. */
+@font-face { font-family: "R1 Roboto"; src: url("./Roboto-Regular.woff2") format("woff2"); font-weight: 100 900; font-stretch: 75% 100%; }
+@font-face { font-family: "R1 Roboto Flex"; src: url("./RobotoFlex-Regular.woff2") format("woff2"); font-weight: 100 1000; font-stretch: 25% 151%; }
+@font-face { font-family: "R1 Source Sans"; src: url("./SourceSansPro-Regular.woff2") format("woff2"); font-weight: 400; }
+@font-face { font-family: "R1 Source Sans"; src: url("./SourceSansPro-SemiBold.woff2") format("woff2"); font-weight: 500 600; }
+@font-face { font-family: "R1 Source Sans"; src: url("./SourceSansPro-Bold.woff2") format("woff2"); font-weight: 700 900; }
+@font-face { font-family: "R1 Noto Serif"; src: url("./NotoSerif-Regular.woff2") format("woff2"); font-weight: 400 600; }
+@font-face { font-family: "R1 Noto Serif"; src: url("./NotoSerif-Bold.woff2") format("woff2"); font-weight: 700 900; }
+@font-face { font-family: "R1 Droid Sans Mono"; src: url("./DroidSansMono.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "R1 Cutive Mono"; src: url("./CutiveMono.woff2") format("woff2"); }
+@font-face { font-family: "R1 Coming Soon"; src: url("./ComingSoon.woff2") format("woff2"); }
+@font-face { font-family: "R1 Dancing Script"; src: url("./DancingScript-Regular.woff2") format("woff2"); font-weight: 400 700; }
+@font-face { font-family: "R1 Carrois Gothic SC"; src: url("./CarroisGothicSC-Regular.woff2") format("woff2"); }

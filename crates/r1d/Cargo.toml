@@ -1,0 +1,59 @@
+[package]
+name = "r1d"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+anyhow = "1.0.104"
+base64 = "0.22"
+axum = { version = "0.8.9", features = ["ws"] }
+# Feed dates for `http.rss` (crate::feed).
+chrono = { version = "0.4", default-features = false, features = ["std"] }
+enee-data = { version = "0.1.0", path = "../enee-data" }
+enee-spec = { version = "0.1.0", path = "../enee-spec" }
+# The player's stream relay hands axum a stream of chunks (crate::player).
+futures-core = "0.3.34"
+getrandom = "0.4.3"
+# Reading a pairing QR from the camera's frame (crate::link, Q42's Rust option).
+image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
+libc = "0.2.190"
+# The PIN lock's hash (crate::pin): PBKDF2-SHA256, both already built for r1-link and zip.
+pbkdf2 = { version = "0.12", default-features = false, features = ["hmac"] }
+sha2 = "0.10"
+# System One's sentence embedder (crate::system1, ADR-0032): ONNX Runtime loaded at run time, the same library
+# speech-to-text ships on the R1 (out/speech/lib, 1.28); nothing is linked or downloaded at build time.
+ort = { version = "=2.0.0-rc.13", default-features = false, features = ["std", "load-dynamic", "api-24"] }
+qrcode = { version = "0.14.1", default-features = false, features = ["svg"] }
+# Feeds for `http.rss` (crate::feed): RSS and Atom, as eneeware reads them.
+quick-xml = "=0.42.0"
+# Linked computers (crate::link, ADR-0048): the link, shared with the companion.
+r1-link = { version = "0.1.0", path = "../r1-link" }
+rqrr = "0.10"
+rusqlite = { version = "0.40", features = ["bundled"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+tokio = { version = "1.53.2", features = ["rt-multi-thread", "macros", "net", "sync", "time", "process", "fs", "io-util"] }
+tower = { version = "0.5", features = ["util"] }
+tower-http = { version = "0.7.1", features = ["fs"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "fmt"] }
+# Apps' web requests (crate::fetch, docs/specs/apps.md §6): blocking HTTP with rustls + ring and
+# Mozilla's roots built in (no system certificate store needed on Android), as eneeware uses it.
+ureq = { version = "3.4", default-features = false, features = ["rustls", "gzip"] }
+url = "2.5"
+
+# Speech-to-text (crate::voice, ADR-0009). Android links k2-fsa's prebuilt shared libs
+# (tools/fetch-speech.sh → out/speech; tools/build-r1d.sh sets SHERPA_ONNX_LIB_DIR). Elsewhere
+# (the simulator, tests) the crate downloads its own static build.
+[target.'cfg(target_os = "android")'.dependencies]
+# An empty JVM context for netdev (crate::link; see main.rs).
+ndk-context = "0.1.1"
+sherpa-onnx = { version = "=1.13.8", default-features = false, features = ["shared"] }
+# Whisper's detected language, which the crate's wrapper drops (crate::translator::speech).
+sherpa-onnx-sys = { version = "=1.13.8", default-features = false, features = ["shared"] }
+
+[target.'cfg(not(target_os = "android"))'.dependencies]
+sherpa-onnx = { version = "=1.13.8" }
+sherpa-onnx-sys = { version = "=1.13.8" }

@@ -1,0 +1,9 @@
+{
+  "name": "r1os",
+  "private": true,
+  "scripts": {
+    "build": "pnpm --filter @r1os/shell build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r --if-present test"
+  }
+}

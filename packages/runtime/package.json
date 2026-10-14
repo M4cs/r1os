@@ -1,0 +1,35 @@
+{
+  "name": "@r1os/runtime",
+  "private": true,
+  "version": "0.0.0",
+  "description": "json-render runtime for compiled enee apps (catalog, StateStore, $x directive, action runner), rendered inside the r1os shell (ADR-0006). Ported from eneeware packages/runtime at 61bc7a7, minus the iframe bridge and the sql.js dev host.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./styles.css": "./src/styles.css"
+  },
+  "sideEffects": [
+    "*.css"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@r1os/icons": "workspace:*",
+    "@json-render/core": "0.21.0",
+    "@json-render/directives": "0.21.0",
+    "@json-render/react": "0.21.0",
+    "zod": "4.3.6"
+  },
+  "peerDependencies": {
+    "react": "^19.2.3"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "react": "19.3.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.2",
+    "vitest": "5.0.3"
+  }
+}

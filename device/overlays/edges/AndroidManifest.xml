@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  No swipe from an edge for Android's own bars (T-127, ADR-0059), on an R1 set up before an image that has it built in
+  (vendor_r1os/overlay's framework config). A runtime overlay of the framework: it has to be signed with the image's
+  platform key (AOSP's test key on r1os's images), which tools/edges-overlay.sh does.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="dev.r1os.overlay.edges">
+    <uses-sdk android:minSdkVersion="35" android:targetSdkVersion="35" />
+    <overlay android:targetPackage="android" android:isStatic="false" android:priority="100" />
+    <application android:hasCode="false" />
+</manifest>

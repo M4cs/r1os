@@ -1,0 +1,50 @@
+enee: 1
+app: { id: water-log, name: Water, icon: drop, archetype: tracker, accent: blue, description: Glasses of water per day. }
+settings:
+  daily_goal: { type: int, default: 8, label: Daily goal, min: 1 }
+data:
+  glasses:
+    count: int! = 1
+    at: datetime = now
+  _indexes: [ glasses(at) ]
+queries:
+  today: SELECT coalesce(sum(count), 0) AS total, count(*) AS n FROM glasses WHERE is_today(at)
+  per_day: SELECT local_date(at) AS day, sum(count) AS glasses FROM glasses WHERE at >= days_ago(7) GROUP BY day ORDER BY day
+  recent: SELECT id, count, at FROM glasses ORDER BY at DESC LIMIT 20
+  last: SELECT coalesce(max(id), 0) AS id FROM glasses
+actions:
+  drink:
+    params: { count: int }
+    do:
+      - sql: INSERT INTO glasses (count) VALUES (:count)
+      - toast: "+{{params.count}} glass"
+  undo:
+    do:
+      - sql: DELETE FROM glasses WHERE id = (SELECT max(id) FROM glasses)
+      - toast: Undone
+  remove:
+    params: { id: int }
+    confirm: Delete this entry?
+    do:
+      - sql: DELETE FROM glasses WHERE id = :id
+views:
+  main:
+    - stat: { label: Today, value: "{{today.total}}", caption: "of {{settings.daily_goal}} glasses" }
+    - progress: { value: "{{today.total}}", max: "{{settings.daily_goal}}" }
+    - text: { text: Goal reached!, tone: accent, visible: { when: today.total, gte: "{{settings.daily_goal}}" } }
+    - quick_actions:
+        - { label: "+1 glass", action: drink, params: { count: 1 } }
+        - { label: "+2 glasses", action: drink, params: { count: 2 } }
+    - button: { label: Undo last, action: undo, variant: ghost, icon: arrow-u-up-left, visible: { when: last.id, gt: 0 } }
+    - chart: { kind: bar, data: per_day, x: day, y: glasses, title: Last 7 days }
+    - list:
+        data: recent
+        title: "{{row.count | plural:glass}}"
+        caption: "{{row.at | relative}}"
+        row_actions: [ { icon: trash, label: Delete, action: remove, params: { id: "{{row.id}}" } } ]
+        empty: No water logged yet
+checks:
+  - do: [ { action: drink, params: { count: 1 } }, { action: drink, params: { count: 2 } } ]
+    expect: { today.total: 3, today.n: 2 }
+  - do: [ { action: drink, params: { count: 1 } }, { action: drink, params: { count: 2 } }, { action: undo } ]
+    expect: { today.total: 1 }

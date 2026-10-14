@@ -1,0 +1,71 @@
+# Hand-written for the M2 exit (an RSS app with live data, triggers and permissions): Hacker News' front page from
+# hnrss.org, kept so posts can be marked read, with an optional notification for new ones.
+enee: 1
+app: { id: news, name: Hacker News, icon: newspaper, archetype: feed, accent: orange, description: Hacker News' front page. }
+permissions:
+  net.http: { hosts: [hnrss.org], reason: Read Hacker News' front page }
+  open.url: Open a story in your browser
+  schedule: Keep checking for new stories while eneeware runs
+  notify: Tell you about new stories, if you turn that on
+settings:
+  notify_new: { type: bool, default: false, label: Notify me about new stories }
+data:
+  stories:
+    guid: text!
+    title: text
+    link: text
+    summary: text
+    author: text
+    published: datetime
+    read: bool = false
+  _indexes: [ "unique stories(guid)", stories(published) ]
+queries:
+  counts: SELECT count(*) FILTER (WHERE NOT read) AS unread, count(*) AS total FROM stories
+  latest: SELECT id, title, link, author, published, read FROM stories ORDER BY published DESC LIMIT 40
+  newest: SELECT title FROM stories ORDER BY id DESC LIMIT 1
+services:
+  front: { use: http.rss, url: "https://hnrss.org/frontpage", every: 15m, into: stories }
+actions:
+  open:
+    params: { id: int, link: text }
+    do:
+      - sql: UPDATE stories SET read = 1 WHERE id = :id
+      - open_url: "{{params.link}}"
+  mark_read:
+    params: { id: int }
+    do:
+      - sql: UPDATE stories SET read = 1 WHERE id = :id
+  mark_all_read:
+    do:
+      - sql: UPDATE stories SET read = 1 WHERE NOT read
+  clear_read:
+    confirm: Remove the stories you've read?
+    do:
+      - sql: DELETE FROM stories WHERE read
+views:
+  main:
+    - row:
+        - stat: { label: Unread, value: "{{counts.unread}}" }
+        - stat: { label: Kept, value: "{{counts.total}}" }
+    - text: { text: "{{services.front.error}}", tone: muted, visible: "{{services.front.error}}" }
+    - list:
+        data: latest
+        title: "{{row.title}}"
+        caption: "{{row.author}} · {{row.published | relative}}"
+        row_actions:
+          - { icon: arrow-square-out, label: Open, action: open, params: { id: "{{row.id}}", link: "{{row.link}}" } }
+          - { icon: check, label: Mark read, action: mark_read, params: { id: "{{row.id}}" } }
+        empty: The front page arrives within a minute of opening
+    - row:
+        - button: { label: Mark all read, action: mark_all_read, variant: secondary }
+        - button: { label: Clear read, action: clear_read, variant: secondary }
+triggers:
+  new_stories:
+    on: change:stories
+    when: SELECT notify_new FROM settings
+    do:
+      - notify: { title: New on Hacker News, body: "{{newest.0.title}}" }
+checks:
+  - expect: { counts.total: 0 }
+  - do: [ { action: mark_all_read }, { action: clear_read } ]
+    expect: { counts.unread: 0, counts.total: 0 }

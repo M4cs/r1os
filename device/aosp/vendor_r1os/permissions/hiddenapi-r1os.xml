@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The host may call Android's hidden interfaces: IAdbManager, to answer "allow USB debugging?" and "debug on this
+  network?" in the shell instead of SystemUI's dialogs (AdbConfirmActivity, roadmap R4's keep-list). AOSP 15 marks
+  IAdbManager `blocked` for apps not signed with the platform key; a system app named here is exempt
+  (ApplicationInfo.isAllowedToUseHiddenApis). Calling it still takes MANAGE_DEBUGGING (privapp-permissions-r1os.xml).
+
+  Not r1d setting `hidden_api_blacklist_exemptions` (v0.2.9): that's every app's list, and r1d's SELinux domain can
+  reach neither `settings` (settings_service) nor `content` (app_process, zygote_exec).
+-->
+<config>
+    <hidden-api-whitelisted-app package="dev.r1os.host" />
+</config>

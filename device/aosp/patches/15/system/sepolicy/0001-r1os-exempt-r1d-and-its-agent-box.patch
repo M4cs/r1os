@@ -1,0 +1,71 @@
+From: Max Bridgland <engineering@oglabs.dev>
+Subject: [PATCH] r1os: exempt r1d and its agent box from four neverallows (ADR-0035)
+
+r1os's core daemon (r1d, a system_ext domain) runs its own binary and libraries from /data/r1os,
+and its agent box runs an Alpine userland and the claude/codex CLIs from there. To build the box,
+r1d mounts a private /proc, /tmp, /dev and devpts, and it reads and fixes up the agent user's
+files as root. AOSP's neverallows forbid all of that outside a few platform domains.
+
+Two private attributes (the pattern of update_provider) exempt them:
+ - r1os_data_exec, on r1os's executable file types in /data: the two data-execution neverallows.
+   Only r1d and r1d_agent have rules that execute them.
+ - r1os_privileged, on r1d: the filesystem-mount and dac_override/dac_read_search neverallows.
+
+Applied by r1os's tools/build-image.sh (stage `layer`) on android-15.0.0_r36.
+---
+diff --git a/private/attributes b/private/attributes
+--- a/private/attributes
++++ b/private/attributes
+@@ -31,3 +31,17 @@
+ until_board_api(202504, `
+     attribute tee_service_type;
+ ')
++
++# r1os (its ADR-0035): r1d, r1os's core daemon (a system_ext domain), builds the agent box: a private
++# mount namespace with its own /proc, /tmp, /dev and devpts, and the agent user's files, which it
++# reads and fixes up as root. Like vold's and zygote's, that needs the mount and dac_override
++# exemptions in domain.te. Only for r1os's own images.
++attribute r1os_privileged;
++expandattribute r1os_privileged false;
++
++# r1os (its ADR-0035): file types in /data/r1os that may hold executable code: r1d and its libraries
++# (deployed there, not baked into the image, during development) and the agent box's Alpine userland
++# and CLIs. Exempt from domain.te's data-execution neverallows; only r1d and the agent box's domain
++# have rules that execute them, and neither can write the other's.
++attribute r1os_data_exec;
++expandattribute r1os_data_exec false;
+diff --git a/private/domain.te b/private/domain.te
+--- a/private/domain.te
++++ b/private/domain.te
+@@ -1836,6 +1836,7 @@
+     -vendor_file_type
+     -exec_type
+     -postinstall_file
++    -r1os_data_exec # r1os: r1d's and its agent box's code in /data/r1os (attributes)
+ }:file execute;
+ 
+ # Only init is allowed to write cgroup.rc file
+@@ -1908,6 +1909,7 @@
+   -dalvikcache_data_file
+   -system_data_file # shared libs in apks
+   -apk_data_file
++  -r1os_data_exec # r1os: r1d's and its agent box's code in /data/r1os (attributes)
+ }:file no_x_file_perms;
+ 
+ # Minimize dac_override and dac_read_search.
+@@ -1925,6 +1927,7 @@
+   migrate_legacy_obb_data
+   netd
+   postinstall_dexopt
++  r1os_privileged
+   recovery
+   rss_hwm_reset
+   sdcardd
+@@ -1959,6 +1962,7 @@
+     -init
+     -kernel
+     -otapreopt_chroot
++    -r1os_privileged # r1os: r1d mounts the agent box's /proc, /tmp, /dev and devpts (attributes)
+     -recovery
+     -update_engine
+     -vold

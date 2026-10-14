@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- r1os's keyboard (ADR-0055): the R1's input method for every text box. -->
+<input-method xmlns:android="http://schemas.android.com/apk/res/android"
+    android:isDefault="true"
+    android:supportsSwitchingToNextInputMethod="false">
+    <subtype
+        android:imeSubtypeLocale="en_US"
+        android:imeSubtypeMode="keyboard"
+        android:label="@string/keyboard_name" />
+</input-method>

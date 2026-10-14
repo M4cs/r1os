@@ -1,0 +1,21 @@
+[workspace]
+resolver = "3"
+members = ["crates/r1d", "crates/r1-link", "crates/r1-usb", "crates/r1-bootlog", "crates/enee-spec", "crates/enee-data", "companion/src-tauri"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+publish = false
+
+[workspace.dependencies]
+anyhow = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing = "0.1"
+
+[profile.release]
+opt-level = "s"
+lto = "thin"
+strip = true
+panic = "abort"

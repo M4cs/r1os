@@ -1,0 +1,48 @@
+/* The home page: centred, big, few words. One idea a section, carried by the R1 and its screens. */
+
+/* ---- the hero ------------------------------------------------------------------------------------------------- */
+
+.hero { position: relative; padding: clamp(30px, 6vh, 64px) 0 0; overflow: hidden; text-transform: lowercase; }
+.hero-glow { position: absolute; left: 50%; top: 34%; width: min(1100px, 130vw); height: 900px; transform: translateX(-50%); background-color: var(--feature); -webkit-mask-image: radial-gradient(closest-side, #000 0%, transparent 100%); mask-image: radial-gradient(closest-side, #000 0%, transparent 100%); opacity: .2; transition: background-color .9s ease; pointer-events: none; }
+:root[data-mode="light"] .hero-glow { opacity: .26; }
+.hero-inner { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; container-type: inline-size; }
+.hero .readout b { color: var(--accent-text); }
+/* On a phone the line shrinks just enough for the reel's widest phrase, in its fill, to fit across: Reel.tsx gives that
+   width in ems as --reel-em. */
+.hero-title { width: 100%; font-size: clamp(44px, 8vw, 112px); font-size: min(clamp(44px, 8vw, 112px), calc(98cqi / var(--reel-em, 9.8))); line-height: 1.06; letter-spacing: -0.03em; margin: 22px 0 0; }
+.hero-line { display: block; }
+.hero-word { display: inline-block; }
+.hero-lede { font-size: clamp(18px, 1.1vw + 13px, 22px); line-height: 1.5; letter-spacing: -0.005em; color: var(--sub); max-width: 32em; margin-top: 10px; }
+.hero-ctas { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 26px; }
+.hero-device { width: min(540px, 88vw); margin-top: clamp(36px, 6vh, 64px); }
+.hero-how { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 30px; min-height: 58px; }
+.hero-dots { display: flex; align-items: center; gap: 2px; }
+.hero-dot { border: 0; background: none; padding: 6px 4px; display: grid; place-items: center; }
+.hero-dot span { display: block; height: 7px; border-radius: 4px; transition: background-color .3s; }
+.hero-how-text { font: 500 15px/1.4 var(--mono); color: var(--sub); min-height: 22px; text-transform: none; }
+/* Room for a caption on two lines, so the facts under it don't jump as the stories change. */
+@media (max-width: 360px) { .hero-how { min-height: 76px; } }
+
+.reel { --py: calc(var(--h) * .07); position: relative; display: block; width: 100%; height: calc((var(--h) + var(--py) * 2) * 1.34); margin-top: .04em; overflow: hidden; -webkit-mask-image: linear-gradient(180deg, #000 0, #000 calc(var(--h) + var(--py) * 2), rgba(0,0,0,.35) calc(var(--h) + var(--py) * 2.6), transparent 100%); mask-image: linear-gradient(180deg, #000 0, #000 calc(var(--h) + var(--py) * 2), rgba(0,0,0,.35) calc(var(--h) + var(--py) * 2.6), transparent 100%); }
+.reel-measure { position: absolute; visibility: hidden; pointer-events: none; left: 0; top: 0; }
+.reel-measure span { display: block; width: max-content; white-space: nowrap; }
+.reel-rows { position: absolute; left: 50%; top: var(--py); width: 0; height: var(--h); will-change: filter; }
+.reel-row { position: absolute; left: 0; top: 0; white-space: nowrap; display: block; }
+.reel-fill { position: absolute; left: 50%; top: 0; height: calc(var(--h) + var(--py) * 2); border-radius: calc(var(--h) * .2); overflow: hidden; display: block; }
+.reel-rows.ink { color: var(--ink); }
+
+/* Four facts under the R1, as small as a spec sheet. */
+.facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; width: 100%; max-width: 900px; margin-top: clamp(40px, 7vh, 72px); padding-top: 26px; border-top: 1px solid var(--line); }
+.fact { display: flex; align-items: center; justify-content: center; gap: 12px; text-align: left; font-size: 15px; font-weight: 700; line-height: 1.3; white-space: pre-line; }
+.fact-icon { display: grid; flex: none; color: var(--accent-text); }
+@media (max-width: 760px) { .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 20px; } .fact { justify-content: flex-start; } }
+
+/* ---- every section's head -------------------------------------------------------------------------------------- */
+
+.section { position: relative; padding: clamp(96px, 16vh, 180px) 0 0; text-transform: lowercase; }
+.head { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 1180px; margin: 0 auto; }
+.head h2 { font-size: clamp(32px, 6vw, 80px); letter-spacing: -0.03em; line-height: 1.06; }
+.head p { font-size: clamp(18px, 1.1vw + 13px, 22px); line-height: 1.5; letter-spacing: -0.005em; color: var(--sub); max-width: 32em; margin-top: 16px; }
+.head-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 18px; font-weight: 700; color: var(--accent-text); }
+.head-link:hover { gap: 10px; }
+@media (max-width: 700px) { .head h2 { letter-spacing: -0.025em; } }

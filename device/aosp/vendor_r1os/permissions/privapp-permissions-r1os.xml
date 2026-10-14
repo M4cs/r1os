@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The host app is a privileged app in r1os's image. It turns off Android's status bar, notification
+  shade and heads-up alerts while it runs (ADR-0014: the R1 has no bars), and StatusBarManager's
+  disable needs STATUS_BAR. An adb-installed update only keeps a privileged permission the image's
+  own copy asks for, so the image's copy must be a host that requests it.
+-->
+<permissions>
+    <privapp-permissions package="dev.r1os.host">
+        <permission name="android.permission.STATUS_BAR"/>
+        <!-- Answering Android's adb confirmations in the shell (AdbConfirmActivity), so SystemUI can go (R4). -->
+        <permission name="android.permission.MANAGE_DEBUGGING"/>
+        <!-- Other apps' media (Spotify) shown and controlled on the glance screen (ADR-0040). -->
+        <permission name="android.permission.MEDIA_CONTENT_CONTROL"/>
+        <!-- Bluetooth on the wheel (R7): switching it, connecting, disconnecting and forgetting devices. -->
+        <permission name="android.permission.BLUETOOTH_PRIVILEGED"/>
+    </privapp-permissions>
+    <!--
+      Aurora Store (ADR-0013, Q23), a privileged app in the image: its preload build asks for these, so the
+      installs and removals the user taps in it need no second confirmation from Android.
+    -->
+    <privapp-permissions package="com.aurora.store">
+        <permission name="android.permission.INSTALL_PACKAGES"/>
+        <permission name="android.permission.DELETE_PACKAGES"/>
+    </privapp-permissions>
+</permissions>
