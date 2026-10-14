@@ -353,6 +353,13 @@ mod imp {
         let groups: [libc::gid_t; 2] = [AGENT_UID, INET_GID];
         let attr_current = lit("/proc/thread-self/attr/current");
         let selinux = cfg!(target_os = "android");
+        // On r1os's image the domain must be there: without it the box would run in r1d's own, far wider (T-185).
+        // Only the Magisk developer base, whose policy has no `r1d_agent`, runs the box without it.
+        let need_domain = selinux && r1os_image();
+        if selinux && !need_domain {
+            static SAID: std::sync::Once = std::sync::Once::new();
+            SAID.call_once(|| tracing::warn!("not r1os's image: the agent box runs in r1d's SELinux domain if the policy has no r1d_agent"));
+        }
 
         let mut cmd = tokio::process::Command::new(program);
         cmd.args(args).env_clear();
@@ -429,8 +436,9 @@ mod imp {
                 let prog = SockFprog { len: filter.len() as u16, filter: filter.as_ptr() };
                 check(prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER as libc::c_ulong, &prog as *const SockFprog as libc::c_ulong, 0, 0), "seccomp")?;
                 // Last, the agent box's SELinux domain (ADR-0035): set here (setcon), as the exec can't
-                // enter it from a file in /data. Through the box's own /proc, mounted above. An image
-                // without the domain (before v0.2.7) answers EINVAL, and the box runs in r1d's.
+                // enter it from a file in /data. Through the box's own /proc, mounted above. A policy
+                // without the domain answers EINVAL: on r1os's image that's refused (T-185); on the Magisk
+                // base the box runs in r1d's.
                 if selinux {
                     let fd = open(attr_current.as_ptr(), O_WRONLY | O_CLOEXEC);
                     if fd < 0 {
@@ -439,14 +447,30 @@ mod imp {
                     let n = write(fd, AGENT_CONTEXT.as_ptr().cast(), AGENT_CONTEXT.len());
                     let err = io::Error::last_os_error();
                     close(fd);
-                    if n < 0 && err.raw_os_error() != Some(EINVAL) {
-                        return Err(io::Error::new(err.kind(), "selinux context"));
+                    if n < 0 && (need_domain || err.raw_os_error() != Some(EINVAL)) {
+                        return Err(io::Error::new(err.kind(), "selinux context: the image's policy has no r1d_agent domain"));
                     }
                 }
                 Ok(())
             });
         }
         Ok(cmd)
+    }
+
+    /// Whether this is r1os's own image (`ro.r1os.image.version` set), whose policy has the agent box's domain.
+    fn r1os_image() -> bool {
+        #[cfg(target_os = "android")]
+        {
+            static IMAGE: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+            *IMAGE.get_or_init(|| {
+                let mut buf = [0u8; 92];
+                // SAFETY: the name is a C string and the buffer is PROP_VALUE_MAX (92) bytes.
+                let n = unsafe { libc::__system_property_get(c"ro.r1os.image.version".as_ptr(), buf.as_mut_ptr().cast()) };
+                n > 0
+            })
+        }
+        #[cfg(not(target_os = "android"))]
+        false
     }
 
     #[cfg(test)]
