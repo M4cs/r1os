@@ -1,5 +1,6 @@
-//! One R1 in fastboot (the bootloader's, or fastbootd's in userspace): reads by name, writes only through
-//! [`crate::safety`]. The serial addresses it and goes nowhere else.
+//! One R1 in fastboot: reads by name, writes only through [`crate::safety`]. The serial addresses it and goes nowhere
+//! else. It reboots only to the system or the bootloader: never into fastbootd (ADR-0067, after T-182); it can tell
+//! when an R1 is there ([`Fastboot::userspace`]), to refuse.
 
 use crate::safety::{self, Write};
 use anyhow::{Context, Result, bail};
@@ -7,14 +8,12 @@ use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
-/// Where to reboot to.
+/// Where to reboot to. Not fastbootd: the install never goes there (ADR-0067).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Reboot {
     System,
     /// The bootloader's fastboot.
     Bootloader,
-    /// fastbootd (userspace, where logical partitions live).
-    Fastbootd,
 }
 
 pub struct Fastboot {
@@ -88,7 +87,6 @@ impl Fastboot {
         match to {
             Reboot::System => c.arg("reboot"),
             Reboot::Bootloader => c.args(["reboot", "bootloader"]),
-            Reboot::Fastbootd => c.args(["reboot", "fastboot"]),
         };
         check_status(c.output().context("fastboot didn't run")?, "reboot")
     }

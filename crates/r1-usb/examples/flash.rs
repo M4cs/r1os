@@ -1,18 +1,33 @@
-//! Flashing r1os onto an R1, as the companion's wizard does it (T-170). `stock` and `status` only read; `check` reboots
-//! the R1 into fastbootd to read its vendor partition's size (no writes); `run` erases the R1 and flashes it, after
-//! showing the plan and reading `ERASE` typed back.
+//! Flashing r1os onto an R1, as the companion's wizard does it (T-170, ADR-0067): everything from the bootloader, never
+//! fastbootd. `stock`, `status`, `read-r1`, `check` and the `super-*` commands only read (and build files on the PC);
+//! `run` writes the R1: vbmeta, `super` (r1os's system in, the R1's own vendor kept), then the wipe, after showing the
+//! plan and reading `ERASE` typed back.
 //!
 //!     cargo run -p r1-usb --example flash -- stock [--from <extracted firmware folder>]
+//!     cargo run -p r1-usb --example flash -- read-r1           (a booted R1 with root: super's head and para, read only)
 //!     cargo run -p r1-usb --example flash -- status
-//!     cargo run -p r1-usb --example flash -- fastboot      (from power-off, through the preloader)
-//!     cargo run -p r1-usb --example flash -- check
-//!     cargo run -p r1-usb --example flash -- run <r1os system .img> [--keep-product]
+//!     cargo run -p r1-usb --example flash -- fastboot          (from power-off, through the preloader)
+//!     cargo run -p r1-usb --example flash -- check             (in the bootloader; no reboots)
+//!     cargo run -p r1-usb --example flash -- run <r1os system .img>
+//!     cargo run -p r1-usb --example flash -- super-head <file> | super-build <head> <system> <out> [a|b] | super-probe <head> <out>
 
 use r1_usb::{fastboot::Fastboot, flash, stock};
 use std::path::PathBuf;
 
 fn stock_dir() -> PathBuf {
     r1_usb::folders::companion().join("stock-v0.8.293")
+}
+
+/// Where an R1's `super` head and `para` are kept between `read-r1` (booted) and `check` (in the bootloader).
+fn r1_dir(id: &str) -> PathBuf {
+    r1_usb::folders::companion().join("r1").join(id)
+}
+
+/// `super`'s head and `para` as `read-r1` kept them for this R1.
+fn read_back(fb: &Fastboot) -> anyhow::Result<(Vec<u8>, Vec<u8>)> {
+    let dir = r1_dir(&fb.id());
+    let head = std::fs::read(dir.join("super-head.bin")).map_err(|_| anyhow::anyhow!("nothing read from this R1 yet: boot it and run `read-r1` first"))?;
+    Ok((head, std::fs::read(dir.join("para.bin"))?))
 }
 
 /// The R1 in fastboot: platform-tools from the companion's folder, else `fastboot`.
@@ -110,31 +125,49 @@ fn main() -> anyhow::Result<()> {
             let image = r1_usb::superimg::probe(&std::fs::read(head)?, out.as_ref())?;
             println!("{}", serde_json::json!({ "probe": image.path(), "bytes": std::fs::metadata(image.path())?.len() }));
         }
-        Some("check") => println!("{}", serde_json::to_string(&flash::check(&r1()?)?)?),
+        Some("read-r1") => {
+            let exe = r1_usb::tools::find(&r1_usb::folders::companion()).map(|t| t.adb).unwrap_or_else(|| PathBuf::from("adb"));
+            let (serial, _) = r1_usb::adb::devices(&exe)?
+                .into_iter()
+                .find(|(_, s)| *s == r1_usb::adb::State::Device)
+                .ok_or_else(|| anyhow::anyhow!("no booted R1 on USB with adb allowed"))?;
+            let adb = r1_usb::adb::Adb::new(exe, serial);
+            let root = adb.root()?;
+            let dir = r1_dir(&adb.id());
+            std::fs::create_dir_all(&dir)?;
+            adb.read_partition_head(root, "super", flash::SUPER_HEAD, &dir.join("super-head.bin"))?;
+            adb.read_partition(root, "para", &dir.join("para.bin"), |_| {})?;
+            let head = std::fs::read(dir.join("super-head.bin"))?;
+            r1_usb::lp::read(&head, 0)?;
+            let merge = r1_usb::superimg::merge_status(&std::fs::read(dir.join("para.bin"))?)?;
+            println!("{}", serde_json::json!({ "r1": adb.id(), "dir": dir, "merge": merge }));
+        }
+        Some("check") => {
+            let fb = r1()?;
+            let (head, para) = read_back(&fb)?;
+            println!("{}", serde_json::to_string(&flash::check(&fb, &head, &para)?)?);
+        }
         Some("run") => {
             let system = PathBuf::from(args.get(1).ok_or_else(|| anyhow::anyhow!("run <r1os system .img>"))?);
             let stock = stock::find(&stock_dir()).ok_or_else(|| anyhow::anyhow!("no stock files yet: run `stock` first"))?;
             let fb = r1()?;
-            eprintln!("Checking the R1 (into fastbootd; nothing written)…");
-            let checked = flash::check(&fb)?;
-            let plan = flash::Plan {
-                slot: checked.slot,
-                system,
-                stock,
-                work: r1_usb::folders::companion().join("flash-work"),
-                keep_product: args.iter().any(|a| a == "--keep-product"),
-            };
-            eprintln!("\nAbout to, on slot {}:", plan.slot);
+            let (head, para) = read_back(&fb)?;
+            let checked = flash::check(&fb, &head, &para)?;
+            eprintln!("Building super for this R1 (on the PC; nothing written yet)…");
+            let plan = flash::prepare(&checked, &system, stock, &r1_usb::folders::companion().join("flash-work"), |_, _| {})?;
+            eprintln!("
+About to:");
             for l in plan.describe() {
                 eprintln!("  - {l}");
             }
-            eprint!("\nType {} to go ahead: ", flash::CONFIRM);
+            eprint!("
+Type {} to go ahead: ", flash::CONFIRM);
             let mut typed = String::new();
             std::io::stdin().read_line(&mut typed)?;
             flash::run(&fb, &checked, &plan, &typed, &mut |l| eprintln!("  {l}"))?;
             eprintln!("Done. Never take Rabbit's update on r1os.");
         }
-        _ => anyhow::bail!("stock, status, fastboot, check or run"),
+        _ => anyhow::bail!("stock, read-r1, status, fastboot, check, run, super-head, super-build or super-probe"),
     }
     Ok(())
 }

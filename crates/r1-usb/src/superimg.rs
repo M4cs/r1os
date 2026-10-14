@@ -340,7 +340,7 @@ pub fn verify(current: &Metadata, image: &SuperImage) -> Result<()> {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use crate::lp::{BlockDevice, Group};
 
@@ -349,7 +349,7 @@ mod tests {
     }
 
     /// A small super for building whole images in tests: 16 MiB, vendor on both slots, an old system and product.
-    fn small(vendor_b: u64) -> Metadata {
+    pub(crate) fn small(vendor_b: u64) -> Metadata {
         Metadata {
             geometry: lp::Geometry { metadata_max_size: 4096, metadata_slot_count: 3, logical_block_size: 4096 },
             major: 10,

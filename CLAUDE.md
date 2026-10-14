@@ -64,6 +64,7 @@ The R1 has no volume keys and no recovery menu. A bad write to the wrong partiti
   - `md1img*`, `tee*`, `gz*`, `scp*`, `sspm*`, `spmfw*`, `dpm*`, `init_boot_*`, `vendor_boot_*`, `mmcblk0boot*`.
   - We only ever write `boot_*` (Magisk-patched from the device's own image), `dtbo_*`, `vbmeta*`, `system_*`, `product_*`, `super` and `userdata`.
 - **Never run `fastboot flashing lock`** on modified images; it can brick the device.
+- **Don't send the R1 into fastbootd** (`fastboot reboot fastboot`). On 2026-10-14 a trip there and back, with no writes, left slot b unbootable, and the R1 needed a reflash to boot ([T-182](docs/kanban/tasks/T-182%20A%20trip%20through%20fastbootd%20marked%20slot%20b%20unbootable.md)). The install writes `super` from the bootloader instead ([ADR-0067](docs/decisions/0067-the-install-writes-super-from-the-bootloader.md)).
 - **Never replace Rabbit's kernel** (`boot_*` comes from Rabbit's firmware or from Magisk patching the device's own boot image). The scroll-wheel driver (`CONFIG_OCH1970`) isn't in Rabbit's released kernel source, so a self-built kernel loses the wheel ([ADR-0001](docs/decisions/0001-rabbit-kernel-and-vendor-our-own-system-image.md)).
 - **Don't let the R1 take a Rabbit OTA** once it's running our system.
 - Before any wipe, a backup of this R1 must verify: the flash scripts' `require_backup` matches the serial at the start of its `proinfo` and checks its `SHA256SUMS` (in `backups/`, or the companion's `Documents\r1os backups`).

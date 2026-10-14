@@ -345,6 +345,12 @@ pub(crate) mod tests {
             ],
             block_devices: vec![BlockDevice { first_logical_sector: 2048, alignment: 512, alignment_offset: 0, size: 8_792_064_000, name: "super".into(), flags: 0 }],
         };
+        (head_of(&m), m)
+    }
+
+    /// `super`'s first MiB holding [m]: its geometry (and backup), then [m] in every slot and backup.
+    pub(crate) fn head_of(m: &Metadata) -> Vec<u8> {
+        let geometry = &m.geometry;
         let mut head = vec![0u8; 1 << 20];
         let mut g = vec![0u8; GEOMETRY_STRUCT];
         g[0..4].copy_from_slice(&GEOMETRY_MAGIC.to_le_bytes());
@@ -358,7 +364,7 @@ pub(crate) mod tests {
         head[8192..8192 + 52].copy_from_slice(&g);
         let region = m.region().unwrap();
         head[METADATA_OFFSET as usize..METADATA_OFFSET as usize + region.len()].copy_from_slice(&region);
-        (head, m)
+        head
     }
 
     #[test]

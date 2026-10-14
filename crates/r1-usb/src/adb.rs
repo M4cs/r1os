@@ -69,6 +69,11 @@ impl Adb {
         Self { exe, serial }
     }
 
+    /// This R1's identity (a hash of its serial), as the scan and backups name it.
+    pub fn id(&self) -> String {
+        crate::identity(&self.serial)
+    }
+
     /// A system property (`ro.r1os.image.version`, `ro.product.model`…). Read only.
     pub fn getprop(&self, name: &str) -> Result<String> {
         if !name.chars().all(|c| c.is_ascii_alphanumeric() || "._-".contains(c)) {
@@ -113,6 +118,18 @@ impl Adb {
             bail!("not a partition's name");
         }
         self.read(root, &format!("dd if=/dev/block/by-name/{name} bs=4194304 2>/dev/null"), to, progress)
+    }
+
+    /// A partition's first [bytes] (whole 4 KiB blocks) into [to]: `super`'s geometry and LP metadata for the flash
+    /// (ADR-0067). Read only.
+    pub fn read_partition_head(&self, root: Root, name: &str, bytes: u64, to: &Path) -> Result<u64> {
+        if name.is_empty() || !name.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_') {
+            bail!("not a partition's name");
+        }
+        if bytes == 0 || !bytes.is_multiple_of(4096) {
+            bail!("a head of whole 4 KiB blocks");
+        }
+        self.read(root, &format!("dd if=/dev/block/by-name/{name} bs=4096 count={} 2>/dev/null", bytes / 4096), to, |_| {})
     }
 
     fn read(&self, root: Root, cmd: &str, to: &Path, mut progress: impl FnMut(u64)) -> Result<u64> {
