@@ -3,7 +3,7 @@
 //! A build session is one headless `claude -p` run in r1d's jail (crate::jail: private mount
 //! namespace, chroot, agent uid without caps, seccomp, memory cgroup). It's fed the prompt on stdin and parsed from
 //! `--output-format stream-json`. No-tools builds (eneeware's fast mode) always strip every tool,
-//! MCP server, skill and slash command. Without `--strict-mcp-config`, Max's claude.ai connectors
+//! MCP server, skill and slash command. Without `--strict-mcp-config`, the user's claude.ai connectors
 //! would load as MCP tools (docs/research, "no-tools builds").
 //!
 //! A Codex build (T-045: the evals' Codex arm, and `codex` among the build models) is one `codex exec` in the same

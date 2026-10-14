@@ -27,12 +27,12 @@
       "id": "b2",
       "surface": "browser",
       "name": "Fill a form",
-      "task": "In the R1's browser (not WebFetch), open https://httpbin.org/forms/post and fill it in: customer name Max Bridgland, telephone 555-0100, email max@example.com, pizza size Medium, toppings Bacon and Extra Cheese, delivery time 19:30, comments: ring twice. Don't submit it, and leave the browser open; tell me when it's filled in.",
+      "task": "In the R1's browser (not WebFetch), open https://httpbin.org/forms/post and fill it in: customer name Sam Example, telephone 555-0100, email sam@example.com, pizza size Medium, toppings Bacon and Extra Cheese, delivery time 19:30, comments: ring twice. Don't submit it, and leave the browser open; tell me when it's filled in.",
       "expect": [
         "fill"
       ],
       "verify_browser": [
-        "value=\"Max Bridgland\"",
+        "value=\"Sam Example\"",
         "value=\"555-0100\"",
         "radio \"Medium\".*\\(checked\\)",
         "checkbox \"Bacon\".*\\(checked\\)",
@@ -54,7 +54,7 @@
       "id": "b4",
       "surface": "browser",
       "name": "Weather search box",
-      "task": "Use the R1's browser (not WebSearch or WebFetch): on forecast.weather.gov, look up Boston, MA with its search box and tell me tonight's low.",
+      "task": "Use the R1's browser (not WebSearch or WebFetch): on forecast.weather.gov, look up Springfield, IL with its search box and tell me tonight's low.",
       "expect": [
         "\\d+\\s*(°|degrees|F\\b)"
       ]
@@ -92,7 +92,7 @@
     {
       "id": "u1",
       "surface": "app",
-      "name": "Big Mac meal (Max's)",
+      "name": "Big Mac meal",
       "task": "Order me a Big Mac meal, medium, with a Coke from McDonald's on Uber Eats.",
       "suffix": "dry",
       "expect": [
@@ -153,9 +153,9 @@
       "id": "b5",
       "surface": "browser",
       "name": "Compare across pages",
-      "task": "Use the R1's browser (not WebSearch or WebFetch): on Wikipedia, find the populations of Malden, Medford and Everett in Massachusetts, and tell me which is largest and by how much.",
+      "task": "Use the R1's browser (not WebSearch or WebFetch): on Wikipedia, find the populations of Springfield, Peoria and Rockford in Illinois, and tell me which is largest and by how much.",
       "expect": [
-        "Malden",
+        "Rockford",
         "\\d{2},\\d{3}"
       ]
     },

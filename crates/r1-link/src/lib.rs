@@ -346,7 +346,7 @@ mod tests {
     fn codes_round_trip_and_agree() {
         let pc = SecretKey::generate().public();
         let r1 = SecretKey::generate().public();
-        let code = PairingCode::new(pc, "Max's PC & co", vec!["192.168.1.20:5544".parse().unwrap(), "[fe80::1]:5544".parse().unwrap()]).unwrap();
+        let code = PairingCode::new(pc, "Sam's PC & co", vec!["192.168.1.20:5544".parse().unwrap(), "[fe80::1]:5544".parse().unwrap()]).unwrap();
         let uri = code.to_uri();
         assert!(uri.starts_with("r1os-link:1?id="), "{uri}");
         assert_eq!(PairingCode::parse(&uri).unwrap(), code);

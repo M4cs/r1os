@@ -5,7 +5,7 @@
 # vendor fstab asks for it to be grown on mount (the `resize` flag), but the Android 14 GSI's
 # libfstab ignores that flag ("unknown flag: resize"), so /data stays at 2.8 GB of the 115 GB
 # partition. The metadata-encryption device (dm-default-key, named "userdata") already spans the
-# whole partition; only the filesystem needs growing. Seen on Max's R1 on 2026-10-08.
+# whole partition; only the filesystem needs growing. Seen on a test R1 on 2026-10-08.
 #
 # Usage: tools/grow-data.sh     (R1 booted, with root over adb: Rooted debugging + adb root, or Magisk su)
 set -euo pipefail

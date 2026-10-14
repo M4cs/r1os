@@ -22,7 +22,7 @@ esac
 BIN="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$HOST/bin"
 [ -x "$BIN/clang$EXE" ] || die "No clang in $BIN"
 export CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER="$BIN/clang$EXE"
-# As build-r1d.sh: flags here, and Max's global RUSTFLAGS (+crt-static, for Windows builds) out of the way.
+# As build-r1d.sh: flags here, and a global RUSTFLAGS (+crt-static, for Windows builds) out of the way.
 export CARGO_ENCODED_RUSTFLAGS="-Clink-arg=--target=aarch64-linux-android$API"
 unset RUSTFLAGS
 

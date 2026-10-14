@@ -13,7 +13,7 @@
 //!     for a third press: `TripleTap` if it comes, `DoubleTap` if not. Off by default, so a double tap is instant.
 //!
 //! Wheel: one tick per detent (`-1` = KEY_UP, `+1` = KEY_DOWN). Ticks within `wheel_guard_ms` of
-//! a button edge are dropped and counted: on Max's R1 the wheel produced 1–3 ticks at the moment
+//! a button edge are dropped and counted: on a test R1 the wheel produced 1–3 ticks at the moment
 //! of a button press (docs/open-questions.md Q12).
 
 use std::time::{Duration, Instant};

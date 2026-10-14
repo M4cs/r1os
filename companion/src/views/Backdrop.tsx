@@ -1,4 +1,4 @@
-// The R1's backgrounds, drawn with modgrad (Max's gradient library: mesh, grain, dither, drift; CSS/SVG, no canvas):
+// The R1's backgrounds, drawn with modgrad (a gradient library: mesh, grain, dither, drift; CSS/SVG, no canvas):
 // behind the window, the R1's home background, softly animated and leaning toward the pointer; and the look page's
 // small R1. Its soft gradients are modgrad meshes; its styled gradients, linear or radial ones.
 

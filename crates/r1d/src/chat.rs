@@ -890,19 +890,19 @@ mod tests {
     fn prompt_has_identity_memories_and_note() {
         let pip = Agent { id: "a1b2c3d4".into(), name: "Pip".into(), role: "apps and tools".into(), ..Agent::default() };
         let bolt = Agent { id: "b1b2c3d4".into(), name: "Bolt".into(), role: "the gym".into(), ..Agent::default() };
-        let ms = [memory("The user's name is Max", true), memory("Max wants the water app to count 8", false)];
+        let ms = [memory("The user's name is Sam", true), memory("Sam wants the water app to count 8", false)];
         let p = system_prompt(&pip, std::slice::from_ref(&bolt), &ms, "claude", Some("We planned Saturday's hike."), None, "What you can do: test.");
         assert!(p.starts_with("You are Pip"));
         assert!(p.contains("What you're for: apps and tools."));
         assert!(p.contains("Bolt (the gym)"));
-        let shared_at = p.find("What every agent knows about the user:\n- The user's name is Max").unwrap();
-        let own_at = p.find("What you remember:\n- Max wants the water app to count 8").unwrap();
+        let shared_at = p.find("What every agent knows about the user:\n- The user's name is Sam").unwrap();
+        let own_at = p.find("What you remember:\n- Sam wants the water app to count 8").unwrap();
         assert!(shared_at < own_at);
         assert!(p.contains("this is the note you wrote then:\nWe planned Saturday's hike."));
         // A first agent alone, nothing remembered, no note.
         let alone = system_prompt(&pip, &[], &[], "codex", None, None, "");
-        let away = system_prompt(&pip, &[], &[], "claude", None, Some("Max's PC"), "");
-        assert!(away.contains("you work on their computer, Max's PC") && !away.contains("/work/files"), "{away}");
+        let away = system_prompt(&pip, &[], &[], "claude", None, Some("Sam's PC"), "");
+        assert!(away.contains("you work on their computer, Sam's PC") && !away.contains("/work/files"), "{away}");
         assert!(!alone.contains("other agents"));
         assert!(alone.contains("What you remember:\n(nothing yet)"));
         assert!(!alone.contains("note you wrote"));

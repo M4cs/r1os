@@ -40,7 +40,7 @@ PRODUCT_SYSTEM_PROPERTIES += \
 
 # r1os's own keys sign every APK the build signs (T-133, ADR-0062), not AOSP's public test-keys:
 # platform, shared, media, networkstack, nfc, bluetooth and sdk_sandbox come from the same folder.
-# tools/build-image.sh copies them from C:\Users\<you>\.r1os\keys (tools/make-keys.sh); never committed.
+# tools/build-image.sh copies them from ~/.r1os/keys ($KEYS, tools/make-keys.sh); never committed.
 # The host is signed with the same platform key, so it holds its signature permissions.
 PRODUCT_DEFAULT_DEV_CERTIFICATE := vendor/r1os-keys/releasekey
 

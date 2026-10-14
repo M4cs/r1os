@@ -490,8 +490,8 @@ object AgentApps {
             if (held) awake?.release()
             awake = null
             // And the window's display sleeps now, not after its own timeout. While any display is awake, Android counts
-            // the R1 as on and ignores the key that wakes it: Max locked the R1 with an app window open and couldn't wake
-            // it (2026-10-13, T-149). An agent's work in the app waits for the screen meanwhile (T-114).
+            // the R1 as on and ignores the key that wakes it: an R1 locked with an app window open couldn't be woken
+            // (2026-10-13, T-149). An agent's work in the app waits for the screen meanwhile (T-114).
             if (display != null) sleepWindow()
             return
         }

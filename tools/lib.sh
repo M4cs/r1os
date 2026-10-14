@@ -16,9 +16,9 @@ OUT="$ROOT/out"
 FIRMWARE="$ROOT/firmware"
 BACKUPS="$ROOT/backups"
 # r1os's own signing keys (T-133): the image's platform, shared, media… keys and the host's. Never in
-# the repo: ~/.r1os/keys (C:\Users\<you>\.r1os\keys), made once by tools/make-keys.sh; R1OS_KEYS
-# overrides it. Not %APPDATA%: shells the Claude desktop app starts write AppData into its own
-# package folder (MSIX), which WSL's build can't see and an app reset deletes.
+# the repo: ~/.r1os/keys ($KEYS), made once by tools/make-keys.sh; R1OS_KEYS overrides it. Not
+# %APPDATA%: shells the Claude desktop app starts write AppData into its own package folder (MSIX),
+# which WSL's build can't see and an app reset deletes.
 KEYS=${R1OS_KEYS:-$( { command -v cygpath >/dev/null && cygpath -m "$HOME"; } || echo "$HOME")/.r1os/keys}
 
 # r1d listens on 127.0.0.1:7171 on the R1. The desktop simulator uses 7171 on the PC, so the
@@ -46,7 +46,7 @@ die()  { printf '\033[1;31mxx\033[0m %s\n' "$*" >&2; exit 1; }
 
 need() { command -v "$1" >/dev/null 2>&1 || die "$1 not found (install Android platform-tools / $1)"; }
 
-# Ask before anything destructive. YES=1 skips the prompt; agents may set it only after Max approved
+# Ask before anything destructive. YES=1 skips the prompt; agents may set it only after the user approved
 # that exact step in chat (CLAUDE.md).
 confirm() {
   [ "${YES:-0}" = 1 ] && return 0

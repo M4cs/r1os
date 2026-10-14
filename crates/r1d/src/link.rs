@@ -691,7 +691,7 @@ mod tests {
     fn reads_a_link_code_from_a_picture() {
         // A QR the way the computer shows one, drawn 6 px a module with a quiet zone, as a camera frame would hold it.
         let key = r1_link::SecretKey::generate().public();
-        let uri = PairingCode::new(key, "Max's PC", vec!["192.168.1.20:5544".parse().unwrap()]).unwrap().to_uri();
+        let uri = PairingCode::new(key, "Sam's PC", vec!["192.168.1.20:5544".parse().unwrap()]).unwrap().to_uri();
         let qr = qrcode::QrCode::new(uri.as_bytes()).unwrap();
         let (w, px, quiet) = (qr.width(), 6u32, 4u32);
         let side = (w as u32 + quiet * 2) * px;

@@ -8,9 +8,10 @@
 # Google's newer android-security-* tags (October 2026) sit on different quarterly releases than
 # TrebleDroid's patches, so they'd mean re-porting those patches (research, 2026-10-09).
 #
-# Runs inside a Linux build environment: on Max's PC, the `r1os-build` WSL distro, whose disk lives
-# on E: (C: is too small). Run it from Git Bash like this:
-#   wsl -d r1os-build -u root -- bash "/mnt/c/Users/Max Bridgland/r1os/tools/build-image.sh" [stage...]
+# Runs inside a Linux build environment: on Windows, a WSL distro (`r1os-build` here) whose disk lives
+# on <your build disk> (the system drive is usually too small). Run it from Git Bash like this, $ROOT
+# being this repo as WSL sees it (under /mnt/c):
+#   wsl -d r1os-build -u root -- bash "$ROOT/tools/build-image.sh" [stage...]
 # (For Android 14: wsl -d r1os-build -u root -- env AOSP_VERSION=14 bash ".../build-image.sh" ...)
 # Stages, in order (default: all; each one can be rerun on its own):
 #   init    repo init + r1os's local manifests
@@ -36,12 +37,13 @@ case "$AOSP_VERSION" in
 esac
 TREE=${AOSP_TREE:-$DEFAULT_TREE}
 PATCHES=${TREBLE_PATCHES:-$DEFAULT_PATCHES}
-# r1os's own signing keys (T-133, ADR-0062), made once by tools/make-keys.sh in C:\Users\<you>\.r1os\keys,
-# which WSL sees under /mnt/c next to this repo. Copied into the tree (vendor/r1os-keys), never into this repo.
+# r1os's own signing keys (T-133, ADR-0062), made once by tools/make-keys.sh in ~/.r1os/keys ($KEYS). WSL's root
+# has another ~, so they're looked for beside this repo (a clone in your home); R1OS_KEYS overrides that. Copied
+# into the tree (vendor/r1os-keys), never into this repo.
 KEYS=${R1OS_KEYS:-$(dirname "$REPO")/.r1os/keys}
 TARGET=treble_arm64_bvN
-# Jobs by memory: about 1.5-2 GB per job at the build's peak (metalava, R8, javac). Max's .wslconfig
-# was 16 GB (8 jobs); 28 GB since 2026-10-09 (all 16 threads). The 48 GB swap file covers peaks.
+# Jobs by memory: about 1.5-2 GB per job at the build's peak (metalava, R8, javac). A .wslconfig of
+# 16 GB ran 8 jobs; 28 GB runs all 16 threads, with a 48 GB swap file for the peaks.
 MEM_GB=$(awk '/MemTotal/ {printf "%d", $2/1048576}' /proc/meminfo)
 if [ "$MEM_GB" -ge 24 ]; then DEFAULT_JOBS=$(nproc); else DEFAULT_JOBS=8; fi
 JOBS=${JOBS:-$DEFAULT_JOBS}

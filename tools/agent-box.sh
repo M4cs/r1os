@@ -9,7 +9,7 @@
 #   tools/agent-box.sh shell         interactive bash in the box (needs a real terminal)
 #   tools/agent-box.sh status        versions, disk use, memory
 #
-# Writes to the device (install): ask Max first (CLAUDE.md). Needs root over adb.
+# Writes to the device (install): ask the user first (CLAUDE.md). Needs root over adb.
 set -euo pipefail
 source "$(dirname "$0")/lib.sh"
 need adb

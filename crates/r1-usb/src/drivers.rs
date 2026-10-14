@@ -336,8 +336,8 @@ mod tests {
         let none = install_script(Some(Path::new(r"C:\x")), Extras::default(), Path::new(r"C:\x\l"));
         assert!(!none.contains("VERYSILENT") && !none.contains("msiexec"));
         // Paths with a quote can't break out of PowerShell's single quotes.
-        let q = install_script(Some(Path::new(r"C:\Max's\x")), Extras::default(), Path::new(r"C:\l"));
-        assert!(q.contains(r"C:\Max''s\x"));
+        let q = install_script(Some(Path::new(r"C:\Sam's\x")), Extras::default(), Path::new(r"C:\l"));
+        assert!(q.contains(r"C:\Sam''s\x"));
         // The R1's installed already: only the extras, and no second certificate.
         let only = install_script(None, Extras { mtk_exe: None, usbdk_msi: Some(Path::new(r"C:\x\UsbDk.msi")) }, Path::new(r"C:\l"));
         assert!(only.contains("msiexec") && only.contains("installed already") && !only.contains("New-SelfSignedCertificate"));

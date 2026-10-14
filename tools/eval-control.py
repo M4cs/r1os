@@ -60,7 +60,7 @@ class Awake(threading.Thread):
         super().__init__(daemon=True)
         self.stop = threading.Event()
         self.paused = threading.Event()
-        # Max's hands on the R1 (Hands): its keys would mix with his.
+        # The user's hands on the R1 (Hands): its keys would mix with theirs.
         self.hands = threading.Event()
 
     def run(self):
@@ -72,17 +72,17 @@ class Awake(threading.Thread):
 
 
 class Hands:
-    """Whether Max is using the R1: its wheel or button (r1d's hardware events) within the last QUIET seconds. A test's
-    taps and keys mix with his, and its load made the R1 lag under his hands (2026-10-13)."""
+    """Whether the user is using the R1: its wheel or button (r1d's hardware events) within the last QUIET seconds. A test's
+    taps and keys mix with theirs, and its load made the R1 lag under their hands (2026-10-13)."""
 
     QUIET = 120
     INPUT = ("wheel", "button", "gesture")
 
     def __init__(self):
-        self.last = 0.0  # when he last touched it, on this PC's clock
+        self.last = 0.0  # when they last touched it, on this PC's clock
 
     def saw(self, events):
-        """Notes his input among r1d's events (their t_ms is r1d's clock since it started: aged against its uptime)."""
+        """Notes the user's input among r1d's events (their t_ms is r1d's clock since it started: aged against its uptime)."""
         if not events:
             return
         try:
@@ -97,7 +97,7 @@ class Hands:
         return time.time() - self.last < self.QUIET
 
     def wait(self, awake):
-        """Before a scenario: while he's using it, the screen's his (no keys from the runner) and the next test waits."""
+        """Before a scenario: while they're using it, the screen's theirs (no keys from the runner) and the next test waits."""
         seq = last_seq()
         told = False
         while True:
@@ -224,7 +224,7 @@ def run(sc, agent_id, agent_name, suffixes, rejects, keep, hands=None, awake=Non
         answer_cards(chat, cards)
         events = call("GET", f"/harness/events?after={seq}")
         if hands is not None:
-            # Max picked it up mid-test: the runner's keys stop until he's done (the agent's turn goes on).
+            # The user picked it up mid-test: the runner's keys stop until they're done (the agent's turn goes on).
             hands.saw(events)
             (awake.hands.set if hands.busy() else awake.hands.clear)()
         for e in events:

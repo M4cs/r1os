@@ -1,6 +1,6 @@
 //! The Value IR evaluator (docs/specs/compiled-app.md §3), ported from the runtime's `value.ts` for the host, which
 //! formats what triggers show (notifications). Same forms and null-safe filters; formatting is English (US), which is
-//! what the runtime's `Intl` gives on Max's machine.
+//! what the runtime's `Intl` gives on a US-English machine.
 //!
 //!   { p: "/abs/path", f?, a? }   read a path (through `read`)
 //!   { i: "field", f?, a? }       a row field: null outside a row ([`eval_row`] has one: a glance card's `each`)

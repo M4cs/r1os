@@ -426,7 +426,7 @@ fn price_in(s: &str) -> Option<(usize, usize)> {
     None
 }
 
-/// Where it goes: "Deliver to 25 Main St", "Drop-off: Logan Airport", "Pickup at Chipotle", or a street address.
+/// Where it goes: "Deliver to 25 Main St", "Drop-off: Springfield Airport", "Pickup at Chipotle", or a street address.
 fn destination(words: &str) -> Option<String> {
     let l = words.to_lowercase();
     for lead in ["deliver to", "delivering to", "delivery address", "drop-off", "dropoff", "destination", "pickup at", "pick up at", "pick up from", "pickup from"] {
@@ -438,7 +438,7 @@ fn destination(words: &str) -> Option<String> {
             }
         }
     }
-    // A street address: a number, then a street's name and kind ("25R Columbia St", "906 Eastern Ave").
+    // A street address: a number, then a street's name and kind ("12B Example St", "40 Sample Ave").
     let parts: Vec<&str> = words.split_whitespace().collect();
     let numbered = parts.first().is_some_and(|w| w.starts_with(|c: char| c.is_ascii_digit()) && w.len() <= 6);
     const KINDS: &[&str] = &["st", "street", "ave", "avenue", "rd", "road", "blvd", "boulevard", "dr", "drive", "ln", "lane", "way", "ct", "court", "pl", "place", "pkwy", "parkway", "hwy", "highway", "sq", "square", "ter", "terrace", "cir", "circle"];
@@ -717,7 +717,7 @@ mod tests {
         // As a checkout's plain read gives it: prices beside their names or after them, fees, the final step's button.
         let screen = r#"button "Back" [a1]
 text "Checkout"
-text "Crazy Good Kitchen- Malden"
+text "Example Kitchen- Springfield"
 text "Deliver to 25 Main St"
 text "Standard · 25–35 min"
 text "1× Classic Fries"
@@ -746,13 +746,13 @@ button "Place order • $35.09" [a20]"#;
         assert_eq!(o.total.as_deref(), Some("$14.02"));
         assert_eq!(o.items.len(), 1);
         // A ride: where to, and the price on its button.
-        let o = order_of("text \"Drop-off: Logan Airport Terminal B\"\ntext \"UberX\"\ntext \"$38.20\"\nbutton \"Confirm UberX\" [a9]");
-        assert_eq!(o.to.as_deref(), Some("Logan Airport Terminal B"));
+        let o = order_of("text \"Drop-off: Springfield Airport Terminal B\"\ntext \"UberX\"\ntext \"$38.20\"\nbutton \"Confirm UberX\" [a9]");
+        assert_eq!(o.to.as_deref(), Some("Springfield Airport Terminal B"));
         assert_eq!(o.items, vec![("UberX".to_owned(), Some("$38.20".to_owned()))]);
         // Nothing an order says: no rows.
         assert!(!order_of("text \"Search\"\nbutton \"Home\" [a1]").any());
         assert_eq!(price_in("about $ 1,204.50 total"), Some((6, 16)));
-        assert_eq!(destination("906 Eastern Ave").as_deref(), Some("906 Eastern Ave"));
+        assert_eq!(destination("40 Sample Ave").as_deref(), Some("40 Sample Ave"));
         assert_eq!(destination("4.7 stars (9,000+)"), None);
         assert_eq!(payment("Apple Pay").as_deref(), Some("Apple Pay"));
         assert_eq!(payment("Discover new dishes"), None);

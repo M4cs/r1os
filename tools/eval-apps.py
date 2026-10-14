@@ -10,7 +10,7 @@ chat build would), follows its stages, then checks the app it made: that it inst
 asks for against what the brief needs, and what the build had to repair on the way. Then it removes the app
 (to the trash, for 7 days) unless --keep.
 
-Every build runs in the agent box on the R1 and costs a little on Max's subscription, so it asks first
+Every build runs in the agent box on the R1 and costs a little on the user's subscription, so it asks first
 (YES=1 skips the question). Needs r1d forwarded on 127.0.0.1:7172: any tools/r1h call sets that up.
 Writes artifacts/evals/<time>.md and .json (git-ignored).
 """

@@ -31,7 +31,7 @@ if ! { [ -f "$APK" ] && sha_ok "$APK"; }; then
 fi
 
 # The certificate, when Java and the SDK's apksigner are around (the hash above already pins the file). Its
-# jar, not apksigner.bat: the .bat breaks on a space in the SDK's path ("C:/Users/Max Bridgland").
+# jar, not apksigner.bat: the .bat breaks on a space in the SDK's path ("C:/Users/Sam Example").
 SDK=${ANDROID_HOME:-${LOCALAPPDATA:-$HOME}/Android/Sdk}
 BT=$(ls -d "$SDK"/build-tools/*/ 2>/dev/null | sort -V | tail -1)
 if command -v java >/dev/null && [ -f "${BT}lib/apksigner.jar" ]; then

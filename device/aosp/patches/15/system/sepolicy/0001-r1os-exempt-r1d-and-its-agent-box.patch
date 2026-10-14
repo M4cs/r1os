@@ -1,4 +1,3 @@
-From: Max Bridgland <engineering@oglabs.dev>
 Subject: [PATCH] r1os: exempt r1d and its agent box from four neverallows (ADR-0035)
 
 r1os's core daemon (r1d, a system_ext domain) runs its own binary and libraries from /data/r1os,

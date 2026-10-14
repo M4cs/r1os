@@ -638,7 +638,7 @@ fn tools() -> Value {
         tool(
             "tell_agent",
             "Leave another of the user's agents a note without waking them: something they should know next time they talk \
-             with the user (\"Max's sister is visiting Saturday\"). It costs nothing; nothing comes back.",
+             with the user (\"The user's sister is visiting Saturday\"). It costs nothing; nothing comes back.",
             json!({
                 "to": { "type": "string", "description": "Their name (list_agents)." },
                 "text": { "type": "string" }

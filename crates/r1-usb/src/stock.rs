@@ -23,7 +23,7 @@ pub struct File {
     pub sha256: &'static str,
 }
 
-/// The four, with their SHA-256s as Max's copy of the release has them (2026-10-14).
+/// The four, with their SHA-256s as a downloaded copy of the release has them (2026-10-14).
 pub const FILES: &[File] = &[
     File { name: "vbmeta.img", size: 4096, sha256: "91fabaff6e5d61d7dbab02f181c36d4f9ab3aff9f833b92a6ddec92bf43dc6dc" },
     File { name: "vbmeta_system.img", size: 4096, sha256: "10d7c932c1b2974efcb35288e2ceea9d35aff2480a19a4882d86f0e2a245d373" },

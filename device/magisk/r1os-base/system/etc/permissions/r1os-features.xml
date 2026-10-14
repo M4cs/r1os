@@ -4,7 +4,7 @@
 
   android.software.app_widgets: without it, SystemServer never starts AppWidgetService, so
   AppWidgetManager is null and LineageOS's Launcher3 crash-loops in its loader thread
-  (NullPointerException on AppWidgetManager.getInstalledProvidersForProfile). Seen on Max's R1,
+  (NullPointerException on AppWidgetManager.getInstalledProvidersForProfile). Seen on a test R1,
   2026-10-08, LineageOS 21 GSI on Rabbit's vendor.
 -->
 <permissions>

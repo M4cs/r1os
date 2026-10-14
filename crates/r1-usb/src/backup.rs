@@ -7,7 +7,7 @@
 //! toolkit), on a Python uv fetches.
 //!
 //! A backup goes to `Documents\r1os backups\<identity>\<date>\` with `SHA256SUMS` and `info.json`. Its identity is the
-//! R1's own ([`crate::identity`]): the serial sits at the start of `proinfo` (seen in Max's three backups, 2026-10-14),
+//! R1's own ([`crate::identity`]): the serial sits at the start of `proinfo` (seen in three backups, 2026-10-14),
 //! so a backup made at power-on matches the R1 the scan finds booted or in fastboot. Reads only: mtkclient's `rl`.
 //!
 //! Skipping it takes typing [`SKIP_PHRASE`]: r1os's flash never writes these partitions; a backup is what gets them
@@ -144,7 +144,7 @@ pub struct Backup {
     pub parts: Vec<(String, u64)>,
 }
 
-/// What runs mtkclient's `mtk.py` (its pinned source left as it is), with fixes for its serial port on Windows (Max's R1,
+/// What runs mtkclient's `mtk.py` (its pinned source left as it is), with fixes for its serial port on Windows (a test R1,
 /// 2026-10-14):
 /// - mtkclient 2.1.4.1 asks for USB endpoints' packet sizes (xflash's stage 2 upload, its reads), which its
 ///   `SerialClass` doesn't have (`AttributeError … EP_OUT`). They get USB 2.0's bulk size, 512, as its serial `write`
@@ -303,7 +303,7 @@ pub const NOT_READ: &[&str] = &["super", "userdata", "metadata", "expdb", "flash
 /// mtkclient's arguments after `mtk.py`: `rl` reads the GPT and then each partition at its own size, into [pending] as
 /// `gpt.bin` and `<name>.bin` (not `r` with several partitions: 2.1.4.1 reads them all at the first one's size, T-181).
 /// On Windows it talks to the preloader through Rabbit's MediaTek serial port driver (`--serialport`, as r1_escape
-/// does): mtkclient's USB route, through UsbDk, missed the preloader's moment at power-on on Max's R1 (2026-10-14).
+/// does): mtkclient's USB route, through UsbDk, missed the preloader's moment at power-on on a test R1 (2026-10-14).
 /// `--serialport` goes last: its value is optional, and it would take a path after it as the port's name.
 pub fn args(pending: &Path) -> Vec<std::ffi::OsString> {
     let mut a: Vec<std::ffi::OsString> = vec!["rl".into(), pending.into(), "--skip".into(), NOT_READ.join(",").into()];
@@ -572,9 +572,9 @@ mod tests {
 
     #[test]
     fn mtkclient_reads_the_list_and_never_the_os_or_data() {
-        let a = args(Path::new(r"C:\Max Bridgland\r1os backups\.pending-x"));
+        let a = args(Path::new(r"C:\Sam Example\r1os backups\.pending-x"));
         assert_eq!(a[0], "rl");
-        assert_eq!(a[1], r"C:\Max Bridgland\r1os backups\.pending-x");
+        assert_eq!(a[1], r"C:\Sam Example\r1os backups\.pending-x");
         assert_eq!(a[2], "--skip");
         let skip = a[3].to_string_lossy();
         assert!(["super", "userdata", "metadata"].iter().all(|p| skip.split(',').any(|s| s == *p)));

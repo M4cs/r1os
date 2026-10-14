@@ -2,7 +2,7 @@
 # Makes r1os's own signing keys, once (T-133, ADR-0062): the keys the image's APKs are signed with
 # instead of AOSP's public test-keys, and the platform key the host app is signed with.
 #
-# Writes $KEYS (~/.r1os/keys, C:\Users\<you>\.r1os\keys; R1OS_KEYS overrides it), never the repo:
+# Writes $KEYS (~/.r1os/keys; R1OS_KEYS overrides it), never the repo:
 #   releasekey, platform, shared, media, networkstack, nfc, bluetooth, sdk_sandbox
 #   each as NAME.pk8 (the private key, PKCS#8 DER, unencrypted as AOSP's make_key leaves them
 #   for an unattended build) and NAME.x509.pem (its certificate).

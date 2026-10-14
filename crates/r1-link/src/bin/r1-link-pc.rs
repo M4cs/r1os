@@ -180,7 +180,7 @@ fn show_qr(uri: &str, name: &str) -> Result<()> {
          <p style=\"opacity:.6\">{name} · good for 5 minutes</p></div>"
     );
     // Served on this computer only, from an http address: opening a .html file goes to whatever opens .html files
-    // (on Max's PC, VS Code), while an http address goes to the browser.
+    // (VS Code, on one PC), while an http address goes to the browser.
     let listener = std::net::TcpListener::bind("127.0.0.1:0").context("the QR page")?;
     let url = format!("http://{}/", listener.local_addr()?);
     std::thread::spawn(move || {

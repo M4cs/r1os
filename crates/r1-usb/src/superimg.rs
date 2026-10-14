@@ -463,7 +463,7 @@ pub(crate) mod tests {
     fn merge_status_from_para() {
         let mut para = vec![0u8; 64 * 1024];
         assert_eq!(merge_status(&para).unwrap(), MergeStatus::None, "no message: never an update");
-        // Max's R1, 2026-10-14: version 2, the magic, NONE, source slot 1.
+        // A test R1, 2026-10-14: version 2, the magic, NONE, source slot 1.
         para[VIRTUAL_AB_OFFSET..VIRTUAL_AB_OFFSET + 7].copy_from_slice(&[0x02, 0xb0, 0x0a, 0x74, 0x56, 0x00, 0x01]);
         assert_eq!(merge_status(&para).unwrap(), MergeStatus::None);
         para[VIRTUAL_AB_OFFSET + 5] = 3;

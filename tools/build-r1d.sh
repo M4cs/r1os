@@ -3,7 +3,7 @@
 #
 # Uses the NDK's clang.exe directly with an explicit --target rather than the
 # aarch64-linux-android30-clang.cmd wrapper: .cmd wrappers misbehave when their path has spaces
-# (C:\Users\Max Bridgland\...).
+# (C:\Users\Sam Example\...).
 #
 # Usage: tools/build-r1d.sh [--debug] [extra cargo args, e.g. clippy-only: CARGO_CMD=clippy]
 # Output: target/aarch64-linux-android/release/r1d
@@ -27,7 +27,7 @@ BIN="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$HOST/bin"
 
 export CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER="$BIN/clang$EXE"
 # Set the flags here (CARGO_ENCODED_RUSTFLAGS, and RUSTFLAGS unset), not CARGO_TARGET_*_RUSTFLAGS: a
-# global RUSTFLAGS takes precedence over the target-specific variable, and Max's machine sets
+# global RUSTFLAGS takes precedence over the target-specific variable, and a machine may set
 # RUSTFLAGS="-C target-feature=+crt-static" for Windows builds, which here would both drop the --target
 # and statically link bionic.
 #

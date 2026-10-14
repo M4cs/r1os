@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Builds the host app (host/, Kotlin + Gradle) into out/r1os-host.apk.
-# Same toolchain as ~/boop-android: Gradle 9.4.1, AGP 9.2.1 (built-in Kotlin), JDK 17+.
+# Toolchain: Gradle 9.4.1, AGP 9.2.1 (built-in Kotlin), JDK 17+.
 #
 # Usage: tools/build-host.sh [debug]      (default: release)
 #

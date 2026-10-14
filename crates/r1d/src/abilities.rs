@@ -15,7 +15,7 @@ use crate::hub::Hub;
 
 /// What one agent can reach.
 pub struct Can {
-    /// The computer it works on, by name ("Max's PC").
+    /// The computer it works on, by name ("Sam's PC").
     pub pc: Option<String>,
     /// The user's own Chrome there (ADR-0053).
     pub browser: bool,
@@ -50,7 +50,7 @@ pub fn of(hub: &Hub, a: &Agent) -> Can {
     Can { pc, browser, android, apps, sign_in, chatgpt: a.brain == "codex" && a.computer().is_none() }
 }
 
-/// One line about what an agent can reach: "on Max's PC: its files and commands, and the user's Chrome".
+/// One line about what an agent can reach: "on Sam's PC: its files and commands, and the user's Chrome".
 pub fn line(hub: &Hub, a: &Agent) -> String {
     let c = of(hub, a);
     let mut s = match &c.pc {

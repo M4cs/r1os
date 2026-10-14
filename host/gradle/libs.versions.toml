@@ -1,6 +1,5 @@
 [versions]
-# Same toolchain as ~/boop-android (cached on Max's machine): AGP 9.2.1 with its built-in Kotlin
-# (2.2.10). Do NOT apply org.jetbrains.kotlin.android: AGP 9 compiles Kotlin itself.
+# AGP 9.2.1 with its built-in Kotlin (2.2.10). Do NOT apply org.jetbrains.kotlin.android: AGP 9 compiles Kotlin itself.
 agp = "9.2.1"
 
 [plugins]

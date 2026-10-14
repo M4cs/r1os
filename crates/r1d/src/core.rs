@@ -1286,11 +1286,11 @@ mod tests {
         let core = Core::open(&dir).unwrap();
         let a = core.first_agent().id;
         let b = core.create_agent(Agent { name: "Bolt".into(), ..Agent::default() }).unwrap().id;
-        let name = core.remember(&a, "The user's name is Max", true).unwrap();
-        let own = core.remember(&a, "Max likes the water app at 8 glasses", false).unwrap();
+        let name = core.remember(&a, "The user's name is Sam", true).unwrap();
+        let own = core.remember(&a, "Sam likes the water app at 8 glasses", false).unwrap();
         core.remember(&b, "Bolt tracks the gym log", false).unwrap();
         let seen: Vec<(String, bool)> = core.memories(Some(&a)).unwrap().into_iter().map(|m| (m.text, m.shared)).collect();
-        assert_eq!(seen, [("The user's name is Max".to_owned(), true), ("Max likes the water app at 8 glasses".to_owned(), false)]);
+        assert_eq!(seen, [("The user's name is Sam".to_owned(), true), ("Sam likes the water app at 8 glasses".to_owned(), false)]);
         assert_eq!(core.memories(Some(&b)).unwrap().len(), 2, "Bolt sees the shared fact and its own");
         assert_eq!(core.memories(None).unwrap().len(), 1, "the user's view: shared facts");
         assert_eq!(core.memories(Some(&a)).unwrap()[0].by.as_deref(), Some(a.as_str()));
@@ -1321,7 +1321,7 @@ mod tests {
                  INSERT INTO settings VALUES ('onboarding', '\"done\"');
                  INSERT INTO chats VALUES ('old', 'Water', 'claude', 'sess-1', 1, 2);
                  INSERT INTO messages (chat, role, text, at) VALUES ('old', 'user', 'log a glass', 2);
-                 INSERT INTO memories (text, at) VALUES ('Max lives in Boston', 3);",
+                 INSERT INTO memories (text, at) VALUES ('Sam lives in Springfield', 3);",
             )
             .unwrap();
         }

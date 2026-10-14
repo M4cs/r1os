@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # The framework overlay that turns off Android's swipe from an edge (T-127, ADR-0059), for an R1 whose image doesn't have
 # it built in. Builds device/overlays/edges into an APK, signs it with the image's platform key (r1os's own, $KEYS:
-# ADR-0062), installs it and enables it. WRITES TO THE DEVICE: asks first (YES=1 only after Max said so).
+# ADR-0062), installs it and enables it. WRITES TO THE DEVICE: asks first (YES=1 only after the user said so).
 #   tools/edges-overlay.sh            build, install, enable
 #   tools/edges-overlay.sh off        disable it again (Android's edge swipes come back)
 set -euo pipefail

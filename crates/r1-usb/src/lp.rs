@@ -1,5 +1,5 @@
 //! Android's logical partition metadata in `super` (AOSP's liblp, metadata 10.x): read, checked, changed, written
-//! (ADR-0067). On the R1 (Max's, 2026-10-14): geometry at 4096 and its backup at 8192; then three metadata slots of
+//! (ADR-0067). On a test R1 (2026-10-14): geometry at 4096 and its backup at 8192; then three metadata slots of
 //! 64 KiB, then their backups; header 10.2 (256 bytes, the Virtual A/B flag); logical partitions from sector 2048 of
 //! one block device, `super`, 8,792,064,000 bytes.
 

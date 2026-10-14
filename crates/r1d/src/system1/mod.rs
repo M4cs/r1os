@@ -879,7 +879,7 @@ mod tests {
     fn screens_from_what_is_said() {
         let target = |said: &str| screen_rule(&normal(said)).map(|i| i.args["target"].clone());
         assert_eq!(target("Open translator for English to Portuguese"), Some(json!({ "t": "tool", "id": "translator", "mine": "en", "theirs": "pt" })));
-        // As Max said it, and as speech-to-text can spell it.
+        // As it was said to the R1, and as speech-to-text can spell it.
         assert_eq!(target("Open translator for english to portugese"), Some(json!({ "t": "tool", "id": "translator", "mine": "en", "theirs": "pt" })));
         assert_eq!(target("translate portuguese to english"), Some(json!({ "t": "tool", "id": "translator", "mine": "en", "theirs": "pt" })));
         assert_eq!(target("open the translator for spanish"), Some(json!({ "t": "tool", "id": "translator", "theirs": "es" })));

@@ -12,7 +12,7 @@
 #   --host      also build and install the host app, and make it the home screen
 #   --no-build  deploy what's already built
 #
-# Writes to the device (CLAUDE.md: agents ask Max before the first deploy of a session).
+# Writes to the device (CLAUDE.md: agents ask the user before the first deploy of a session).
 # Needs root over adb: Rooted debugging + `adb root`, or Magisk su.
 #
 # Usage: tools/deploy.sh [--host] [--no-build]
