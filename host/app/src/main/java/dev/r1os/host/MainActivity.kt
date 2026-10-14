@@ -57,8 +57,10 @@ class MainActivity : Activity() {
         DeviceSettings.init(this)
         // Android apps you've left alone close in the background (T-150).
         BackgroundApps.init(this)
-        // chrome://inspect over adb for the mini-app pages. Fine on a personal device; revisit for R4.
-        WebView.setWebContentsDebuggingEnabled(true)
+        // chrome://inspect over adb for the shell's and mini-apps' pages (T-174): only in a debuggable build, or with
+        // `persist.r1os.webview_debug` set to 1, which only root over adb can set. Otherwise anyone with adb could read
+        // what's on them.
+        WebView.setWebContentsDebuggingEnabled(webViewDebugging())
         // The glance screen is the R1's lock screen (ADR-0019): show over Android's own keyguard,
         // which the shell dismisses when you go home.
         setShowWhenLocked(true)
@@ -122,6 +124,17 @@ class MainActivity : Activity() {
         started = false
         shell.setShown(false)
         super.onStop()
+    }
+
+    /** Whether pages may be inspected over adb (T-174): a debuggable build, or root set `persist.r1os.webview_debug`. */
+    private fun webViewDebugging(): Boolean {
+        if (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0) return true
+        // android.os.SystemProperties is hidden; the host is a platform-signed system app, which may read it.
+        val prop = runCatching {
+            Class.forName("android.os.SystemProperties").getMethod("get", String::class.java, String::class.java)
+                .invoke(null, "persist.r1os.webview_debug", "") as String
+        }.getOrDefault("")
+        return prop == "1"
     }
 
     private fun hideSystemBars() {
