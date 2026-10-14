@@ -1,10 +1,11 @@
 //! One R1 over adb: what the install reads from a booted R1 (its properties; its partitions as root, for the backup,
-//! T-169), and the reboot into fastboot. The first setup's pushes (r1d, the shell, the agent box) come with T-170.
+//! T-169), the reboot into fastboot, and the first setup's commands and pushes (T-170), which only
+//! [`crate::setup`] can make.
 
 use anyhow::{Context, Result, bail};
-use std::io::{Read, Write};
+use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 /// How a booted R1's shell gets root, for reading partitions.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -169,6 +170,84 @@ impl Adb {
             .context("adb didn't run")?;
         if !out.status.success() {
             bail!("adb reboot failed: {}", crate::fastboot::scrub(String::from_utf8_lossy(&out.stderr).trim(), &self.serial));
+        }
+        Ok(())
+    }
+
+    /// One of the first setup's commands, as root (T-170). [`crate::setup`] builds every one from fixed templates, and
+    /// nothing else can make one. [line] hears its output line by line as it comes; the serial is scrubbed from it and
+    /// from adb's own errors.
+    pub fn setup_command(&self, root: Root, cmd: &crate::setup::Cmd, line: &mut dyn FnMut(&str)) -> Result<crate::setup::Output> {
+        let text = match root {
+            Root::Adbd => cmd.text().to_owned(),
+            // Magisk's su takes the command in single quotes, so it can't have one.
+            Root::Su if cmd.text().contains('\'') => bail!("a setup command with a single quote can't go through su"),
+            Root::Su => format!("su -c '{}'", cmd.text()),
+        };
+        let mut child = command(&self.exe)
+            .args(["-s", &self.serial, "shell", &text])
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .context("adb didn't run")?;
+        let mut err = child.stderr.take().context("no output from adb")?;
+        let errs = std::thread::spawn(move || {
+            let mut s = Vec::new();
+            let _ = err.read_to_end(&mut s);
+            String::from_utf8_lossy(&s).into_owned()
+        });
+        let mut out = String::new();
+        let mut r = BufReader::new(child.stdout.take().context("no output from adb")?);
+        let mut buf = Vec::new();
+        loop {
+            buf.clear();
+            if r.read_until(b'\n', &mut buf)? == 0 {
+                break;
+            }
+            let l = crate::fastboot::scrub(String::from_utf8_lossy(&buf).trim_end_matches(['\n', '\r']), &self.serial);
+            line(&l);
+            out.push_str(&l);
+            out.push('\n');
+        }
+        let status = child.wait()?;
+        let err = errs.join().unwrap_or_default();
+        Ok(crate::setup::Output { code: status.code().unwrap_or(-1), out, err: crate::fastboot::scrub(err.trim(), &self.serial) })
+    }
+
+    /// One of the first setup's pushes (T-170): a file, a folder's contents or one of the agent box's compiled-in
+    /// scripts, into its place under [`crate::setup::STAGE`]. Only [`crate::setup`] can make one.
+    pub fn setup_push(&self, p: &crate::setup::Push) -> Result<()> {
+        use crate::setup::Source;
+        if !p.to().starts_with(&format!("{}/", crate::setup::STAGE)) {
+            bail!("the setup pushes only into {}", crate::setup::STAGE);
+        }
+        let mut written = None;
+        let from: std::ffi::OsString = match p.source() {
+            Source::File(f) => f.clone().into(),
+            // The folder's contents, as `tools/deploy.sh` pushes them (`<folder>/.`).
+            Source::Dir(d) => {
+                let mut s = d.clone().into_os_string();
+                s.push("/.");
+                s
+            }
+            Source::Script { name, text } => {
+                let dir = std::env::temp_dir().join(format!("r1os-setup-{}", std::process::id()));
+                std::fs::create_dir_all(&dir)?;
+                let f = dir.join(name);
+                std::fs::write(&f, text)?;
+                written = Some(f.clone());
+                f.into()
+            }
+        };
+        let out = command(&self.exe).args(["-s", &self.serial, "push"]).arg(&from).arg(p.to()).stdin(Stdio::null()).output();
+        if let Some(f) = written {
+            let _ = std::fs::remove_file(f);
+        }
+        let out = out.context("adb didn't run")?;
+        if !out.status.success() {
+            let why = String::from_utf8_lossy(&out.stderr);
+            bail!("adb push to {} failed: {}", p.to(), crate::fastboot::scrub(why.trim(), &self.serial));
         }
         Ok(())
     }

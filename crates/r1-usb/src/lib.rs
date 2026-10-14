@@ -7,6 +7,8 @@
 //! - [`safety`]: what may be written. Every fastboot write passes through it; anything outside a short list of exact
 //!   partition names is refused in code, and there's no way to ask for a relock at all.
 //! - [`fastboot`] and [`adb`]: typed operations on one R1, never free-form arguments.
+//! - [`setup`]: the first setup after the flash (`/data` grown, r1d, the shell, speech, models, the agent box), from
+//!   fixed command templates, writing only under `/data/r1os` and its own staging folder.
 //!
 //! An R1 is named by [`identity`], a hash of its serial: the serial itself (and the IMEI) never goes in a log, an
 //! error or anything the companion shows.
@@ -23,6 +25,7 @@ pub mod lp;
 pub mod preloader;
 pub mod safety;
 pub mod scan;
+pub mod setup;
 pub mod sparse;
 pub mod superimg;
 pub mod stock;

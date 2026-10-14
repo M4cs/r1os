@@ -3,6 +3,7 @@ name = "r1-usb"
 description = "The companion's USB layer for installing r1os on an R1 (ADR-0065, T-167): platform-tools, the R1 in each mode, and what may be written"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
 rust-version.workspace = true
 publish.workspace = true
 
