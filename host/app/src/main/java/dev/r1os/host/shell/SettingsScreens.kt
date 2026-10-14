@@ -166,9 +166,63 @@ class AboutScreen(shell: Shell) : ListPage(shell, "About") {
             }
         }
         msg?.let { note(it) }
+        item("heart", "credits", sub = "what r1os is built on, and their licences") { shell.push(CreditsScreen(shell)) }.tag = "credits"
         button("Run setup again", primary = false) {
             R1d.put("/api/onboarding", JSONObject().put("step", "hello")) { shell.restartSetup() }
         }
+    }
+}
+
+/**
+ * Settings › About › Credits (T-178): what r1os on the R1 is built on, and each part's licence, as NOTICE.md in r1os's
+ * source says (keep the two in step), plus what the agent box downloads. One row each, so the wheel reads them one at a
+ * time.
+ */
+class CreditsScreen(shell: Shell) : ListPage(shell, "Credits") {
+    init {
+        list.rebuild {
+            note("r1os is open source under the MIT licence. It's built on the work of others, each under its own licence: " +
+                "the full texts are in NOTICE.md in r1os's source.", size = 13f)
+            for ((group, rows) in CREDITS) {
+                section(group)
+                for ((name, licence) in rows) item(null, name, sub = licence) {}
+            }
+            button("Done", primary = false) { shell.back() }.tag = "done"
+        }
+    }
+
+    private companion object {
+        val CREDITS = listOf(
+            "on the r1" to listOf(
+                "kroko" to "banafo · cc-by-sa · speech to text",
+                "all-minilm-l6-v2" to "sentence-transformers · apache-2.0 · system one",
+                "whisper base" to "openai · mit · the translator's ears",
+                "opus-mt" to "helsinki-nlp · cc-by-4.0 · the translator",
+                "piper voices" to "each under its dataset's terms",
+                "espeak-ng" to "its data · gpl-3.0 or later",
+                "sherpa-onnx" to "k2-fsa · apache-2.0",
+                "onnx runtime" to "microsoft · mit",
+            ),
+            "the system" to listOf(
+                "android" to "the android open source project · apache-2.0 and others",
+                "trebledroid" to "phhusson and contributors",
+                "aurora store" to "aurora oss · gpl-3.0 or later",
+                "rabbit's kernel and vendor" to "rabbit inc. · the kernel under gpl-2.0",
+            ),
+            "the agent box" to listOf(
+                "alpine linux" to "its packages, each under its own licence",
+                "claude code" to "anthropic · its own terms",
+                "codex" to "openai · apache-2.0",
+            ),
+            "the look" to listOf(
+                "rubik" to "sil open font licence 1.1",
+                "phosphor icons" to "mit",
+            ),
+            "with thanks" to listOf(
+                "r1ptt" to "julian dice · mit",
+                "rabbit_r1_boot_notes" to "david buchanan",
+            ),
+        )
     }
 }
 
