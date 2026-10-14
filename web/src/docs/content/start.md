@@ -79,7 +79,15 @@ tools/agent-box.sh install   # Alpine, with Claude Code and Codex
 - Never relock the bootloader while it runs a modified image.
 - Never let it take a Rabbit OTA: it would replace r1os.
 - USB adb isn't authenticated yet: a computer with a cable gets root, and with it r1d's token and the CLIs' logins. An approval prompt is planned.
-- To go back, [Rabbit's web flashing tool](https://rabbit-hmi-oss.github.io/flashing/) restores stock rabbitOS v0.8.293, which then takes Rabbit's updates. It's reported to relock the bootloader; that isn't confirmed.
+- Don't send the R1 into fastbootd (`fastboot reboot fastboot`). One trip there and back, with nothing written, left an R1's slot unbootable until it was flashed again.
+
+## If it gets stuck
+
+- **It starts Android's recovery** ("Can't load Android system", "Try again or factory data reset"). Don't choose factory data reset: it erases your data and doesn't fix a system that won't start. Choose try again once. If it comes back to recovery, stop there and open an issue with what the screen says. Getting it to start again depends on what broke.
+- **Back to stock rabbitOS:** both of these erase everything on the R1.
+  - [Rabbit's web flashing tool](https://rabbit-hmi-oss.github.io/flashing/) restores rabbitOS v0.8.293, which then takes Rabbit's updates. It's reported to relock the bootloader; that isn't confirmed.
+  - From the command line, with the R1 in fastboot and Rabbit's `rabbit_OS_v0.8.293.zip` extracted: `tools/flash-stock-base.sh <that folder>` puts v0.8.293's kernel, `dtbo`, `vbmeta` and `super` on slot a, with verified boot off and the bootloader left unlocked. It never touches the boot chain or the R1's calibration, and it refuses to run without a backup of this R1.
+- **Your backup** is what restores the IMEI and radio calibration, if anything ever overwrites them. r1os never writes those partitions. Putting them back is a job for mtkclient, done by hand.
 
 ## First boot
 
