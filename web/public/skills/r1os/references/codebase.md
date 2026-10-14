@@ -134,6 +134,7 @@ Python scripts run with `python3` (`py -3` on Windows); bash scripts source `lib
 | `fetch-speech.sh`, `fetch-models.sh`, `fetch-aurora.sh` | Pinned, hash-checked downloads into `out/` (`translator-models.txt` pins the Translator's) | computer only |
 | `optimize-stt.py` | ONNX → `.ort` for the R1 (ORT minor must match the R1's) | computer only |
 | `power.py` | Diffs two power snapshots (used by `r1h power`) | computer only |
+| `notices.py` | Third-party notices for what r1os ships (r1d, r1-bootlog, the companion, the shell, the site) into `out/notices/`, from `cargo tree` and `pnpm licenses` | computer only |
 | `deploy.sh [--host] [--no-build]` | Pushes r1d, shell, libs, models; `restorecon -RF`; `pkill -x r1d`; `--host` installs, AOT-compiles, sets HOME and IME | **writes** (ask before first deploy of a session) |
 | `agent-box.sh` | `install`, `codex-host`, `run -- CMD`, `root -- CMD`, `shell`, `status` | `status` read-only; others **write** |
 | `agent-test.py` | New chat through r1d's API, prints tools/timings/replies | spends subscription; delete chats after |

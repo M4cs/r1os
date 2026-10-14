@@ -1,5 +1,7 @@
 # Third-party notices
 
+The packages each binary and bundle ships, with their licence texts, are listed by `tools/notices.py` (`out/notices/`, made for each release).
+
 r1os's own code is under the MIT licence ([LICENSE](LICENSE), [ADR-0064](docs/decisions/0064-r1os-is-open-source-under-mit.md)). It builds on work by others, each under its own licence, below.
 
 ## r1ptt (MIT)
@@ -101,7 +103,7 @@ The companion's Rubik (`companion/src/fonts/rubik_*.ttf`) is the same as the she
 
 `tools/fetch-speech.sh` and `tools/fetch-models.sh` download these, pinned by hash, and `tools/deploy.sh` puts them on the R1. Each stays under its own licence.
 
-- **Speech to text:** Banafo's Kroko streaming English model (`sherpa-onnx-streaming-zipformer-en-kroko-2025-08-06`). Banafo's community models are under CC-BY-SA, per https://huggingface.co/Banafo/Kroko-ASR, though that page doesn't name this build (**unverified**). r1os converts it to ONNX Runtime's `.ort` format.
+- **Speech to text:** Banafo's Kroko streaming English model (`sherpa-onnx-streaming-zipformer-en-kroko-2025-08-06`). Its archive's README says only "See license at https://huggingface.co/Banafo/Kroko-ASR". That page says Banafo's community models are under CC-BY-SA, but its `LICENSE` file is empty and it doesn't name this build. An earlier Banafo demo said the models in it were under the Coqui Public License, for non-commercial use. So this model's terms are **unverified** until Banafo confirms them. r1os converts it to ONNX Runtime's `.ort` format.
 - **System One:** sentence-transformers' all-MiniLM-L6-v2 (Apache-2.0).
 - **The Translator:**
   - **Listening:** OpenAI's Whisper base (MIT), as exported by sherpa-onnx.
