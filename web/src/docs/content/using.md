@@ -27,7 +27,9 @@ Waking shows the time, status, next alarm and timer, and your last agent peeking
 
 **Click** to sleep, **turn down** for the next page, **turn up** or double click for home, and **hold** to talk to the agent peeking up, or touch what you want.
 
-With a PIN set, it's also the lock screen: a four-reel wheel lock. A double click while asleep wakes straight to home (or the lock).
+By touch it's a sheet. Swipe up from its bottom edge and it rides up with your finger, home showing under it: let go far enough up, or flick, and you're home; else it drops back. Swipe down from the top of any r1os screen and it slides down over it, and a swipe up puts it back.
+
+With a PIN set, it's also the lock screen: a four-reel wheel lock. A swipe up then only moves it a little and opens the lock. A double click while asleep wakes straight to home (or the lock).
 
 ## Home
 

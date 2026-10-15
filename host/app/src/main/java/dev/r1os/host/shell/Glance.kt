@@ -1453,6 +1453,38 @@ class GlanceView(context: Context, private val home: HomeScreen) : FrameLayout(c
         }.start()
     }
 
+    // ---- swiped up from the bottom edge, unlocking (T-156, T-189) ----------------------------------
+
+    /**
+     * The glance screen as the R1 wakes, pushed up from its bottom edge (T-189, Max: "closer to iOS … swiped up from the
+     * bottom"): it rides up with the finger as a sheet, home showing under it. With the PIN on it only gives a little,
+     * and letting go opens the dial: home never shows before the code.
+     */
+    fun liftTo(dy: Float, guarded: Boolean) {
+        if (!up || dropped || committed) return
+        animate().cancel()
+        translationY = if (guarded) (dy * GUARD_GIVE).coerceIn(-context.dp(GUARD_MAX_DP), 0f) else dy.coerceIn(-height.toFloat(), 0f)
+    }
+
+    /** Let go: gone up, unlocked as a double click unlocks (its reply's chat after, if one was showing); else back down. */
+    fun liftSettle(open: Boolean) {
+        if (!up || dropped || committed) return
+        animate().cancel()
+        if (!open) {
+            animate().translationY(0f).setDuration(260).setInterpolator(Theme.SETTLE).start()
+            return
+        }
+        committed = true
+        removeCallbacks(relax)
+        Sounds.play(Sounds.S.OPEN)
+        leavingTo = (replyOn() ?: replies.firstOrNull())?.takeIf { it.agent == agent.id }
+        if (agent.id != home.agentId && home.shell.agent(agent.id) != null) home.select(agent.id, animate = false)
+        animate().translationY(-height.toFloat()).setDuration(220).setInterpolator(Theme.EASE_IN_OUT).withEndAction {
+            translationY = 0f
+            finish()
+        }.start()
+    }
+
     // ---- the morph back: home to the glance screen, to sleep (ADR-0022) -----------------------------
 
     /**
@@ -1752,6 +1784,9 @@ class GlanceView(context: Context, private val home: HomeScreen) : FrameLayout(c
         const val LEAVE_MS = 200L
         /** A flick that puts a notification away however far it went (dp a second). */
         const val FLING_DP = 900f
+        /** Pushed up with the PIN on (T-189): it moves this much of the finger's way, at most [GUARD_MAX_DP]. */
+        const val GUARD_GIVE = 0.25f
+        const val GUARD_MAX_DP = 48f
     }
 }
 

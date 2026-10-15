@@ -37,7 +37,7 @@ The mechanics an agent needs before changing anything: layers, ports, the token,
 - **Docked mode** is a setting (Settings › Display & sound; `docked` in `/api/device`). While charging, the glance screen keeps the display on as a bedside clock. On its side (its right side at the bottom) the screen turns to landscape, plugged in or not, and stays on above 20% battery.
 - **At rest:** two minutes untouched, nothing moves on the glance screen, the backlight drops to 6/255 and the accelerometer stops. A touch, the wheel, the button or a notification brings it back. The accelerometer listens only while docked mode is on and the display is on.
 - **The rest of r1os turns too**, the same screens in landscape, and touch stands in for the wheel and button (ADR-0014's one exception):
-  - a swipe up from the glance screen's bottom edge unlocks it; a swipe down from the top brings it back;
+  - a swipe up from the glance screen's bottom edge unlocks it, the screen riding up with the finger as a sheet (with a PIN, only a little, then the dial); a swipe down from the top (the first 40 dp) brings it back down over any r1os screen;
   - on home, a vertical swipe moves through your agents, a swipe up from the bottom edge opens the launcher, and one tap on the agent opens its current chat;
   - a tap on a page's header lights it as Back, and a second goes back;
   - a mic in home's bottom-right corner talks: `POST /api/voice/talk {op: start | send | cancel}`, the side button's own hold (so r1d and the shell can't tell them apart); a talk nobody sends ends by itself after a minute.

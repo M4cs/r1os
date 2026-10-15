@@ -2230,7 +2230,8 @@ class Shell(context: Context) : FrameLayout(context) {
             }
             EDGE_LAUNCHER -> home.dragLauncher(-dy)
             EDGE_AWAY -> glance.dropTo(height + dy)
-            EDGE_UNLOCK -> {}
+            // It rides up with the finger as a sheet (T-189); with the PIN on, only a little.
+            EDGE_UNLOCK -> glance.liftTo(dy, guarded = pinLocked)
         }
     }
 
@@ -2241,9 +2242,16 @@ class Shell(context: Context) : FrameLayout(context) {
             EDGE_DOWN -> glance.dropSettle(!cancelled && (dy > height * 0.3f || vy > fling))
             EDGE_LAUNCHER -> home.releaseLauncher(!cancelled && (-dy > height * 0.3f || -vy > fling))
             EDGE_AWAY -> if (!cancelled && (-dy > height * 0.2f || -vy > fling)) glance.dropAway() else glance.dropSettle(true)
-            // Far enough up, or flung: unlocked, as a double click does (the PIN's dial, when it's on).
-            EDGE_UNLOCK -> if (!cancelled && (-dy > height * 0.2f || -vy > fling)) {
-                if (pinLocked) glance.openDial() else glance.complete()
+            // Far enough up, or flung: unlocked, as a double click does, the sheet carried on up (T-189); with the PIN
+            // on, it settles and the dial opens. Else it drops back.
+            EDGE_UNLOCK -> {
+                val far = !cancelled && (-dy > height * 0.2f || -vy > fling)
+                if (pinLocked) {
+                    glance.liftSettle(false)
+                    if (far) glance.openDial()
+                } else {
+                    glance.liftSettle(far)
+                }
             }
         }
     }
