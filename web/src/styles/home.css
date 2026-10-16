@@ -1,4 +1,4 @@
-/* The home page: centred, big, few words. One idea a section, carried by the R1 and its screens. */
+/* The home page: big, few words. One idea a section, carried by the R1 and its screens. */
 
 /* ---- the hero ------------------------------------------------------------------------------------------------- */
 
@@ -39,12 +39,42 @@
 .reel-fill { position: absolute; left: 50%; top: 0; height: calc(var(--h) + var(--py) * 2); border-radius: calc(var(--h) * .2); overflow: hidden; display: block; }
 .reel-rows.ink { color: var(--ink); }
 
-/* ---- every section's head -------------------------------------------------------------------------------------- */
+/* ---- a section's head (home/parts.tsx) ------------------------------------------------------------------------- */
 
+/* The same words in each, set the way the section's content asks: centred over a show, beside the R1 or a list, across
+   the page, or quiet over a picture. On a phone each is a single column, centred or left as its words were. */
 .section { position: relative; padding: clamp(96px, 16vh, 180px) 0 0; text-transform: lowercase; }
-.head { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 1180px; margin: 0 auto; }
 .head h2 { font-size: var(--text-headline); letter-spacing: -0.03em; line-height: 1.06; }
 .head p { font-size: var(--text-lede); line-height: 1.5; letter-spacing: -0.005em; color: var(--sub); max-width: 32em; margin-top: 16px; }
 .head-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 18px; font-weight: 700; color: var(--accent-text); }
 .head-link:hover { gap: 10px; }
 @media (max-width: 700px) { .head h2 { letter-spacing: -0.025em; } }
+
+/* Over a show that's centred too. */
+.head.stage { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 1180px; margin: 0 auto; }
+
+/* In a column beside the R1 or a list: flush left, the line a little narrower so it keeps to the column. */
+.head.beside { display: flex; flex-direction: column; align-items: flex-start; text-align: left; }
+.head.beside p { max-width: 25em; }
+
+/* Across the page: the words on the left; the line and the link on the right, ending where the words end. */
+.head.split { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); grid-template-rows: 1fr auto; grid-template-areas: "title sub" "title go"; column-gap: clamp(32px, 6vw, 88px); }
+.head.split h2 { grid-area: title; align-self: end; }
+.head.split p { grid-area: sub; align-self: end; margin-top: 0; }
+.head.split .head-go { grid-area: go; }
+.head.split .head-link { margin-top: 14px; }
+
+/* Quiet: a heading's size, so the picture under it leads, at the picture's width, its link at the far end. */
+.head.quiet { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "title go" "sub go"; column-gap: 40px; max-width: 1040px; margin: 0 auto; }
+.head.quiet h2 { grid-area: title; font-size: var(--text-title); letter-spacing: -0.025em; line-height: 1.1; }
+.head.quiet p { grid-area: sub; margin-top: 10px; max-width: 34em; }
+.head.quiet .head-go { grid-area: go; align-self: end; }
+.head.quiet .head-link { margin-top: 0; padding-bottom: .2em; }
+
+@media (max-width: 760px) {
+  .head.split, .head.quiet { display: flex; flex-direction: column; align-items: flex-start; }
+  .head.split h2, .head.split p, .head.quiet .head-go { align-self: auto; }
+  .head.split p { margin-top: 16px; }
+  .head.split .head-link { margin-top: 18px; }
+  .head.quiet .head-link { margin-top: 14px; padding-bottom: 0; }
+}

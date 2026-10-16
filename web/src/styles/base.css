@@ -16,10 +16,10 @@
 /* Text in four steps: --fg for words, --sub for the line under a head and captions (≥ 10:1), --muted for labels and
    meta (≥ 7:1), --faint only for what isn't read (dots, anchors). The accent's shades follow below.
    Type in nine roles, each one size wherever it appears: --text-display for the hero's line; --text-headline for a
-   section's head; --text-title for a heading inside a section; --text-lede for the line under a head; --text-item for
-   a point's title; --text-body for sentences (never smaller); --text-label for the bar, tiles and short labels;
-   --text-small for chips and footnotes; --text-meta for mono labels and crumbs. The docs' prose has its own reading
-   scale (docs.css). */
+   section's head; --text-title for a heading inside a section, and for a quiet section's head (the companion's, over
+   its window); --text-lede for the line under a head; --text-item for a point's title; --text-body for sentences
+   (never smaller); --text-label for the bar, tiles and short labels; --text-small for chips and footnotes; --text-meta
+   for mono labels and crumbs. The docs' prose has its own reading scale (docs.css). */
 :root {
   --bg: #000; --bg2: #08080a; --fg: #f2f2f2; --sub: #c4c7cc; --muted: #a3a8b0; --faint: #787d86;
   --panel: #111215; --panel2: #1a1c21; --line: #22252b;

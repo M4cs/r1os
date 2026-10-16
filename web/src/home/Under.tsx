@@ -1,7 +1,7 @@
 // The home page's last parts: private by default, and the close: yours to change. Few words each; the docs carry the
-// detail (the privacy page says what isn't safe yet, so no claim here outruns it: T-177). Private is a plain list,
-// each point a bold word and a line, so it doesn't read as one more grid of icons. The close's characters rest while
-// it's scrolled away.
+// detail (the privacy page says what isn't safe yet, so no claim here outruns it: T-177). Private is its head beside a
+// plain list, each point a bold word and a line, so it doesn't read as one more grid of icons. The close's characters
+// rest while it's scrolled away.
 
 import { Icon } from "@r1os/icons";
 import { motion, useReducedMotion } from "motion/react";
@@ -38,8 +38,8 @@ export function Private() {
   const reduce = useReducedMotion();
   return (
     <section className="section" id="private" ref={section} {...rest(seen)}>
-      <div className="wrap">
-        <Head title="private by default." sub="just your device, your agents and the services you already pay for." link={{ to: "/docs/privacy", label: "what leaves the device" }} />
+      <div className="wrap private-rail">
+        <Head layout="beside" title="private by default." sub="just your device, your agents and the services you already pay for." link={{ to: "/docs/privacy", label: "what leaves the device" }} />
         <ul className="private">
           {PRIVATE.map((p, i) => (
             <motion.li

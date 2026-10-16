@@ -69,15 +69,18 @@
 
 /* ---- private by default ------------------------------------------------------------------------------------------- */
 
-/* A plain list in two columns: each point a bold word and its line, between hairlines. */
-.private { list-style: none; margin: 44px auto 0; padding: 0; max-width: 880px; columns: 2; column-gap: 56px; }
-.private li { break-inside: avoid; padding: 15px 0 16px; border-top: 1px solid var(--line); font-size: var(--text-body); line-height: 1.5; color: var(--sub); }
+/* The head in a column of its own, and beside it a plain list, read like terms: each point's bold words, then its line,
+   between hairlines. Narrower, the list comes under the head, and on a phone each line under its words. */
+.private-rail { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); column-gap: clamp(40px, 7vw, 104px); align-items: start; }
+.private { list-style: none; margin: 0; padding: 0; border-bottom: 1px solid var(--line); }
+.private li { display: grid; grid-template-columns: 11.5em minmax(0, 1fr); column-gap: 24px; padding: 17px 0 18px; border-top: 1px solid var(--line); font-size: var(--text-body); line-height: 1.5; color: var(--sub); }
 .private b { color: var(--fg); font-weight: 700; }
-@media (max-width: 700px) { .private { columns: 1; } }
+@media (max-width: 860px) { .private-rail { grid-template-columns: minmax(0, 1fr); row-gap: 40px; } }
+@media (max-width: 560px) { .private li { display: block; padding: 15px 0 16px; } }
 
 /* ---- the companion ------------------------------------------------------------------------------------------------ */
 
-.cwin { position: relative; max-width: 1040px; margin: 48px auto 0; border-radius: 22px; background: color-mix(in srgb, var(--bg2) 92%, transparent); box-shadow: 0 50px 100px -40px rgba(0, 0, 0, .6), inset 0 0 0 1px var(--line); overflow: hidden; text-transform: lowercase; }
+.cwin { position: relative; max-width: 1040px; margin: 36px auto 0; border-radius: 22px; background: color-mix(in srgb, var(--bg2) 92%, transparent); box-shadow: 0 50px 100px -40px rgba(0, 0, 0, .6), inset 0 0 0 1px var(--line); overflow: hidden; text-transform: lowercase; }
 .cwin::before { content: ""; position: absolute; inset: 0; background: radial-gradient(60% 70% at 85% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%); pointer-events: none; }
 .cwin > * { position: relative; }
 .cwin-bar { display: flex; align-items: center; gap: 8px; height: 46px; padding: 0 14px 0 18px; }

@@ -1,13 +1,13 @@
 /* Dock mode on the home page (home/Dock.tsx): the R1 turning onto its side as the section comes up, its docked story,
    and four points beside it lighting in turn. The R1 is square either way up, so nothing moves around it as it turns.
-   On a wide screen the R1 sits on the right, the mirror of the android section's, so the two don't read as one layout
-   twice; narrower, it comes first. */
+   On a wide screen the R1 sits on the right with the section's head and the points beside it, the mirror of the
+   android section's, so the two don't read as one layout twice; narrower, the head comes first, then the R1. */
 
-.dock { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); align-items: center; gap: clamp(28px, 6vw, 88px); max-width: 1040px; margin: 56px auto 0; }
-.dock-device { width: min(460px, 100%); justify-self: center; }
-@media (min-width: 861px) { .dock-device { order: 2; } }
+.dock { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); grid-template-areas: "head device" "points device"; align-items: center; column-gap: clamp(28px, 6vw, 88px); row-gap: 36px; max-width: 1040px; margin: 0 auto; }
+.dock-head { grid-area: head; align-self: end; padding-left: 18px; }
+.dock-device { grid-area: device; width: min(460px, 100%); justify-self: center; }
 
-.dock-points { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.dock-points { grid-area: points; align-self: start; display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; list-style: none; }
 .dock-point { position: relative; display: grid; grid-template-columns: 46px minmax(0, 1fr); column-gap: 16px; row-gap: 2px; align-items: start; padding: 16px 18px; border-radius: 22px; }
 .dock-point > :not(.dock-point-fill) { position: relative; }
 .dock-point-fill { position: absolute; inset: 0; border-radius: 22px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); }
@@ -19,7 +19,8 @@
 /* Turning, its corners reach 1.35× its width across: these widths keep them on the screen at 45°. */
 @media (min-width: 861px) and (max-width: 1180px) { .dock-device { width: 76%; } }
 @media (max-width: 860px) {
-  .dock { grid-template-columns: minmax(0, 1fr); gap: 40px; }
+  .dock { grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "device" "points"; gap: 44px; }
+  .dock-head { width: 100%; max-width: 560px; justify-self: center; padding-left: 0; }
   .dock-device { width: min(420px, 72vw); }
   .dock-points { width: 100%; max-width: 560px; justify-self: center; }
 }

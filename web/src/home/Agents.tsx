@@ -67,7 +67,7 @@ export function MeetAgents() {
   return (
     <section className="section" id="agents" ref={section} {...rest(seen)}>
       <div className="wrap">
-        <Head title="make them yours." sub="up to eight agents, each the real claude or codex, signed in as you. give each a look, a name and a job." link={{ to: "/docs/agents", label: "how agents work" }} />
+        <Head layout="stage" title="make them yours." sub="up to eight agents, each the real claude or codex, signed in as you. give each a look, a name and a job." link={{ to: "/docs/agents", label: "how agents work" }} />
         <motion.div
           className="agents"
           {...(reduce ? {} : rise)}

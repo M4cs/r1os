@@ -1,12 +1,20 @@
-/* Quick, then quiet (home/Speed.tsx): a band of light streaks gliding by, then four points, each led by its number. Each lane is the band's
-   full width and slides by transform alone, its streak at its left end, so a crossing is translateX(-40%) → 100% of
-   the band; the edges fade out. The lanes rest with the band (base.css [data-rest]) and stand still, mid-flight, with
-   reduced motion. */
+/* Quick, then quiet (home/Speed.tsx): the section's words on a band of light streaks gliding by, then four points,
+   each led by its number. Each lane is the band's full width and slides by transform alone, its streak at its left
+   end, so a crossing is translateX(-40%) → 100% of the band; the edges fade out. The lanes rest with the band (base.css
+   [data-rest]) and stand still, mid-flight, with reduced motion. */
+
+/* ---- the head on the streaks --------------------------------------------------------------------------------------- */
+
+/* The band and the head share one cell: the band behind, the head's words centred on it, its line and link under. Each
+   letter keeps an edge of the page's own colour around it, so the streaks pass behind the words, not through them. */
+.fast-head { --band: clamp(84px, 11vw, 132px); display: grid; }
+.fast-head > * { grid-area: 1 / 1; }
+.fast-head .head h2 { display: flex; align-items: center; justify-content: center; min-height: var(--band); -webkit-text-stroke: .18em var(--bg); paint-order: stroke fill; }
 
 /* ---- the streaks --------------------------------------------------------------------------------------------------- */
 
 .fast-flow {
-  position: relative; max-width: 1040px; height: clamp(84px, 11vw, 132px); margin: 56px auto 0; overflow: hidden;
+  position: relative; width: 100%; max-width: 1040px; height: var(--band); margin: 0 auto; align-self: start; overflow: hidden;
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
   mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
 }
@@ -35,12 +43,10 @@
 .fast-point p { margin-top: 6px; font-size: var(--text-body); line-height: 1.5; color: var(--sub); }
 
 @media (max-width: 860px) {
-  .fast-flow { margin-top: 44px; }
   .fast-points { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 36px 24px; }
 }
 /* One to a line. */
 @media (max-width: 520px) {
-  .fast-flow { margin-top: 36px; }
   .fast-points { grid-template-columns: minmax(0, 1fr); gap: 28px; margin-top: 36px; }
   .fast-point { padding-top: 22px; }
   .fast-point h3 { margin-top: 12px; }

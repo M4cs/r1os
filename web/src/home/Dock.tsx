@@ -1,8 +1,9 @@
 // Dock mode (T-103, T-156, T-157): set it on its side and r1os becomes a bedside clock, run by touch. The R1 comes up
 // the page upright and turns onto its side once it's well in view (back upright when it's scrolled most of the way out
-// below); held there a moment (0.7 s, as the R1 waits before its screen turns), it plays its docked story, again every few seconds while it's on screen. Beside it, four points light
-// in turn with the story: resting, worked by touch, talking to an agent, on battery, and resting again. With reduced
-// motion it's on its side from the start, still.
+// below); held there a moment (0.7 s, as the R1 waits before its screen turns), it plays its docked story, again every
+// few seconds while it's on screen. Beside it, under the section's head, four points light in turn with the story:
+// resting, worked by touch, talking to an agent, on battery, and resting again. With reduced motion it's on its side
+// from the start, still.
 
 import { Icon } from "@r1os/icons";
 import { AnimatePresence, motion, useMotionValue, useMotionValueEvent, useReducedMotion, useScroll, useSpring } from "motion/react";
@@ -103,8 +104,8 @@ export function DockMode() {
   return (
     <section className="section" id="dock" ref={box} {...rest(seen)}>
       <div className="wrap">
-        <Head title="set it on its side." sub="with dock mode on, it becomes a bedside clock with your widgets and agents, run by touch." link={{ to: "/docs/using#dock-mode", label: "how dock mode works" }} />
         <div className="dock">
+          <Head layout="beside" className="dock-head" title="set it on its side." sub="with dock mode on, it becomes a bedside clock with your widgets and agents, run by touch." link={{ to: "/docs/using#dock-mode", label: "how dock mode works" }} />
           <div className="dock-device" ref={stage} aria-hidden>
             <R1 glow={accent} docked={reduce || side}>
               <AnimatePresence initial={false}>{screen}</AnimatePresence>

@@ -1,9 +1,11 @@
-/* Agents that use your apps (home/Android.tsx): the R1 replaying an order beside four points, the lit one carried by a
-   card that springs between them, and a band for the full Android device underneath. */
+/* Agents that use your apps (home/Android.tsx): the R1 replaying an order, and beside it the section's head over four
+   points, the lit one carried by a card that springs between them; then a band for the full Android device underneath.
+   Narrower, the head comes first, then the R1, then the points. */
 
-.droid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr); align-items: center; gap: clamp(36px, 5vw, 76px); margin-top: 56px; }
-.droid-device { display: flex; flex-direction: column; align-items: center; gap: 22px; width: min(440px, 100%); justify-self: center; }
-.droid-side { container-type: inline-size; min-width: 0; }
+.droid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr); grid-template-areas: "device head" "device points"; align-items: center; column-gap: clamp(36px, 5vw, 76px); row-gap: 36px; }
+.droid-head { grid-area: head; align-self: end; padding-left: 20px; }
+.droid-device { grid-area: device; display: flex; flex-direction: column; align-items: center; gap: 22px; width: min(440px, 100%); justify-self: center; }
+.droid-points { grid-area: points; align-self: start; min-width: 0; }
 
 /* The points: plain until one is lit, then a card, the same card springing from one to the next. */
 .droid-points { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
@@ -27,9 +29,10 @@
 .droid-chip .ph-icon { color: var(--accent-text); }
 
 @media (max-width: 860px) {
-  .droid { grid-template-columns: minmax(0, 1fr); gap: 40px; margin-top: 44px; }
+  .droid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "device" "points"; gap: 44px; }
+  .droid-head { width: 100%; max-width: 620px; justify-self: center; padding-left: 0; }
   .droid-device { width: min(400px, 86vw); }
-  .droid-side { width: 100%; max-width: 620px; justify-self: center; }
+  .droid-points { width: 100%; max-width: 620px; justify-self: center; }
 }
 @media (max-width: 560px) {
   .droid-point { gap: 14px; padding: 14px 14px 15px 16px; }

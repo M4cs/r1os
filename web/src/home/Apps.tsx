@@ -49,7 +49,7 @@ export function AskForApps() {
   return (
     <section className="section own-accent" id="apps" ref={section} style={{ ["--accent" as string]: accent }} {...rest(seen)}>
       <div className="wrap">
-        <Head title="need an app? just ask." sub="your agent builds it on the device in seconds, and your data stays there." link={{ to: "/docs/apps", label: "how apps work" }} />
+        <Head layout="split" title="need an app? just ask." sub="your agent builds it on the device in seconds, and your data stays there." link={{ to: "/docs/apps", label: "how apps work" }} />
         <motion.div className="apps" {...(reduce ? {} : rise)}>
           <div className="apps-device">
             <R1 glow={accent}>

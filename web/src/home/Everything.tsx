@@ -116,7 +116,7 @@ export function Everything() {
   return (
     <section className="section" id="everything" ref={section} {...rest(seen)}>
       <div className="wrap">
-        <Head title="everything you'd expect, and more." sub="the everyday tools of rabbit's os3 are built in, plus a few things only r1os does." link={{ to: "/docs/using", label: "what's built in" }} />
+        <Head layout="stage" title="everything you'd expect, and more." sub="the everyday tools of rabbit's os3 are built in, plus a few things only r1os does." link={{ to: "/docs/using", label: "what's built in" }} />
         <div className="collage" ref={box}>
           {MINIS.map((m) => (
             <Mini key={m.at} m={m} progress={scrollYProgress} on={near} />

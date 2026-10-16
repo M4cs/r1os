@@ -1,6 +1,6 @@
 // Agents that use your apps (ADR-0061, ADR-0063; T-113, T-144): an R1 replaying an agent ordering in a made-up food
-// app, beside four points that light as the story reaches each one, and the full Android device underneath
-// (ADR-0013). It all rests when scrolled away, and shows the end at once with reduced motion.
+// app, with the head and four points that light as the story reaches each one beside it, and the full Android device
+// underneath (ADR-0013). It all rests when scrolled away, and shows the end at once with reduced motion.
 
 import { Icon } from "@r1os/icons";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -73,8 +73,8 @@ export function AppControl() {
   return (
     <section className="section" id="android" ref={box} {...rest(seen)}>
       <div className="wrap">
-        <Head title="agents that use your apps." sub="ask for dinner or a song, and watch your agent tap through the app for you." link={{ to: "/docs/android", label: "how they use your apps" }} />
         <div className="droid">
+          <Head layout="beside" className="droid-head" title="agents that use your apps." sub="ask for dinner or a song, and watch your agent tap through the app for you." link={{ to: "/docs/android", label: "how they use your apps" }} />
           <motion.div className="droid-device" ref={device} {...(reduce ? {} : rise)}>
             <R1 glow={agent}>
               <Replay on={playing} ms={8000}>
@@ -82,25 +82,23 @@ export function AppControl() {
               </Replay>
             </R1>
           </motion.div>
-          <div className="droid-side">
-            <ul className="droid-points" onMouseLeave={() => setHover(null)}>
-              {POINTS.map((p, i) => {
-                const on = lit === i;
-                return (
-                  <motion.li key={p.title} className={`droid-point${on ? " on" : ""}`} onMouseEnter={() => setHover(i)} {...enter(i)}>
-                    {on && <motion.div layoutId="droid-point-fill" className="droid-point-fill" transition={reduce ? { duration: 0 } : spring} />}
-                    <span className="droid-icon">
-                      <Icon name={p.icon} weight="bold" size={22} />
-                    </span>
-                    <span className="droid-words">
-                      <b>{p.title}</b>
-                      <span>{p.text}</span>
-                    </span>
-                  </motion.li>
-                );
-              })}
-            </ul>
-          </div>
+          <ul className="droid-points" onMouseLeave={() => setHover(null)}>
+            {POINTS.map((p, i) => {
+              const on = lit === i;
+              return (
+                <motion.li key={p.title} className={`droid-point${on ? " on" : ""}`} onMouseEnter={() => setHover(i)} {...enter(i)}>
+                  {on && <motion.div layoutId="droid-point-fill" className="droid-point-fill" transition={reduce ? { duration: 0 } : spring} />}
+                  <span className="droid-icon">
+                    <Icon name={p.icon} weight="bold" size={22} />
+                  </span>
+                  <span className="droid-words">
+                    <b>{p.title}</b>
+                    <span>{p.text}</span>
+                  </span>
+                </motion.li>
+              );
+            })}
+          </ul>
         </div>
         <motion.div className="droid-band" {...(reduce ? {} : rise)}>
           <h3>and a full android device.</h3>

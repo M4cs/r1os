@@ -1,8 +1,8 @@
 // Quick, then quiet: r1os is fast while you use it and idle once it sleeps, with the numbers measured on the device
-// (all from /docs/architecture#speed-and-battery and the introduction; change them there first). A band of light
-// streaks glides by, near ones quicker than far ones: CSS animations, transform only, resting while the band is out of
-// sight or the tab is hidden, and a still frame of them with reduced motion. Under it, four points rise in one after
-// another, each led by its number in one of the R1's mono readouts.
+// (all from /docs/architecture#speed-and-battery and the introduction; change them there first). The section's words
+// sit on a band of light streaks gliding by, near ones quicker than far ones: CSS animations, transform only, resting
+// while the band is out of sight or the tab is hidden, and a still frame of them with reduced motion. Under it, four
+// points rise in one after another, each led by its number in one of the R1's mono readouts.
 
 import { motion, useReducedMotion, type Variants } from "motion/react";
 import { type CSSProperties, useRef } from "react";
@@ -55,12 +55,15 @@ export function Speed() {
   return (
     <section className="section" id="speed">
       <div className="wrap">
-        <Head
-          title="quick, then quiet."
-          sub="fast while you use it, idle the moment it sleeps, and tuned on the device to stay that way."
-          link={{ to: "/docs/architecture#speed-and-battery", label: "how it's measured" }}
-        />
-        <Streaks still={!!reduce} />
+        <div className="fast-head">
+          <Streaks still={!!reduce} />
+          <Head
+            layout="stage"
+            title="quick, then quiet."
+            sub="fast while you use it, idle the moment it sleeps, and tuned on the device to stay that way."
+            link={{ to: "/docs/architecture#speed-and-battery", label: "how it's measured" }}
+          />
+        </div>
         <motion.ul className="fast-points" {...(reduce ? {} : reveal)}>
           {POINTS.map((p, i) => (
             <motion.li key={p.title} className="fast-point" variants={after(i * 0.09, 12)}>

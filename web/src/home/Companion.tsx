@@ -39,7 +39,7 @@ export function CompanionSection() {
   return (
     <section className="section" id="companion" ref={section} {...rest(seen)}>
       <div className="wrap">
-        <Head title="your pc, too." sub="pair once, then manage r1os and chat from anywhere, and let agents work in your folders." link={{ to: "/docs/companion", label: "about the companion" }} />
+        <Head layout="quiet" title="your pc, too." sub="pair once, then manage r1os and chat from anywhere, and let agents work in your folders." link={{ to: "/docs/companion", label: "about the companion" }} />
         <motion.div className="cwin" role="group" aria-label="a demo of the companion's window" {...(reduce ? {} : rise)}>
           <div className="cwin-bar">
             <span className="brand">
