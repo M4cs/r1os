@@ -44,7 +44,7 @@ How work is planned and recorded in r1os's docs vault, how commits are written, 
 - `bun run --cwd companion tauri build --no-bundle` → `target/release/r1os-companion.exe`; window only, demo R1: `bun run --cwd companion dev` (:1420); link test: `cargo run -p r1-link --bin r1-link-pc -- pair`.
 
 **Website and this skill**
-- `bun run --cwd web typecheck`, `bun run --cwd web build` → `web/dist`; `bun run --cwd web dev` (:5180); hosted on Railway (`railway.json`: the site built with Bun, served by `bun web/serve.ts`). The docs pages are `web/src/docs/content/*.md`; this skill is `web/public/skills/r1os/`.
+- `bun run --cwd web typecheck`, `bun run --cwd web build` → `web/dist`; `bun run --cwd web dev` (:5180); hosted on Railway (`railway.json` builds `web/Dockerfile` from the repo's root: Bun, then `bun web/serve.ts`). The docs pages are `web/src/docs/content/*.md`; this skill is `web/public/skills/r1os/`.
 
 **Prompts / app builds**
 - `cargo test -p r1d` (example sync); `tools/r1h install fixtures/apps/water.enee.yaml` to check a spec; `tools/r1h create "<brief>"` (spends a little); evals `python3 tools/eval-apps.py [--model …] [--only 1,3] [--edits]` (asks first; reports to `artifacts/evals/`).

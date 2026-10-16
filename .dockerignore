@@ -1,0 +1,11 @@
+# What web/Dockerfile's build sees: the Bun workspace and nothing else (no device images, backups, keys or build output).
+*
+!package.json
+!bun.lock
+!web/
+!shell/
+!companion/
+!packages/
+**/node_modules
+**/dist
+companion/src-tauri
