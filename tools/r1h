@@ -25,7 +25,8 @@
 #   tools/r1h power diff <a> <b>        what was used between two marks
 #   tools/r1h perf [reset]              r1d's latency marks and the host's frame times (since the last reset)
 #   tools/r1h bootanim [default]        the host draws the boot animation now (T-029); `default`: r1os's own cast,
-#                                       pulled into out/bootanim for the image (device only)
+#                                       pulled into out/bootanim for the image, and its still into device/aosp for
+#                                       an image built without it (device only)
 set -euo pipefail
 source "$(dirname "$0")/lib.sh"
 need curl
@@ -159,6 +160,10 @@ if not d["stats"]:
       mkdir -p "$OUT/bootanim"
       adb pull /data/r1os/boot/default.zip "$OUT/bootanim/bootanimation.zip" >/dev/null
       say "$OUT/bootanim/bootanimation.zip ($(( $(stat -c %s "$OUT/bootanim/bootanimation.zip") / 1024 )) KiB)"
+      # The intro's last frame, the whole cast in: the still an image built without this zip gets (build-image.sh).
+      f=$(unzip -Z1 "$OUT/bootanim/bootanimation.zip" 'part0/*' | sort | tail -n 1)
+      unzip -p "$OUT/bootanim/bootanimation.zip" "$f" > "$ROOT/device/aosp/bootanimation-still.png"
+      say "device/aosp/bootanimation-still.png (its still: commit it if it changed)"
     else
       printf '%s
 ' "$now"

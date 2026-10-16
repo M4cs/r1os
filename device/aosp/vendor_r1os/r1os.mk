@@ -28,7 +28,8 @@ PRODUCT_PACKAGES += \
 SYSTEM_EXT_PRIVATE_SEPOLICY_DIRS += vendor/r1os/sepolicy
 
 # The boot animation (T-029): r1os's own cast, drawn by the host (tools/r1h bootanim default) into out/bootanim,
-# which tools/build-image.sh copies to prebuilt/. Your agents' (r1d's, /data/r1os/boot) is bound over it at boot.
+# which tools/build-image.sh copies to prebuilt/ (without it, a still of it: device/aosp/bootanimation-still.png).
+# Your agents' (r1d's, /data/r1os/boot) is bound over it at boot.
 PRODUCT_COPY_FILES += vendor/r1os/prebuilt/bootanimation.zip:$(TARGET_COPY_OUT_PRODUCT)/media/bootanimation.zip
 
 # Framework settings r1os overrides (overlay/): the host answers adb's confirmations (roadmap R4's keep-list).

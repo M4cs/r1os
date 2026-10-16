@@ -50,6 +50,24 @@ JOBS=${JOBS:-$DEFAULT_JOBS}
 
 say() { printf '\n==> %s\n' "$*"; }
 
+# Android's bootanimation.zip from one PNG frame, held until the R1 is up: stored, not compressed (Android reads it in
+# place), and dated 1980 so the same frame makes the same zip.
+still_bootanimation() {
+  python3 - "$1" "$2" <<'EOF'
+import struct, sys, zipfile
+png, out = sys.argv[1:]
+frame = open(png, "rb").read()
+if frame[:8] != b"\x89PNG\r\n\x1a\n":
+    sys.exit(f"{png} isn't a PNG")
+w, h = struct.unpack(">II", frame[16:24])
+with zipfile.ZipFile(out, "w", zipfile.ZIP_STORED) as z:
+    for name, data in (("desc.txt", f"{w} {h} 10\np 0 0 part0\n".encode()), ("part0/00000.png", frame)):
+        entry = zipfile.ZipInfo(name, (1980, 1, 1, 0, 0, 0))
+        entry.external_attr = 0o644 << 16
+        z.writestr(entry, data)
+EOF
+}
+
 stage_init() {
   mkdir -p "$TREE" && cd "$TREE"
   [ -d .repo ] || repo init -u https://android.googlesource.com/platform/manifest -b "$TAG" \
@@ -110,12 +128,19 @@ stage_layer() {
   cp "$REPO/out/r1os-host.apk" vendor/r1os/prebuilt/r1os-host.apk
   [ -f "$REPO/out/aurora/AuroraStore.apk" ] || { echo "out/aurora/AuroraStore.apk is missing: run tools/fetch-aurora.sh first" >&2; exit 1; }
   cp "$REPO/out/aurora/AuroraStore.apk" vendor/r1os/prebuilt/AuroraStore.apk
-  # Verbose boot's program (T-101) and r1os's own boot animation (T-029), built on Windows like the host.
+  # Verbose boot's program (T-101), built on Windows like the host.
   [ -f "$REPO/out/bootlog/r1os-bootlog" ] || { echo "out/bootlog/r1os-bootlog is missing: run tools/build-bootlog.sh first" >&2; exit 1; }
   cp "$REPO/out/bootlog/r1os-bootlog" vendor/r1os/prebuilt/r1os-bootlog
   chmod 755 vendor/r1os/prebuilt/r1os-bootlog
-  [ -f "$REPO/out/bootanim/bootanimation.zip" ] || { echo "out/bootanim/bootanimation.zip is missing: run tools/r1h bootanim default first" >&2; exit 1; }
-  cp "$REPO/out/bootanim/bootanimation.zip" vendor/r1os/prebuilt/bootanimation.zip
+  # r1os's own boot animation (T-029), which only the host on an R1 running r1os draws (tools/r1h bootanim default).
+  # Without it, as on a first build, the image gets a still of it from the repo; the R1 shows your agents' animation
+  # once the host has drawn them.
+  if [ -f "$REPO/out/bootanim/bootanimation.zip" ]; then
+    cp "$REPO/out/bootanim/bootanimation.zip" vendor/r1os/prebuilt/bootanimation.zip
+  else
+    echo "no out/bootanim/bootanimation.zip: the image gets a still of the boot animation (device/aosp/bootanimation-still.png)"
+    still_bootanimation "$REPO/device/aosp/bootanimation-still.png" vendor/r1os/prebuilt/bootanimation.zip
+  fi
   chmod 755 vendor/r1os/bin/r1os-r1d
   (cd device/phh/treble && bash generate.sh vendor/r1os/r1os.mk)
 }

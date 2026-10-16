@@ -51,7 +51,7 @@ tools/build-host.sh      # the host app, signed with your platform key
 tools/build-bootlog.sh   # verbose boot
 ```
 
-The image takes a boot animation at `out/bootanim/bootanimation.zip`, and r1os doesn't ship a default yet. For a first build, put any Android boot animation zip there; once r1os runs, `tools/r1h bootanim default` makes its own. Then, on Linux, from the repository:
+A first build needs no R1. Its boot animation is a still of r1os's characters, and your R1 shows your own agents from the boot after r1os has drawn them. Once an R1 runs r1os, `tools/r1h bootanim default` puts the animated one in `out/bootanim` for the next build. Then, on Linux, from the repository:
 
 ```bash
 sudo R1OS_KEYS=/path/to/.r1os/keys AOSP_TREE=/big/disk/aosp15 bash tools/build-image.sh

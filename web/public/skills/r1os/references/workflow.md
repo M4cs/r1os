@@ -38,7 +38,7 @@ How work is planned and recorded in r1os's docs vault, how commits are written, 
 - `tools/build-host.sh` → `out/r1os-host.apk`, signed with r1os's platform key (`tools/make-keys.sh` once; `R1OS_KEYS` if they live elsewhere); deploy with `tools/deploy.sh --host` (ask first). Native shell changes can only be checked on the R1 (`r1h screenshot`, `r1h perf` for frame times).
 
 **The image**
-- `tools/build-image.sh` in Linux (WSL works), as root: stages `init sync patch layer build export`, and `layer policy` for the SELinux policy alone (~7 min). `export` refuses an image whose `framework-res.apk` or host isn't signed with r1os's platform key. Before an image build: `tools/build-host.sh`, `tools/fetch-aurora.sh`, `tools/build-bootlog.sh`, `tools/r1h bootanim default`. Flashing is a device write: ask.
+- `tools/build-image.sh` in Linux (WSL works), as root: stages `init sync patch layer build export`, and `layer policy` for the SELinux policy alone (~7 min). `export` refuses an image whose `framework-res.apk` or host isn't signed with r1os's platform key. Before an image build: `tools/build-host.sh`, `tools/fetch-aurora.sh`, `tools/build-bootlog.sh`, and `tools/r1h bootanim default` if an R1 runs r1os (the animated boot animation into `out/bootanim`; without it the image gets a still, `device/aosp/bootanimation-still.png`, so a first build needs no R1). Flashing is a device write: ask.
 
 **Companion**
 - `pnpm --dir companion tauri build --no-bundle` → `target/release/r1os-companion.exe`; window only, demo R1: `pnpm --dir companion dev` (:1420); link test: `cargo run -p r1-link --bin r1-link-pc -- pair`.
