@@ -12,6 +12,20 @@ pub fn companion() -> PathBuf {
     local_app_data().join("r1os").join("companion")
 }
 
+/// `%APPDATA%\r1os\companion`: the companion's settings (its key, its R1s, `settings.json`, the backup folder).
+pub fn settings() -> PathBuf {
+    roaming_app_data().join("r1os").join("companion")
+}
+
+/// The user's roaming application data (`AppData\Roaming`).
+pub fn roaming_app_data() -> PathBuf {
+    #[cfg(windows)]
+    if let Some(p) = known(&windows_sys::Win32::UI::Shell::FOLDERID_RoamingAppData) {
+        return p;
+    }
+    std::env::var_os("APPDATA").map(PathBuf::from).unwrap_or_else(|| home().join("AppData").join("Roaming"))
+}
+
 /// The user's local application data (`AppData\Local`).
 pub fn local_app_data() -> PathBuf {
     #[cfg(windows)]

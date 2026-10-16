@@ -4,7 +4,8 @@
 //!   `fetch` downloads uv and mtkclient (pinned) first; Windows needs Rabbit's MediaTek driver
 //!   (`drivers -- install --mtk`); the R1 is powered off, then plugged in while it waits.
 //!
-//! Backups go to `Documents\r1os backups` unless `R1OS_BACKUPS` names another folder.
+//! Backups go to the folder chosen in the companion (`Documents\r1os backups` until one is), unless `R1OS_BACKUPS`
+//! names another.
 //!
 //!     cargo run -p r1-usb --example backup -- status
 //!     cargo run -p r1-usb --example backup -- fetch
@@ -33,7 +34,8 @@ fn mtk_driver() -> bool {
 
 fn main() -> anyhow::Result<()> {
     let dir = backup::tools_dir();
-    let root = std::env::var_os("R1OS_BACKUPS").map(PathBuf::from).unwrap_or_else(backup::default_root);
+    let named = std::env::var_os("R1OS_BACKUPS").map(PathBuf::from);
+    let root = named.clone().unwrap_or_else(backup::root);
     let args: Vec<String> = std::env::args().skip(1).collect();
     match args.first().map(String::as_str) {
         Some("status") | None => println!(
@@ -95,7 +97,11 @@ fn main() -> anyhow::Result<()> {
         }
         Some("latest") => {
             let Some(id) = args.get(1) else { anyhow::bail!("latest <identity>") };
-            println!("{}", serde_json::json!({ "latest": backup::latest(&root, id) }));
+            let latest = match &named {
+                Some(root) => backup::latest(root, id),
+                None => backup::newest(id),
+            };
+            println!("{}", serde_json::json!({ "latest": latest }));
         }
         Some(other) => anyhow::bail!("status, fetch, run, verify or latest, not {other}"),
     }

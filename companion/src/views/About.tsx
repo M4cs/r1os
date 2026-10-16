@@ -80,7 +80,7 @@ export function About({ r1, data }: { r1: R1Info; data: R1Data }) {
         {saved && (
           <div className="row-buttons">
             <span className="muted small">
-              {saved.files} files, {size(saved.bytes)}, in documents\r1os backups
+              {saved.files} files, {size(saved.bytes)}, in {saved.dir}
             </span>
             <button className="btn small" onClick={() => void reveal(saved.dir)}>
               <Icon name="folder-open" weight="bold" size={14} /> show

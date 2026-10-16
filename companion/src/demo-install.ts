@@ -21,7 +21,7 @@ const TOOLS = 8_044_989;
 const BACKUPS = String.raw`C:\Users\you\Documents\r1os backups`;
 
 const r1 = { mode: (stockR1 ? "off" : "adb") as Mode, unlocked: !stockR1, slot: "b", r1os: stockR1 ? null : ("0.2.17" as string | null) };
-const pc = { tools: null as string | null, drivers: { r1: false, mtk: false }, backupTools: false, backups: {} as Record<string, string>, stock: false };
+const pc = { tools: null as string | null, drivers: { r1: false, mtk: false }, backupTools: false, backups: {} as Record<string, string>, backupRoot: null as string | null, stock: false };
 const flash = { read: null as number | null, checked: null as Checked | null, plan: null as FlashPlan | null };
 /** The first setup: the checkout picked, the steps done on the R1, whether r1d runs and the R1 is online, the plan. */
 const setup = { from: null as string | null, done: new Set<SetupStep["what"]>(), running: false, online: params.get("wifi") !== "off", plan: null as SetupPlan | null };
@@ -238,7 +238,20 @@ const COMMANDS: Record<string, (args: Record<string, unknown>, emit: Emit) => Pr
   },
   async backup_status(args) {
     const id = args.identity as string | null;
-    return { tools: pc.backupTools, mtk_driver: pc.drivers.mtk, root: BACKUPS, latest: id ? (pc.backups[id] ?? null) : null, skip_phrase: "I understand" };
+    return {
+      tools: pc.backupTools,
+      mtk_driver: pc.drivers.mtk,
+      root: pc.backupRoot ?? BACKUPS,
+      chosen: pc.backupRoot !== null,
+      root_there: true,
+      default_root: BACKUPS,
+      latest: id ? (pc.backups[id] ?? null) : null,
+      skip_phrase: "I understand",
+    };
+  },
+  async backup_folder(args) {
+    const folder = (args.folder as string | null) ?? null;
+    pc.backupRoot = folder === BACKUPS ? null : folder;
   },
   async backup_fetch_tools(_, emit) {
     for (const [what, total] of [["uv", 22_310_473], ["mtkclient", 32_229_485]] as const) {
@@ -283,7 +296,7 @@ const COMMANDS: Record<string, (args: Record<string, unknown>, emit: Emit) => Pr
         }
         r1.mode = "off";
       }
-      pc.backups[ID] = `${BACKUPS}\\${ID}\\${date}`;
+      pc.backups[ID] = `${pc.backupRoot ?? BACKUPS}\\${ID}\\${date}`;
       return { dir: pc.backups[ID], identity: ID, date, parts };
     } finally {
       s.done();

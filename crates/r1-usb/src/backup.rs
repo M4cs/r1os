@@ -6,7 +6,8 @@
 //! from its pinned source with only the five packages its command line needs (its package would pull in a GUI
 //! toolkit), on a Python uv fetches.
 //!
-//! A backup goes to `Documents\r1os backups\<identity>\<date>\` with `SHA256SUMS` and `info.json`. Its identity is the
+//! A backup goes to `<root>\<identity>\<date>\` with `SHA256SUMS` and `info.json`, where the root is the folder chosen
+//! in the companion ([`root`], ADR-0069), `Documents\r1os backups` until one is. Its identity is the
 //! R1's own ([`crate::identity`]): the serial sits at the start of `proinfo` (seen in three backups, 2026-10-14),
 //! so a backup made at power-on matches the R1 the scan finds booted or in fastboot. Reads only: mtkclient's `rl`.
 //!
@@ -104,9 +105,64 @@ pub fn usbdk_installed() -> bool {
     Command::new("sc").args(["query", "UsbDk"]).output().map(|o| o.status.success()).unwrap_or(false)
 }
 
-/// Where backups go: `Documents\r1os backups`, wherever Windows keeps Documents.
+/// Where backups go until another folder is chosen: `Documents\r1os backups`, wherever Windows keeps Documents.
 pub fn default_root() -> PathBuf {
     crate::folders::documents().join("r1os backups")
+}
+
+/// Where backups go: the folder chosen in the companion ([set_root]), else [default_root] (ADR-0069). A backup holds
+/// the R1's IMEI and radio calibration, and Documents may be a folder OneDrive syncs, so it's the person's to choose.
+pub fn root() -> PathBuf {
+    chosen().unwrap_or_else(default_root)
+}
+
+/// The folder chosen for backups, if one was: `%APPDATA%\r1os\companion\backup-folder.txt` holds its path, which
+/// `tools/lib.sh`'s `require_backup` reads too.
+pub fn chosen() -> Option<PathBuf> {
+    chosen_in(&crate::folders::settings())
+}
+
+/// Chooses where backups go ([None], or the default itself: back to [default_root]).
+pub fn set_root(folder: Option<&Path>) -> Result<()> {
+    set_root_in(&crate::folders::settings(), folder.filter(|p| *p != default_root()))
+}
+
+/// Every folder a backup may be in: the chosen one, then [default_root], so a backup made before the choice is still
+/// found.
+pub fn roots() -> Vec<PathBuf> {
+    let mut all: Vec<PathBuf> = chosen().into_iter().collect();
+    if !all.contains(&default_root()) {
+        all.push(default_root());
+    }
+    all
+}
+
+/// The newest backup of [identity]'s R1 that verifies, in any of [roots].
+pub fn newest(identity: &str) -> Option<PathBuf> {
+    newest_in(&roots(), identity)
+}
+
+const CHOSEN: &str = "backup-folder.txt";
+
+fn chosen_in(settings: &Path) -> Option<PathBuf> {
+    let p = PathBuf::from(std::fs::read_to_string(settings.join(CHOSEN)).ok()?.trim());
+    p.is_absolute().then_some(p)
+}
+
+fn set_root_in(settings: &Path, folder: Option<&Path>) -> Result<()> {
+    let file = settings.join(CHOSEN);
+    match folder {
+        Some(p) => {
+            if !p.is_absolute() {
+                bail!("not a whole path: {}", p.display());
+            }
+            std::fs::create_dir_all(settings)?;
+            std::fs::write(&file, p.to_string_lossy().as_bytes())?;
+        }
+        None if file.exists() => std::fs::remove_file(&file)?,
+        None => {}
+    }
+    Ok(())
 }
 
 /// Where uv, mtkclient and uv's Python go: `%LOCALAPPDATA%\r1os\companion\backup-tools`.
@@ -257,7 +313,7 @@ impl Stop {
     }
 }
 
-/// Reads [PARTS] over the boot ROM into [root] (`Documents\r1os backups`): the R1 powered off, then plugged in while
+/// Reads [PARTS] over the boot ROM into [root] (the folder [`root()`] names): the R1 powered off, then plugged in while
 /// this waits. [progress] hears mtkclient's lines, with anything that names the chip taken out. A backup that doesn't
 /// finish leaves nothing behind (what it read holds the IMEI).
 pub fn run(tools: &Tools, root: &Path, date: &str, stop: &Stop, progress: impl FnMut(&str)) -> Result<Backup> {
@@ -467,8 +523,19 @@ pub fn verify(dir: &Path, identity: &str) -> Result<()> {
 
 /// The newest backup of [identity]'s R1 under [root] that verifies.
 pub fn latest(root: &Path, identity: &str) -> Option<PathBuf> {
-    let mut dates: Vec<PathBuf> = std::fs::read_dir(root.join(identity)).ok()?.filter_map(|e| e.ok().map(|e| e.path())).filter(|p| p.is_dir()).collect();
-    dates.sort();
+    newest_in(&[root.to_path_buf()], identity)
+}
+
+/// The newest backup of [identity]'s R1 under any of [roots] that verifies, newest by its date (the folder's name).
+pub fn newest_in(roots: &[PathBuf], identity: &str) -> Option<PathBuf> {
+    let mut dates: Vec<PathBuf> = roots
+        .iter()
+        .filter_map(|r| std::fs::read_dir(r.join(identity)).ok())
+        .flatten()
+        .filter_map(|e| e.ok().map(|e| e.path()))
+        .filter(|p| p.is_dir())
+        .collect();
+    dates.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
     dates.into_iter().rev().find(|d| verify(d, identity).is_ok())
 }
 
@@ -617,5 +684,46 @@ mod tests {
         assert!(verify(&b.dir, &id).is_err());
         assert_eq!(latest(&root, &id), None);
         let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn the_folder_chosen_for_backups() {
+        let settings = std::env::temp_dir().join(format!("r1-usb-chosen-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&settings);
+        assert_eq!(chosen_in(&settings), None);
+        let usb = if cfg!(windows) { PathBuf::from(r"E:\r1 backups") } else { PathBuf::from("/media/usb/r1 backups") };
+        set_root_in(&settings, Some(&usb)).unwrap();
+        assert_eq!(chosen_in(&settings), Some(usb));
+        // Only a whole path; and none goes back to the default.
+        assert!(set_root_in(&settings, Some(Path::new("backups"))).is_err());
+        set_root_in(&settings, None).unwrap();
+        assert_eq!(chosen_in(&settings), None);
+        set_root_in(&settings, None).unwrap();
+        let _ = std::fs::remove_dir_all(&settings);
+    }
+
+    #[test]
+    fn the_newest_backup_in_either_folder() {
+        let base = std::env::temp_dir().join(format!("r1-usb-newest-{}", std::process::id()));
+        let (chosen, default) = (base.join("chosen"), base.join("default"));
+        let id = crate::identity("0123456789ABCDEFGHIJ");
+        let made = |root: &Path, date: &str| {
+            let dir = root.join(&id).join(date);
+            std::fs::create_dir_all(&dir).unwrap();
+            std::fs::write(dir.join("proinfo.bin"), b"0123456789ABCDEFGHIJ\0\0").unwrap();
+            let sum = download::sha256_of(&dir.join("proinfo.bin")).unwrap();
+            std::fs::write(dir.join("SHA256SUMS"), format!("{sum}  proinfo.bin\n")).unwrap();
+            dir
+        };
+        let older = made(&default, "20261014-120000");
+        let newer = made(&chosen, "20261015-090000");
+        let roots = [chosen.clone(), default.clone()];
+        assert_eq!(newest_in(&roots, &id), Some(newer.clone()));
+        // One that no longer verifies is passed over for the one that does, in the other folder.
+        std::fs::write(newer.join("proinfo.bin"), b"changed").unwrap();
+        assert_eq!(newest_in(&roots, &id), Some(older));
+        // A folder that isn't there (a drive unplugged) is no backup, and no error.
+        assert_eq!(newest_in(&[base.join("unplugged")], &id), None);
+        let _ = std::fs::remove_dir_all(&base);
     }
 }

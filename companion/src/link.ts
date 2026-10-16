@@ -195,7 +195,7 @@ export async function reveal(path: string) {
   await revealItemInDir(path).catch(() => undefined);
 }
 
-/** Backs an R1's data up into Documents\r1os backups\<label>, saying how far it's got. */
+/** Backs an R1's data up into the folder chosen for backups (Documents\r1os backups until one is), saying how far it's got. */
 export async function backup(id: string, label: string, progress: (done: number, total: number) => void): Promise<{ dir: string; files: number; bytes: number }> {
   const off = await listen<{ r1: string; done: number; total: number }>("backup", (p) => p.r1 === id && progress(p.done, p.total));
   try {
@@ -268,8 +268,8 @@ export function codexSignIn(): Promise<void> {
 }
 
 /** Picks a folder on this computer (for an agent working here, or Rabbit's release unpacked). */
-export async function pickFolder(title = "a folder for your agent"): Promise<string | null> {
-  if (!inTauri) return "C:\\Users\\you\\Projects\\garden";
+export async function pickFolder(title = "a folder for your agent", demo = "C:\\Users\\you\\Projects\\garden"): Promise<string | null> {
+  if (!inTauri) return demo;
   const { open } = await import("@tauri-apps/plugin-dialog");
   const picked = await open({ directory: true, multiple: false, title });
   return typeof picked === "string" ? picked : null;
@@ -320,8 +320,15 @@ export interface Drivers {
 export interface BackupStatus {
   tools: boolean;
   mtk_driver: boolean;
+  /** Where backups go: the folder chosen (ADR-0069), else `default_root`. */
   root: string;
-  /** This R1's newest backup that verifies. */
+  /** Whether a folder was chosen. */
+  chosen: boolean;
+  /** Whether that folder is there (a chosen drive can be unplugged). */
+  root_there: boolean;
+  /** `Documents\r1os backups`. */
+  default_root: string;
+  /** This R1's newest backup that verifies, in the chosen folder or the default. */
   latest: string | null;
   skip_phrase: string;
 }
@@ -449,6 +456,8 @@ export const install = {
   stopBackup: () => invoke<void>("backup_stop"),
   /** The backup skipped for [identity]'s R1 (`null`: before one was seen), if [typed] is the phrase. */
   skipBackup: (typed: string, identity: string | null) => invoke<boolean>("backup_skip", { typed, identity }),
+  /** Where backups go from now on: a folder, or `null` for `Documents\r1os backups`. */
+  backupFolder: (folder: string | null) => invoke<void>("backup_folder", { folder }),
   stock: () => invoke<StockStatus>("flash_stock_status"),
   fetchStock: (from: string | null) => invoke<void>("flash_fetch_stock", { from }),
   readStatus: (identity: string) => invoke<ReadStatus>("flash_read_status", { identity }),

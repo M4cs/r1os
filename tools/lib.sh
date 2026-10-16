@@ -203,11 +203,27 @@ device_serial() {
   printf '%s' "$s"
 }
 
+# The folder chosen for backups in the companion (ADR-0069), as a path this shell can use, if one was: its path is in
+# %APPDATA%\r1os\companion\backup-folder.txt.
+chosen_backups() {
+  local settings f p
+  settings=${APPDATA:-$HOME/AppData/Roaming}
+  command -v cygpath >/dev/null 2>&1 && settings=$(cygpath -u "$settings")
+  f=$settings/r1os/companion/backup-folder.txt
+  [ -f "$f" ] || return 0
+  p=$(tr -d '\r\n' <"$f")
+  [ -n "$p" ] || return 0
+  if command -v cygpath >/dev/null 2>&1; then cygpath -u "$p"; else printf '%s' "$p"; fi
+}
+
 # Refuses to continue unless a backup of the R1 plugged in verifies: its proinfo starts with this R1's serial (where
-# the R1 keeps it), and every file matches its SHA256SUMS. Looks in backups/ (tools/backup.sh) and in the companion's
-# Documents/r1os backups (T-169; R1OS_BACKUPS names another).
+# the R1 keeps it), and every file matches its SHA256SUMS. Looks in backups/ (tools/backup.sh), the folder chosen in
+# the companion, and Documents/r1os backups (T-169, T-194; R1OS_BACKUPS names another in its place).
 require_backup() {
-  local serial d p
+  local serial d p chosen
+  local roots=("$BACKUPS" "${R1OS_BACKUPS:-$HOME/Documents/r1os backups}")
+  chosen=$(chosen_backups)
+  [ -n "$chosen" ] && roots+=("$chosen")
   serial=$(device_serial)
   [ -n "$serial" ] || die "No R1 found to match a backup to: plug it in (fastboot or booted) first."
   while IFS= read -r d; do
@@ -222,6 +238,6 @@ require_backup() {
       return 0
     fi
     warn "$d doesn't match its SHA256SUMS: not counted"
-  done < <(find "$BACKUPS" "${R1OS_BACKUPS:-$HOME/Documents/r1os backups}" -maxdepth 3 -name SHA256SUMS -printf '%h\n' 2>/dev/null | sort -r)
+  done < <(find "${roots[@]}" -maxdepth 3 -name SHA256SUMS -printf '%h\n' 2>/dev/null | sort -r)
   die "No verified backup of this R1. Run tools/backup.sh (rooted) or the companion's backup first (or set NO_BACKUP_OK=1 if you really mean it)."
 }

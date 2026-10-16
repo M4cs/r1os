@@ -621,13 +621,27 @@ function BackupStep({ r1, known, status, made, skipped, log, reload, onMade, onS
     } else setErr(`type “${status?.skip_phrase ?? "I understand"}” to go on without a backup`);
   };
 
+  // Where backups go (ADR-0069): a folder picked here, or `null` for Documents\r1os backups.
+  const choose = async (to?: null) => {
+    const dir = to === null ? null : await pickFolder("where r1 backups go", String.raw`E:\r1 backups`);
+    if (to !== null && !dir) return;
+    try {
+      await install.backupFolder(dir);
+      log.add(dir ? `backup: backups go to ${dir} from now on` : "backup: backups go to documents\\r1os backups again");
+      setErr(null);
+      reload();
+    } catch (e) {
+      setErr(words(e));
+    }
+  };
+
   const have = made && made.identity === known ? made.dir : status?.latest;
-  const ready = fast || (!!status?.tools && !!status?.mtk_driver && !bootedWithoutRoot);
+  const ready = (fast || (!!status?.tools && !!status?.mtk_driver && !bootedWithoutRoot)) && status?.root_there !== false;
   return (
     <StepCard
       what={
         <p>
-          before anything is written, the r1's own partitions are copied to this computer: its imei and radio calibration, its unlock state, and rabbit's boot chain on both slots. no image can give those back. r1os's flash never writes them, so a backup is what gets them back if something else ever does. it only reads, into documents\r1os backups, with sums to check it by.
+          before anything is written, the r1's own partitions are copied to this computer: its imei and radio calibration, its unlock state, and rabbit's boot chain on both slots. no image can give those back. r1os's flash never writes them, so a backup is what gets them back if something else ever does. it only reads, into the folder below, with sums to check it by.
         </p>
       }
       picture={fast ? undefined : <PlugInOff />}
@@ -650,7 +664,28 @@ function BackupStep({ r1, known, status, made, skipped, log, reload, onMade, onS
       ]}
     >
       <Section title="this r1's backup" />
-      <Item label="a backup here" sub={have ? `documents\\r1os backups\\${have.split(/[\\/]/).slice(-2).join("\\")}: its sums verify` : known ? "none for this r1 yet" : "plug the r1 in to find out whether this computer has its backup"}>
+      <Item
+        label="where backups go"
+        sub={
+          !status
+            ? "…"
+            : !status.root_there
+              ? `${status.root} isn't there: plug its drive in, or choose another`
+              : `${status.root}${status.chosen ? "" : " until you choose"}. it holds this r1's imei: pick somewhere only you can reach, not a folder that syncs to the cloud unless you mean it to`
+        }
+      >
+        <div className="row-buttons">
+          <button className="btn small" disabled={!!run} onClick={() => void choose()}>
+            <Icon name="folder-simple" weight="bold" size={14} /> choose
+          </button>
+          {status?.chosen && (
+            <button className="btn small" disabled={!!run} onClick={() => void choose(null)}>
+              documents
+            </button>
+          )}
+        </div>
+      </Item>
+      <Item label="a backup here" sub={have ? `${have.split(/[\\/]/).slice(-3).join("\\")}: its sums verify` : known ? "none for this r1 yet" : "plug the r1 in to find out whether this computer has its backup"}>
         <div className="row-buttons">
           <Found ok={known ? !!have : null} yes="checked" no="not yet" unknown="not known yet" />
           {have && inTauri && (

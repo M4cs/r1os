@@ -48,7 +48,7 @@ An agent set to work on a linked computer runs its turns there, with the real `c
 
 The companion also installs r1os, one step at a time:
 1. **Windows' drivers.**
-2. **A backup** of the R1's own partitions.
+2. **A backup** of the R1's own partitions, into a folder you choose (Documents\r1os backups until you do). It holds the R1's IMEI, so pick somewhere only you can reach.
 3. **The unlock.** The companion guides it; you request it on Rabbit's portal.
 4. **The flash.**
 5. **The first setup.**

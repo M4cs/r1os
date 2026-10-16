@@ -140,23 +140,35 @@ fn backup_tools_dir() -> PathBuf {
 static BACKUP_STOP: std::sync::LazyLock<r1_usb::backup::Stop> = std::sync::LazyLock::new(Default::default);
 
 /// The backup step: whether uv and mtkclient are fetched and Rabbit's MediaTek driver installed (mtkclient reaches the
-/// preloader through its serial port), where backups go, what has to be typed to skip it, and for `identity`'s R1 the
-/// newest backup that verifies.
+/// preloader through its serial port), where backups go (the folder chosen, ADR-0069, and whether it's there: a drive
+/// can be unplugged), what has to be typed to skip it, and for `identity`'s R1 the newest backup that verifies, in the
+/// chosen folder or the default.
 #[tauri::command]
 pub async fn backup_status(identity: Option<String>) -> Result<Value, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let root = r1_usb::backup::default_root();
-        let latest = identity.as_deref().and_then(|id| r1_usb::backup::latest(&root, id));
+        let root = r1_usb::backup::root();
+        let chosen = r1_usb::backup::chosen().is_some();
+        let latest = identity.as_deref().and_then(r1_usb::backup::newest);
         json!({
             "tools": r1_usb::backup::find(&backup_tools_dir()).is_some(),
             "mtk_driver": r1_usb::drivers::status().map(|s| s.mtk).unwrap_or(false),
             "root": root,
+            "chosen": chosen,
+            "root_there": !chosen || root.is_dir(),
+            "default_root": r1_usb::backup::default_root(),
             "latest": latest,
             "skip_phrase": r1_usb::backup::SKIP_PHRASE,
         })
     })
     .await
     .map_err(|e| e.to_string())
+}
+
+/// Chooses where backups go: a folder picked on this computer, or `null` for `Documents\r1os backups` (ADR-0069).
+/// Every backup the companion makes goes there, and every check for an R1's backup looks there as well.
+#[tauri::command]
+pub fn backup_folder(folder: Option<String>) -> Result<(), String> {
+    r1_usb::backup::set_root(folder.as_deref().map(std::path::Path::new)).map_err(|e| format!("{e:#}"))
 }
 
 /// Fetches uv and mtkclient, checked against their pins, and gets Python and mtkclient's packages ready;
@@ -179,14 +191,18 @@ pub async fn backup_fetch_tools(app: AppHandle) -> Result<(), String> {
     .map_err(|e| format!("{e:#}"))
 }
 
-/// Reads the R1's own partitions into `Documents\r1os backups`. A booted R1 on USB with root (r1os's image, or Magisk)
-/// is read over adb at USB speed, with `backup-progress {part, done, total}` events. Otherwise (a stock R1) through the
-/// preloader at power-on: the R1 powered off, then plugged in while this waits, with `backup-line` events carrying
-/// mtkclient's lines, anything naming the device taken out. Returns the backup (its folder, identity, date and parts).
+/// Reads the R1's own partitions into the folder chosen for backups (`Documents\r1os backups` until one is). A booted R1
+/// on USB with root (r1os's image, or Magisk) is read over adb at USB speed, with `backup-progress {part, done, total}`
+/// events. Otherwise (a stock R1) through the preloader at power-on: the R1 powered off, then plugged in while this
+/// waits, with `backup-line` events carrying mtkclient's lines, anything naming the device taken out. Returns the backup
+/// (its folder, identity, date and parts).
 #[tauri::command]
 pub async fn backup_run(app: AppHandle) -> Result<Value, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let root = r1_usb::backup::default_root();
+        let root = r1_usb::backup::root();
+        if r1_usb::backup::chosen().is_some() && !root.is_dir() {
+            anyhow::bail!("the folder chosen for backups isn't there ({}): plug its drive in, or choose another", root.display());
+        }
         if let Some(tools) = r1_usb::tools::find(&dir())
             && let Some((serial, _)) =
                 r1_usb::adb::devices(&tools.adb)?.into_iter().find(|(_, s)| *s == r1_usb::adb::State::Device)
@@ -647,9 +663,12 @@ pub async fn flash_run(app: AppHandle, flash: State<'_, Flash>, typed: String) -
         // Before the wipe, a backup of this R1 that verifies, or its skip typed (CLAUDE.md; ADR-0065): the screen asks
         // for one, and this holds it.
         let skipped = SKIPPED.lock().unwrap_or_else(|e| e.into_inner()).iter().any(|s| s.is_empty() || *s == id);
-        if !skipped && r1_usb::backup::latest(&r1_usb::backup::default_root(), &id).is_none() {
+        if !skipped && r1_usb::backup::newest(&id).is_none() {
+            let root = r1_usb::backup::root();
+            let gone = r1_usb::backup::chosen().is_some() && !root.is_dir();
             anyhow::bail!(
-                "not flashed: no backup of this R1 here verifies. Back it up first, or type “{}” on the backup step",
+                "not flashed: {}. Back it up first, choose the folder that has its backup, or type “{}” on the backup step",
+                if gone { format!("the folder chosen for backups isn't there ({})", root.display()) } else { "no backup of this R1 here verifies".into() },
                 r1_usb::backup::SKIP_PHRASE
             );
         }
