@@ -54,7 +54,7 @@ Everything r1os keeps is in `/data/r1os`, readable only by root. That's your cha
 |---|---|---|
 | **Anyone with a USB cable** | adb, which is on and doesn't ask today | **Root:** everything on the R1, including the CLIs' sign-ins. This is the biggest gap ([below](#not-safe-yet)). The PIN lock doesn't stop it |
 | **A computer on your Wi-Fi** | Wireless debugging, only if you turn it on in Android's developer options | The same as a USB cable |
-| **Your local network** | Two short-lived servers: the sign-in page (port 7180, while you sign an agent in from your phone: up to 10 minutes, one try) and sharing (a random port, up to 10 minutes) | One page or one file, behind a one-time token in the link. **Plain HTTP:** someone who can watch your Wi-Fi's traffic could read the sign-in code |
+| **Your local network** | Two short-lived servers: the sign-in page (port 7180, while you sign an agent in from your phone: up to 10 minutes, one try) and sharing (a random port, up to 10 minutes) | One page or one file, behind a one-time token in the link. Both are plain HTTP and listen only on the R1's Wi-Fi address. The sign-in page keeps its token on your phone and sends the code sealed with it, so someone watching your Wi-Fi can't read the code. What you share crosses as it is |
 | **A linked computer** | The link: the R1 dials the computer, never the reverse, and you confirm a matching code on both at pairing | What Settings can do. It can read chats, memories, media, notifications, and a full backup. It can change agents, apps, Wi-Fi and the CLIs' sign-ins, and talk to your agents. Not the test harness, approvals, the PIN lock or the camera motor ([Companion](/docs/companion)) |
 | **n0's relays and DNS** | The link, when the R1 and the computer can't reach each other directly | Both devices' IDs, IP addresses, and when and how much they talk. Not what they say: the link is QUIC, encrypted between the two devices' own keys (iroh's design; r1os hasn't audited it) |
 | **Android apps you install** | Android's own sandbox | Their own Android permissions, asked for by Android's own prompts. Not r1d's API (it needs a token they can't get), and not `/data/r1os` |
@@ -70,7 +70,7 @@ r1os is early. These are known, and each one has a fix planned:
 
 - **A USB cable means root.** The image is a userdebug build, and adb doesn't ask. Planned: adb authorization, or a user build, before a general release.
 - **Every agent runs as the same user** and shares one sign-in home, so any agent's process can read every agent's CLI sign-ins. Planned: a credential broker.
-- **The sign-in page is plain HTTP** on your local network.
+- **The sign-in page is plain HTTP** on your local network. Its code is sealed against anyone watching the Wi-Fi, but someone who can change traffic as it passes could change the page.
 - **A Codex agent on your computer can read outside its folders** without asking. Everything else it does outside them asks on the R1. Planned: those reads ask too.
 - **Android apps' mic and camera use has no indicator.** r1os turns Android's off: r1d opens the mic on every button press, and the indicator kept pulling the status bar down. The R1's own screen shows when r1os is listening, but not when another app is.
 - **Some of the image's system components** are still signed with AOSP's public test keys.

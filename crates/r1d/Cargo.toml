@@ -23,6 +23,8 @@ libc = "0.2.190"
 # The PIN lock's hash (crate::pin): PBKDF2-SHA256, both already built for r1-link and zip.
 pbkdf2 = { version = "0.12", default-features = false, features = ["hmac"] }
 sha2 = "0.10"
+# The sign-in page's sealed code (crate::accounts, T-175): HMAC-SHA256, already built for pbkdf2.
+hmac = "0.12"
 # System One's sentence embedder (crate::system1, ADR-0032): ONNX Runtime loaded at run time, the same library
 # speech-to-text ships on the R1 (out/speech/lib, 1.28); nothing is linked or downloaded at build time.
 ort = { version = "=2.0.0-rc.13", default-features = false, features = ["std", "load-dynamic", "api-24"] }

@@ -1,8 +1,10 @@
 //! Sharing by QR (ADR-0056, T-071): one item on the Wi-Fi while its code shows, and an app installed from another
 //! R1's code.
 //!
-//! - **Out** ([`Shares::start`]): a photo, a recording or an app is served on a port the system picks, on every
-//!   address, at one path, `/s/<token>/<name>` (a 128-bit token); anything else is a 404. It stops when the code's
+//! - **Out** ([`Shares::start`]): a photo, a recording or an app is served on a port the system picks, on the Wi-Fi
+//!   address alone, at one path, `/s/<token>/<name>` (a 128-bit token); anything else is a 404. It's plain HTTP, so
+//!   the token and what's shared cross the Wi-Fi as they are: it's something you're showing someone nearby, for ten
+//!   minutes at most (T-175 looked, and left it so; the privacy page says it). It stops when the code's
 //!   screen closes ([`Shares::stop`]), after [`LASTS`], or when another share starts. A photo or a recording is served as
 //!   itself (ranges too, so a phone can seek a recording); an app as a small page to a browser and as its spec
 //!   ([`APP_MIME`]) to an R1.
@@ -71,7 +73,7 @@ impl Shares {
             bail!("share `media` or `app`");
         };
         let ip = lan_ip().context("sharing needs the Wi-Fi: no address on a local network")?;
-        let listener = tokio::net::TcpListener::bind((Ipv4Addr::UNSPECIFIED, 0)).await.context("couldn't listen")?;
+        let listener = tokio::net::TcpListener::bind((ip, 0)).await.context("couldn't listen")?;
         let port = listener.local_addr()?.port();
         let token = crate::core::random_hex(16);
         let url = format!("http://{ip}:{port}/s/{token}/{name}");
@@ -155,7 +157,7 @@ impl Shares {
 }
 
 async fn serve(State(s): State<Arc<Served>>, Path((token, name)): Path<(String, String)>, headers: HeaderMap, req: Request) -> Response {
-    if token != s.token || name != s.name {
+    if !crate::accounts::constant_eq(&token, &s.token) || name != s.name {
         return StatusCode::NOT_FOUND.into_response();
     }
     match &s.item {

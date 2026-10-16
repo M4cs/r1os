@@ -4627,6 +4627,7 @@ dependencies = [
  "enee-spec",
  "futures-core",
  "getrandom 0.4.3",
+ "hmac",
  "image",
  "libc",
  "ndk-context",
