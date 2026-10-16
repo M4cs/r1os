@@ -104,7 +104,7 @@ The companion's Rubik (`companion/src/fonts/rubik_*.ttf`) is the same as the she
 
 `tools/fetch-speech.sh` and `tools/fetch-models.sh` download these, pinned by hash, and `tools/deploy.sh` puts them on the R1. Each stays under its own licence.
 
-- **Speech to text:** Banafo's Kroko streaming English model (`sherpa-onnx-streaming-zipformer-en-kroko-2025-08-06`). Its archive's README says only "See license at https://huggingface.co/Banafo/Kroko-ASR". That page says Banafo's community models are under CC-BY-SA, but its `LICENSE` file is empty and it doesn't name this build. An earlier Banafo demo said the models in it were under the Coqui Public License, for non-commercial use. So this model's terms are **unverified** until Banafo confirms them. r1os converts it to ONNX Runtime's `.ort` format.
+- **Speech to text:** Banafo's Kroko streaming English model (`sherpa-onnx-streaming-zipformer-en-kroko-2025-08-06`). Its archive's README says only "See license at https://huggingface.co/Banafo/Kroko-ASR". That page puts Banafo's community models under CC-BY-SA, and r1os uses this one on those terms. The page's `LICENSE` file is empty and doesn't name this build, and an earlier Banafo demo said its models were under the Coqui Public License, for non-commercial use, so check the terms yourself before any commercial use. r1os converts it to ONNX Runtime's `.ort` format.
 - **System One:** sentence-transformers' all-MiniLM-L6-v2 (Apache-2.0).
 - **The Translator:**
   - **Listening:** OpenAI's Whisper base (MIT), as exported by sherpa-onnx.
@@ -120,4 +120,6 @@ The companion's Rubik (`companion/src/fonts/rubik_*.ttf`) is the same as the she
     | Russian | unknown |
     | Hindi | CC BY-NC-SA 4.0 (non-commercial) |
     | Chinese | non-commercial use only |
+
+    r1os isn't a commercial product, so the non-commercial voices are fetched with the rest. Anyone using r1os commercially should leave them out of `tools/translator-models.txt`.
 - **Runtimes:** sherpa-onnx (Apache-2.0), with ONNX Runtime (MIT).

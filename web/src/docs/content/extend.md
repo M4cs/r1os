@@ -16,7 +16,7 @@ An outside agent can't call r1d's own MCP endpoint: r1d gives its tokens only to
 An r1os agent can work on a linked computer. The companion runs the real Claude Code or Codex CLI there, in a workspace in your Documents plus the folders you allow, and streams each turn back. You talk to it as to any agent, or type in the companion.
 
 - **Permission mode** for new chats: `manual`, `acceptEdits`, `auto` or `plan`, never `bypassPermissions`.
-- **Approvals on the device:** files in its folders are allowed; commands, anything outside them, the browser and writing `.claude`, `.git` or `.mcp.json` ask. Your own Claude Code settings don't apply.
+- **Approvals on the device:** files in its folders are allowed; commands, anything outside them, the browser and writing `.claude`, `.git` or `.mcp.json` ask. A Codex agent can still read outside its folders without asking; that's planned to ask too. Your own Claude Code settings don't apply.
 - **Your Chrome:** a Claude agent can drive your signed-in Chrome through Claude in Chrome. Looking runs; clicks, typing and forms ask once per turn; logins, passwords, payments and CAPTCHAs stay yours.
 - **Handing off:** agents on the device and on the PC can `ask_agent` each other.
 

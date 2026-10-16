@@ -13,8 +13,9 @@ else and follow it as well as this file. It holds how their work is tracked and 
 - The public docs are the website's pages, `web/src/docs/content/*.md`. The agent skill is `web/public/skills/r1os/`.
 - **Behaviour changes update those pages in the same change.** A rule or gotcha that changes here changes in the skill
   too.
-- ADR numbers (ADR-0001…) in this file and in code comments name the maintainers' decision records. What a contributor
-  needs from them is said where they're cited.
+- ADR numbers (ADR-0001…) and task numbers (T-001…) in this file, code comments and commit messages name the maintainers'
+  private decision records and tasks. They're kept as design history, as are the "(Max, date)" notes on a decision. What a
+  contributor needs from them is said where they're cited.
 - Work you find but won't do now (a bug, a follow-up) becomes an issue, not a TODO in code.
 
 ## Device safety (hard rules)

@@ -32,7 +32,7 @@ The CLIs run with their own settings. Whatever they send by default (usage stati
 
 - **The time zone.** When the R1 joins a network (at most every 10 minutes), it asks ipinfo.io, or else wttr.in, for the time zone of its public address. Each of them sees the R1's IP address. Pick a zone in Settings › Date & time and the R1 stops asking.
 - **Mini-apps** reach only the web hosts they declare and you allow: https only, public addresses only, through r1d.
-- **Agents** browse, fetch and run commands with the network, as any app with internet access can. That includes your local network.
+- **Agents** browse, fetch and run commands with the network, as any app with internet access can. That includes your local network, so they can use your home's devices.
 - **Android apps:** Aurora Store browses Google Play's catalog with anonymous sessions from Aurora's own service. Google sees that anonymous account, the R1's IP address, and what you search for and download. Apps you install behave as they would on any Android phone.
 - **Android itself** keeps AOSP's connectivity checks and network time.
 - **Setting up the agent box** downloads Alpine's packages and Claude Code's installer, and the CLIs update themselves.
@@ -71,8 +71,8 @@ r1os is early. These are known, and each one has a fix planned:
 - **A USB cable means root.** The image is a userdebug build, and adb doesn't ask. Planned: adb authorization, or a user build, before a general release.
 - **Every agent runs as the same user** and shares one sign-in home, so any agent's process can read every agent's CLI sign-ins. Planned: a credential broker.
 - **The sign-in page is plain HTTP** on your local network.
+- **A Codex agent on your computer can read outside its folders** without asking. Everything else it does outside them asks on the R1. Planned: those reads ask too.
 - **Android apps' mic and camera use has no indicator.** r1os turns Android's off: r1d opens the mic on every button press, and the indicator kept pulling the status bar down. The R1's own screen shows when r1os is listening, but not when another app is.
-- **Agents reach your local network** as well as the internet.
 - **Some of the image's system components** are still signed with AOSP's public test keys.
 - **No signed releases or over-the-air updates yet:** updates are a flash by hand. The companion isn't code-signed.
 - **No factory reset** that wipes your data and sign-ins.

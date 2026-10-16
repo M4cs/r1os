@@ -222,7 +222,7 @@ Tools that change the R1, or act for you, go through approvals. Each agent has a
 | `android` | Acting in an Android app in the app window, the same way |
 | `files` | An agent working on a computer: changing files in its own folders (allowed by default) |
 | `commands` | An agent working on a computer: running commands there |
-| `outside` | An agent working on a computer: anything outside its folders |
+| `outside` | An agent working on a computer: anything outside its folders (Codex's reads don't ask yet) |
 
 Levels are **ask** (the default, except `files`: an approval card, waking the display, and the tool waits up to 2 minutes), **allow** and **never**. Some asks come whatever the level (only **never** stops them), with no "always":
 - granting an app a permission;
