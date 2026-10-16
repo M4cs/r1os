@@ -51,7 +51,7 @@ It sees its workspace, its chats and the shared home with the CLIs' logins. The 
 
 ## Storage
 
-Everything is in `/data/r1os`, readable only by root: `core.db` (agents, chats, memories, grants, alarms), `apps/` (specs), `data/` (each app's database and snapshots), `trash/` (removed apps, for 7 days), `media/`, `agent/` (the box and each agent's files) and `models/`.
+Everything is in `/data/r1os`, readable only by root: `core.db` (agents, chats, memories, grants, alarms), `apps/` (each app's spec and every version of it, for undo), `data/` (each app's database and snapshots), `trash/` (removed apps, for 7 days), `media/`, `agent/` (the box and each agent's files) and `models/`.
 
 ## Trust boundaries
 
