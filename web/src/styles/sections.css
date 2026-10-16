@@ -1,7 +1,4 @@
-/* The home page's sections, after the hero, and what they share: the heads' words. */
-
-/* A head's words rise one by one (home/parts.tsx), so each is its own box. */
-.head-word { display: inline-block; }
+/* The home page's sections, after the hero. */
 
 /* A section with its own --accent (`.own-accent`) needs no rules of its own: the accent's shades follow --accent
    wherever it's set (base.css). */
@@ -15,70 +12,73 @@
 .apps-device { width: min(460px, 86vw); }
 .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; width: 100%; max-width: 760px; }
 .stat { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
-.stat b { font-size: clamp(28px, 4vw, 44px); letter-spacing: -0.03em; color: var(--accent-text); white-space: nowrap; }
-.stat span { font-size: 15px; line-height: 1.45; color: var(--sub); }
+.stat b { font-size: var(--text-title); line-height: 1.1; letter-spacing: -0.025em; white-space: nowrap; }
+.stat span { font-size: var(--text-body); line-height: 1.45; color: var(--sub); }
 @media (max-width: 520px) { .stats { grid-template-columns: minmax(0, 1fr); gap: 18px; } }
 
 /* ---- everything you'd expect, and more ---------------------------------------------------------------------------- */
 
+/* The device's other screens float around two short lists at the collage's heart (home/Everything.tsx). */
 .collage { position: relative; height: clamp(560px, 62vw, 760px); margin-top: 48px; }
-.collage-device { position: absolute; left: 50%; top: 50%; width: min(420px, 44%); transform: translate(-50%, -50%); }
 .mini { position: absolute; width: clamp(130px, 15vw, 190px); aspect-ratio: 3 / 4; z-index: 1; }
-.mini-float { position: absolute; inset: 0; border-radius: 16px; overflow: hidden; background: #000; box-shadow: 0 30px 60px -24px rgba(0, 0, 0, .7), 0 0 0 1px rgba(255, 255, 255, .06); animation: float 6s ease-in-out infinite; }
+.mini-float { position: absolute; inset: 0; border-radius: 16px; overflow: hidden; background: #000; box-shadow: 0 30px 60px -24px rgba(0, 0, 0, .7), 0 0 0 1px rgba(255, 255, 255, .06); }
 .mini-float .r1-screen { left: 0; top: 0; width: 100%; border-radius: 0; }
-.m1 { left: 2%; top: 2%; } .m1 .mini-float { animation-delay: -1s; }
-.m2 { left: 13%; top: 37%; } .m2 .mini-float { animation-delay: -3s; }
-.m3 { left: 3%; top: 68%; } .m3 .mini-float { animation-delay: -2s; }
-.m4 { right: 2%; top: 3%; } .m4 .mini-float { animation-delay: -4s; }
-.m5 { right: 13%; top: 39%; } .m5 .mini-float { animation-delay: -.5s; }
-.m6 { right: 3%; top: 69%; } .m6 .mini-float { animation-delay: -2.5s; }
-@keyframes float { 50% { transform: translateY(-10px); } }
-@media (max-width: 900px) {
-  .collage { height: auto; display: flex; flex-direction: column; align-items: center; gap: 22px; }
-  .collage-device { position: relative; left: auto; top: auto; transform: none; width: min(380px, 86vw); order: -1; }
-  .mini { position: relative; inset: auto; display: inline-block; }
-  .collage { flex-flow: row wrap; justify-content: center; }
-  .collage-device { flex-basis: 100%; max-width: min(380px, 86vw); }
-  .mini { width: calc(33% - 14px); max-width: 160px; transform: none !important; }
-}
+.m1 { left: 2%; top: 2%; }
+.m2 { left: 13%; top: 37%; }
+.m3 { left: 3%; top: 68%; }
+.m4 { right: 2%; top: 3%; }
+.m5 { right: 13%; top: 39%; }
+.m6 { right: 3%; top: 69%; }
 
-/* Two groups of tiles: what's built in, then what only r1os does (its label and badges in the accent). A soft accent
-   focus sits behind the tile under the pointer and springs to the next (home/Everything.tsx). */
-.groups { display: flex; flex-direction: column; gap: clamp(48px, 7vh, 72px); margin-top: clamp(56px, 9vh, 96px); }
-.group { --n: 7; --gap: 12px; display: flex; flex-direction: column; align-items: center; }
-.group.only { --n: 4; }
-.group-label { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 26px; font-size: 16px; font-weight: 700; letter-spacing: 0; color: var(--sub); }
-.group-label .ph-icon { color: var(--muted); }
-.group.only .group-label, .group.only .group-label .ph-icon { color: var(--accent-text); }
-.tiles { list-style: none; margin: 0; padding: 0; width: 100%; display: flex; flex-wrap: wrap; justify-content: center; gap: 22px var(--gap); }
-.group.only .tiles { max-width: 860px; }
-.tile { position: relative; flex: 0 0 calc((100% - (var(--n) - 1) * var(--gap)) / var(--n)); display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 12px 4px 10px; text-align: center; }
-.tile > :not(.tile-focus) { position: relative; }
-.tile-focus { position: absolute; inset: 0; border-radius: 22px; background: var(--accent-soft); box-shadow: inset 0 0 0 1.5px var(--accent-line); pointer-events: none; }
-.tile-icon { width: 60px; height: 60px; border-radius: 19px; display: grid; place-items: center; background: var(--tile); color: var(--ink); box-shadow: 0 14px 30px -14px var(--tile), inset 0 -3px 0 rgba(0, 0, 0, .12); transition: transform .3s cubic-bezier(.2, .9, .3, 1.4); }
-.group.only .tile-icon { width: 72px; height: 72px; border-radius: 22px; }
-.tile:hover .tile-icon { transform: translateY(-4px) rotate(-4deg); }
-.tile-badge { position: absolute; right: -7px; top: -7px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--ink); box-shadow: 0 0 0 3px var(--bg); }
-.tile-label { font-size: 15px; font-weight: 700; line-height: 1.25; text-wrap: balance; }
-.group.only .tile-label { font-size: 16px; max-width: 13em; }
-.groups-note { margin: 34px auto 0; max-width: 40em; text-align: center; font-size: 15px; line-height: 1.45; color: var(--sub); }
-@media (max-width: 900px) { .group { --n: 5; } .group.only { --n: 4; } }
-@media (max-width: 640px) { .group { --n: 3; --gap: 8px; } .group.only { --n: 2; } .tile-icon { width: 54px; height: 54px; border-radius: 17px; } .group.only .tile-icon { width: 62px; height: 62px; border-radius: 19px; } }
+/* What's built in sits at the collage's heart, two columns among the floating screens; what only r1os does follows in
+   a band of its own under it (its label and links in the accent), three columns: the agents, Android, the device.
+   Each tool's icon is drawn in its own colour, so the lists keep the R1's palette without a wall of coloured tiles. */
+.kits { position: absolute; left: 50%; top: 50%; width: min(440px, 40%); translate: -50% -50%; text-align: left; z-index: 2; }
+.kit-label { display: flex; align-items: center; gap: 8px; margin: 0 0 16px; font-size: var(--text-body); font-weight: 700; letter-spacing: 0; color: var(--sub); }
+.kit-label .ph-icon { color: var(--muted); }
+.kit.only .kit-label, .kit.only .kit-label .ph-icon { color: var(--accent-text); }
+.kit ul { list-style: none; margin: 0; padding: 0; columns: 2; column-gap: 28px; }
+.kit li { --tile-ink: var(--tile); break-inside: avoid; display: flex; align-items: center; gap: 10px; margin-bottom: 11px; font-size: var(--text-label); font-weight: 500; line-height: 1.3; }
+.kit li .ph-icon { flex: none; color: var(--tile-ink); }
+/* On the light paper the R1's colours are too pale to draw with: a darker shade of each, as --accent-text does. */
+:root[data-mode="light"] .kit li { --tile-ink: color-mix(in srgb, var(--tile) 55%, var(--fg)); }
+@supports (color: oklch(from red l c h)) { :root[data-mode="light"] .kit li { --tile-ink: oklch(from var(--tile) 0.5 c h); } }
+.only-band { max-width: 980px; margin: 24px auto 0; }
+.only-band .kit-label { justify-content: center; margin-bottom: 24px; }
+.kit.only ul { columns: 3; column-gap: 44px; }
+.kit.only li { align-items: flex-start; margin-bottom: 16px; font-size: var(--text-body); }
+.kit.only li .ph-icon { margin-top: 2px; }
+.kit.only a { text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 30%, transparent); text-underline-offset: 3px; text-decoration-thickness: 1.5px; transition: color .15s, text-decoration-color .15s; }
+.kit.only a:hover { color: var(--accent-text); text-decoration-color: currentColor; }
+.groups-note { margin: 22px auto 0; max-width: 40em; text-align: center; font-size: var(--text-small); line-height: 1.45; color: var(--sub); }
+@media (max-width: 900px) { .kit.only ul { columns: 2; } }
+@media (max-width: 560px) { .kit.only ul { columns: 1; } }
+
+/* Narrower, the lists come first and the screens wrap under them, three to a row; on a phone the screens are left out,
+   too small to read. */
+@media (max-width: 900px) {
+  .collage { height: auto; display: flex; flex-flow: row wrap; justify-content: center; gap: 22px; }
+  .kits { position: relative; left: auto; top: auto; translate: none; width: 100%; max-width: 480px; flex-basis: 100%; order: -1; margin-bottom: 18px; }
+  .mini { position: relative; inset: auto; display: inline-block; width: calc(33% - 14px); max-width: 160px; transform: none !important; }
+}
+@media (max-width: 600px) {
+  .mini { display: none; }
+  .kits { margin-bottom: 0; }
+  .only-band { margin-top: 40px; }
+}
 
 /* ---- private by default ------------------------------------------------------------------------------------------- */
 
-.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; margin-top: 48px; border-radius: 26px; overflow: hidden; background: var(--line); box-shadow: 0 0 0 1px var(--line); }
-.cell { display: flex; flex-direction: column; gap: 6px; padding: 28px 26px 30px; background: var(--bg); }
-.cell .ph-icon { color: var(--accent-text); margin-bottom: 8px; }
-.cell b { font-size: 19px; line-height: 1.25; letter-spacing: -0.01em; }
-.cell span { font-size: 16px; line-height: 1.5; color: var(--sub); }
-@media (max-width: 820px) { .grid3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 520px) { .grid3 { grid-template-columns: minmax(0, 1fr); } .cell { padding: 20px 18px 22px; } .cell b { font-size: 17px; } .cell span { font-size: 15px; } }
+/* A plain list in two columns: each point a bold word and its line, between hairlines. */
+.private { list-style: none; margin: 44px auto 0; padding: 0; max-width: 880px; columns: 2; column-gap: 56px; }
+.private li { break-inside: avoid; padding: 15px 0 16px; border-top: 1px solid var(--line); font-size: var(--text-body); line-height: 1.5; color: var(--sub); }
+.private b { color: var(--fg); font-weight: 700; }
+@media (max-width: 700px) { .private { columns: 1; } }
 
 /* ---- the companion ------------------------------------------------------------------------------------------------ */
 
 .cwin { position: relative; max-width: 1040px; margin: 48px auto 0; border-radius: 22px; background: color-mix(in srgb, var(--bg2) 92%, transparent); box-shadow: 0 50px 100px -40px rgba(0, 0, 0, .6), inset 0 0 0 1px var(--line); overflow: hidden; text-transform: lowercase; }
-.cwin::before { content: ""; position: absolute; inset: 0; background: radial-gradient(60% 70% at 85% 0%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%), radial-gradient(50% 60% at 0% 100%, color-mix(in srgb, #8b8cf8 16%, transparent), transparent 70%); pointer-events: none; }
+.cwin::before { content: ""; position: absolute; inset: 0; background: radial-gradient(60% 70% at 85% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%); pointer-events: none; }
 .cwin > * { position: relative; }
 .cwin-bar { display: flex; align-items: center; gap: 8px; height: 46px; padding: 0 14px 0 18px; }
 .cwin-bar .brand { font-size: 15px; margin-right: 6px; }
@@ -138,13 +138,12 @@
 
 /* ---- yours to change ---------------------------------------------------------------------------------------------- */
 
-.open { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; padding: clamp(48px, 8vw, 96px) clamp(18px, 4vw, 48px); border-radius: 36px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); overflow: hidden; }
-.open::before { content: ""; position: absolute; left: 50%; top: -30%; width: 70%; height: 80%; transform: translateX(-50%); border-radius: 50%; background: var(--accent); opacity: .14; filter: blur(70px); }
-.open > * { position: relative; }
+.open-card { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; padding: clamp(48px, 8vw, 96px) clamp(18px, 4vw, 48px); border-radius: 28px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); overflow: hidden; }
+.open-card::before { content: ""; position: absolute; left: 50%; top: -30%; width: 70%; height: 80%; transform: translateX(-50%); border-radius: 50%; background: var(--accent); opacity: .07; filter: blur(70px); }
+.open-card > * { position: relative; }
 .open-chars { display: flex; gap: 4px; margin-bottom: 18px; }
-.open h2 { font-size: clamp(32px, 6vw, 80px); letter-spacing: -0.03em; line-height: 1.06; }
-.open p { font-size: clamp(18px, 1.1vw + 13px, 22px); line-height: 1.5; letter-spacing: -0.005em; color: var(--sub); margin-top: 16px; max-width: 30em; }
-.open-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 30px; max-width: 760px; }
+.open-card h2 { font-size: var(--text-headline); letter-spacing: -0.03em; line-height: 1.06; }
+.open-card p { font-size: var(--text-lede); line-height: 1.5; letter-spacing: -0.005em; color: var(--sub); margin-top: 16px; max-width: 30em; }
 .open-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 30px; }
-@media (max-width: 700px) { .open h2 { letter-spacing: -0.025em; } }
+@media (max-width: 700px) { .open-card h2 { letter-spacing: -0.025em; } }
 @media (max-width: 600px) { .open-chars > :nth-child(n + 3) { display: none; } }

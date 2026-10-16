@@ -9,7 +9,7 @@ order: 1
 
 ## The repo
 
-r1os is open source under the MIT licence. Its layout:
+r1os is open source under the MIT licence, at [github.com/M4cs/r1os](https://github.com/M4cs/r1os). Its layout:
 
 ```text
 r1os/

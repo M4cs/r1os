@@ -1,5 +1,5 @@
 // Make them yours: a set of eight agents, each its own look, name, job and brain, drawn by the shell's own Character as
-// on the device. The big one turns into the next every 2.4 s (it shrinks away as the next pops in, the glow behind it
+// on the device. The big one turns into the next every 2.4 s (it fades away as the next settles in, the glow behind it
 // eases to the new colour and the name rolls over), and the set sits under it with the accent's focus moving along, as
 // the wheel moves it on the R1. Nobody designs anything here: hovering, focusing or tapping one only shows it. The cycle
 // waits while the pointer or the keyboard's focus is on it, and runs only while the section is on screen in a visible
@@ -29,10 +29,10 @@ const SET: Member[] = [
 /** How long each one stays before the next. */
 const STAY_MS = 2400;
 
-/** The next one popping in: a little past full size, then settling. */
-const pop = { type: "spring", stiffness: 340, damping: 21, mass: 0.9, delay: 0.05, opacity: { duration: 0.2, delay: 0.05 } } as const;
-/** The last one going: quick, shrinking and turning away. */
-const away = { opacity: 0, scale: 0.6, rotate: 8, transition: { duration: 0.22, ease: [0.4, 0, 1, 1] } } as const;
+/** The next one coming in: growing to full size and settling. */
+const pop = { type: "spring", stiffness: 300, damping: 28, mass: 0.9, delay: 0.05, opacity: { duration: 0.2, delay: 0.05 } } as const;
+/** The last one going: quick, shrinking a little as it fades. */
+const away = { opacity: 0, scale: 0.9, transition: { duration: 0.2, ease: [0.4, 0, 1, 1] } } as const;
 
 /** Whether focus came from the keyboard: a click focuses a button too, and that shouldn't hold the cycle. */
 const keyboard = (el: Element) => {
@@ -67,7 +67,7 @@ export function MeetAgents() {
   return (
     <section className="section" id="agents" ref={section} {...rest(seen)}>
       <div className="wrap">
-        <Head title="make them yours." sub="up to eight agents, each the real claude or codex, signed in as you. give each a look, a name and a job." />
+        <Head title="make them yours." sub="up to eight agents, each the real claude or codex, signed in as you. give each a look, a name and a job." link={{ to: "/docs/agents", label: "how agents work" }} />
         <motion.div
           className="agents"
           {...(reduce ? {} : rise)}
@@ -92,7 +92,7 @@ export function MeetAgents() {
 
           <div className="agents-stage">
             <AnimatePresence initial={false}>
-              <motion.div key={a.name} className="agents-big" initial={{ opacity: 0, scale: 0.45, rotate: -12 }} animate={{ opacity: 1, scale: 1, rotate: 0 }} exit={away} transition={pop}>
+              <motion.div key={a.name} className="agents-big" initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} exit={away} transition={pop}>
                 <Character form={a.form} color={a.color} finish={a.finish} eyes={a.eyes} wear={a.wear} state="idle" size={240} />
               </motion.div>
             </AnimatePresence>
@@ -104,9 +104,9 @@ export function MeetAgents() {
                 key={a.name}
                 className="agents-line"
                 style={{ ["--accent" as string]: hex }}
-                initial={{ opacity: 0, y: 22 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -22 }}
+                exit={{ opacity: 0, y: -12 }}
                 transition={spring}
               >
                 <div className="agents-name">{a.name}</div>

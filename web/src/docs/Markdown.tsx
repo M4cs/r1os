@@ -1,8 +1,9 @@
-// Markdown, drawn as React from marked's tokens: headings with anchors, code in the site's panels, tables, callouts,
-// and links that stay in the site go through the router. Raw HTML in the source is left out.
+// Markdown, drawn as React from marked's tokens: headings with anchors, code in the site's panels, tables, callouts
+// (notes, warnings and dangers, by GitHub's alert syntax), and links that stay in the site go through the router. Raw
+// HTML in the source is left out.
 
 import { Icon } from "@r1os/icons";
-import type { Token, Tokens } from "marked";
+import { Lexer, type Token, type Tokens } from "marked";
 import { createContext, type ReactNode, useContext } from "react";
 import { Link } from "react-router";
 import { Code } from "../site/Code";
@@ -10,7 +11,9 @@ import { Code } from "../site/Code";
 /** Decides what a link does: return true when it's handled (the skill viewer's own files). */
 const LinkCtx = createContext<((href: string) => boolean) | null>(null);
 
-const ENTITIES: Record<string, string> = { "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"', "&#39;": "'", "&#x27;": "'" };
+const CALLOUT_ICON: Record<string, string> = { note: "info", warning: "warning", danger: "warning-octagon" };
+
+const ENTITIES: Record<string, string> ={ "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"', "&#39;": "'", "&#x27;": "'" };
 const unescape = (s: string) => s.replace(/&(amp|lt|gt|quot|#39|#x27);/g, (m) => ENTITIES[m] ?? m);
 
 export function Markdown({ tokens, onLink }: { tokens: Token[]; onLink?: (href: string) => boolean }) {
@@ -92,13 +95,23 @@ function block(t: Token, key: number): ReactNode {
         </div>
       );
     }
-    case "blockquote":
+    case "blockquote": {
+      // GitHub's alert syntax ranks a callout: `> [!WARNING]` is amber, `> [!CAUTION]` red (what can brick a device or
+      // erase it), anything else a note in the accent. A screen reader hears the kind first.
+      const bq = t as Tokens.Blockquote;
+      const alert = bq.text.match(/^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\][ \t]*\n?/i);
+      const kind = alert ? (({ warning: "warning", caution: "danger" }) as Record<string, string>)[alert[1]!.toLowerCase()] ?? "note" : "note";
+      const body = alert ? Lexer.lex(bq.text.slice(alert[0].length)) : bq.tokens;
       return (
-        <blockquote key={key} className="callout">
-          <Icon name="info" weight="bold" size={18} className="callout-icon" />
-          <div>{blocks((t as Tokens.Blockquote).tokens)}</div>
+        <blockquote key={key} className={`callout ${kind}`}>
+          <Icon name={CALLOUT_ICON[kind]!} weight={kind === "note" ? "bold" : "fill"} size={18} className="callout-icon" />
+          <div>
+            {kind !== "note" && <span className="sr">{kind}: </span>}
+            {blocks(body)}
+          </div>
         </blockquote>
       );
+    }
     case "hr":
       return <hr key={key} />;
     case "text": {

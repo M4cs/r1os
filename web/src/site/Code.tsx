@@ -44,7 +44,9 @@ function line(text: string, lang: Lang, n: number): ReactNode {
   return <span key={n}>{words(text, lang)}</span>;
 }
 
+/** Plain text (diagrams, output) is left as it is: a quote in it isn't a string. */
 export function highlight(code: string, lang: Lang): ReactNode[] {
+  if (!lang || lang === "text") return [code];
   return code.split("\n").flatMap((l, i, all) => (i < all.length - 1 ? [line(l, lang, i), "\n"] : [line(l, lang, i)]));
 }
 
@@ -60,7 +62,7 @@ export function Code({ code, lang, title, className }: { code: string; lang?: st
     });
   };
   return (
-    <div className={`code ${className ?? ""}`}>
+    <div className={`code ${className ?? ""}`} data-lang={lang ?? "text"}>
       <div className="code-head">
         <span className="code-title">{title ?? lang ?? "text"}</span>
         <button className="code-copy" onClick={copy} aria-label="copy">

@@ -69,11 +69,11 @@ export function AppControl() {
   const lit = hover ?? beat;
   /** Rises in once, a little after the one before it; already there with reduced motion. */
   const enter = (i: number) =>
-    reduce ? {} : ({ initial: { opacity: 0, y: 18 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, margin: "-60px" }, transition: { ...soft, delay: i * 0.07 } } as const);
+    reduce ? {} : ({ initial: { opacity: 0, y: 12 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, margin: "-60px" }, transition: { ...soft, delay: i * 0.07 } } as const);
   return (
     <section className="section" id="android" ref={box} {...rest(seen)}>
       <div className="wrap">
-        <Head title="agents that use your apps." sub="ask for dinner or a song, and watch your agent tap through the app for you." link={{ to: "/docs/android", label: "how it works" }} />
+        <Head title="agents that use your apps." sub="ask for dinner or a song, and watch your agent tap through the app for you." link={{ to: "/docs/android", label: "how they use your apps" }} />
         <div className="droid">
           <motion.div className="droid-device" ref={device} {...(reduce ? {} : rise)}>
             <R1 glow={agent}>
@@ -110,7 +110,7 @@ export function AppControl() {
               <motion.span
                 key={c.text}
                 className="droid-chip"
-                {...(reduce ? {} : { initial: { opacity: 0, scale: 0.82 }, whileInView: { opacity: 1, scale: 1 }, viewport: { once: true, margin: "-40px" }, transition: { type: "spring", stiffness: 380, damping: 22, delay: 0.15 + i * 0.05 } })}
+                {...(reduce ? {} : { initial: { opacity: 0, y: 8 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, margin: "-40px" }, transition: { ...soft, delay: 0.15 + i * 0.04 } })}
               >
                 <Icon name={c.icon} weight="bold" size={17} />
                 {c.text}

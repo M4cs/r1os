@@ -2,14 +2,16 @@
    with soft corners; the screen under black glass at its left; the camera's window at the top right; under it the
    wheel in its slot, ribbed so it can be seen to turn, its edge at the side; the button on the right edge.
    Docked (R1.tsx `docked`), the body turns onto its side; what's cast on the floor (.r1-device's shadow, .r1-shadow)
-   stays put, and the body's sheen and the glass's glare are turned back by `--tilt`, so the light stays the room's. */
+   stays put, and the body's sheen and the glass's glare are turned back by `--tilt`, so the light stays the room's.
+   The drop shadow is the body's own, its offsets turned back the same way: it keeps the body's shape as it turns, and
+   stays below it. */
 
-.r1-device { position: relative; width: 100%; border-radius: 7.5%; isolation: isolate; box-shadow: 0 60px 110px -40px rgba(0, 0, 0, .7), 0 18px 34px -18px rgba(120, 30, 0, .55); }
-:root[data-mode="light"] .r1-device { box-shadow: 0 60px 110px -50px rgba(90, 30, 0, .45), 0 18px 34px -18px rgba(120, 30, 0, .35); }
-.r1-body { position: relative; width: 100%; aspect-ratio: 1; border-radius: 7.5%; background: linear-gradient(calc(170deg - var(--tilt, 0deg)), #ff6a24 0%, #ff4f0a 38%, #f54700 100%); box-shadow: inset 0 3px 1px rgba(255, 196, 160, .55), inset 0 -4px 3px rgba(150, 30, 0, .35), inset 3px 0 2px rgba(255, 170, 120, .25), inset -3px 0 3px rgba(150, 30, 0, .25); container-type: inline-size; }
-/* The sheen's top light, lower shade and side edges, each offset turned back by the body's tilt. */
+.r1-device { position: relative; width: 100%; isolation: isolate; --drop-far: rgba(0, 0, 0, .7); --drop-near: rgba(120, 30, 0, .55); --drop-spread: -40px; }
+:root[data-mode="light"] .r1-device { --drop-far: rgba(90, 30, 0, .45); --drop-near: rgba(120, 30, 0, .35); --drop-spread: -50px; }
+.r1-body { position: relative; width: 100%; aspect-ratio: 1; border-radius: 7.5%; background: linear-gradient(calc(170deg - var(--tilt, 0deg)), #ff6a24 0%, #ff4f0a 38%, #f54700 100%); box-shadow: 0 60px 110px var(--drop-spread) var(--drop-far), 0 18px 34px -18px var(--drop-near), inset 0 3px 1px rgba(255, 196, 160, .55), inset 0 -4px 3px rgba(150, 30, 0, .35), inset 3px 0 2px rgba(255, 170, 120, .25), inset -3px 0 3px rgba(150, 30, 0, .25); container-type: inline-size; }
+/* The drop shadow, the sheen's top light, lower shade and side edges, each offset turned back by the body's tilt. */
 @supports (width: calc(1px * sin(1deg))) {
-  .r1-body { box-shadow: inset calc(3px * sin(var(--tilt, 0deg))) calc(3px * cos(var(--tilt, 0deg))) 1px rgba(255, 196, 160, .55), inset calc(-4px * sin(var(--tilt, 0deg))) calc(-4px * cos(var(--tilt, 0deg))) 3px rgba(150, 30, 0, .35), inset calc(3px * cos(var(--tilt, 0deg))) calc(-3px * sin(var(--tilt, 0deg))) 2px rgba(255, 170, 120, .25), inset calc(-3px * cos(var(--tilt, 0deg))) calc(3px * sin(var(--tilt, 0deg))) 3px rgba(150, 30, 0, .25); }
+  .r1-body { box-shadow: calc(60px * sin(var(--tilt, 0deg))) calc(60px * cos(var(--tilt, 0deg))) 110px var(--drop-spread) var(--drop-far), calc(18px * sin(var(--tilt, 0deg))) calc(18px * cos(var(--tilt, 0deg))) 34px -18px var(--drop-near), inset calc(3px * sin(var(--tilt, 0deg))) calc(3px * cos(var(--tilt, 0deg))) 1px rgba(255, 196, 160, .55), inset calc(-4px * sin(var(--tilt, 0deg))) calc(-4px * cos(var(--tilt, 0deg))) 3px rgba(150, 30, 0, .35), inset calc(3px * cos(var(--tilt, 0deg))) calc(-3px * sin(var(--tilt, 0deg))) 2px rgba(255, 170, 120, .25), inset calc(-3px * cos(var(--tilt, 0deg))) calc(3px * sin(var(--tilt, 0deg))) 3px rgba(150, 30, 0, .25); }
 }
 .r1-glass { position: absolute; left: 3.4%; top: 3%; width: 70.6%; height: 94%; border-radius: 6.5% / 4.9%; background: linear-gradient(160deg, #141414 0%, #050505 40%, #020202 100%); box-shadow: 0 0 0 1px rgba(90, 20, 0, .55), inset 0 0 0 1px rgba(255, 255, 255, .07); overflow: hidden; isolation: isolate; }
 .r1-glass::after { content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit; background: linear-gradient(calc(125deg - var(--tilt, 0deg)), rgba(255, 255, 255, .08) 0%, rgba(255, 255, 255, 0) 30%); z-index: 5; }
@@ -32,7 +34,7 @@
 .r1-edge { position: absolute; left: 100%; top: 34%; width: 1.8%; height: 11.5%; border-radius: 0 3px 3px 0; background: linear-gradient(90deg, #8f8f8f, #e9e9e9 45%, #b8b8b8); box-shadow: 1px 0 2px rgba(0, 0, 0, .25); overflow: hidden; }
 .r1-edge .r1-ribs { mix-blend-mode: normal; background-image: repeating-linear-gradient(180deg, rgba(0, 0, 0, .28) 0 .6cqw, transparent .6cqw 1.6cqw); }
 .r1-button { position: absolute; left: 100%; top: 10%; width: 1.1%; height: 12%; border-radius: 0 4px 4px 0; background: linear-gradient(90deg, #c63a00, #ff7a40 55%, #e04400); box-shadow: 1px 0 2px rgba(0, 0, 0, .3); transform-origin: left center; }
-.r1-shadow { position: absolute; left: 8%; right: 8%; bottom: -9%; height: 14%; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--glow, #ff5a1f) 55%, transparent), transparent); filter: blur(18px); opacity: .65; z-index: -1; pointer-events: none; transition: background .6s; }
+.r1-shadow { position: absolute; left: 8%; right: 8%; bottom: -9%; height: 14%; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--glow, #ff5a1f) 55%, transparent), transparent); filter: blur(18px); opacity: .45; z-index: -1; pointer-events: none; transition: background .6s; }
 
 /* ---- dock mode's screen (screens/Dock.tsx) ---------------------------------------------------------------------- */
 

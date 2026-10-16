@@ -1,8 +1,8 @@
 /* Make them yours (Agents.tsx): one big agent turning into the next, a glow of its colour behind it, its name and job
    under it, and the set of eight in a row, the accent's focus on the one shown. Four across on a phone, two rows. */
 
-.agents { position: relative; display: flex; flex-direction: column; align-items: center; margin-top: 30px; --glow: 26%; --glow-edge: 9%; }
-:root[data-mode="light"] .agents { --glow: 30%; --glow-edge: 11%; }
+.agents { position: relative; display: flex; flex-direction: column; align-items: center; margin-top: 30px; --glow: 18%; --glow-edge: 6%; }
+:root[data-mode="light"] .agents { --glow: 22%; --glow-edge: 8%; }
 
 /* A soft disc of the agent's colour, fading out at its own edge, so it never needs clipping or a blur. */
 .agents-glow {
@@ -19,8 +19,8 @@
 
 .agents-says { position: relative; display: flex; flex-direction: column; align-items: center; min-height: 68px; margin: 6px 0 28px; text-align: center; }
 .agents-line { display: flex; flex-direction: column; align-items: center; }
-.agents-name { font-size: 34px; font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: var(--fg); }
-.agents-role { margin-top: 4px; font-size: 16px; line-height: 1.4; color: var(--sub); }
+.agents-name { font-size: var(--text-title); font-weight: 700; line-height: 1.1; letter-spacing: -0.025em; color: var(--fg); }
+.agents-role { margin-top: 4px; font-size: var(--text-body); line-height: 1.4; color: var(--sub); }
 .agents-dot { margin: 0 .4em; color: var(--muted); }
 .agents-brain { color: var(--accent-text); }
 

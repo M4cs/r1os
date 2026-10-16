@@ -39,7 +39,7 @@ Skills install once for every agent. Ask one ("add the pdf skill from anthropics
 
 ## Scripting the device
 
-From a clone of r1os, any program on your computer, a coding agent included, can drive the device over adb:
+From a [clone of r1os](https://github.com/M4cs/r1os), any program on your computer, a coding agent included, can drive the device over adb:
 
 ```bash
 tools/r1h state                     # state and recent events

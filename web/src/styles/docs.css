@@ -6,29 +6,32 @@
 .docs-side { position: sticky; top: 84px; max-height: calc(100vh - 100px); overflow: auto; padding: 4px 4px 24px 0; text-transform: lowercase; scrollbar-width: thin; }
 .docs-search { display: flex; align-items: center; gap: 8px; padding: 0 8px 0 12px; height: 42px; border-radius: 14px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); color: var(--muted); margin-bottom: 18px; transition: box-shadow .15s; }
 .docs-search:focus-within { box-shadow: inset 0 0 0 2px var(--accent); }
-.docs-search input { flex: 1; min-width: 0; border: 0; outline: none; background: none; color: var(--fg); font: 500 15px var(--font); }
+.docs-search input { flex: 1; min-width: 0; border: 0; outline: none; background: none; color: var(--fg); font: 500 var(--text-label) var(--font); }
 .docs-search input::placeholder { color: var(--muted); }
 .docs-search .kbd { height: 22px; min-width: 22px; font-size: 12px; }
 .docs-group { display: flex; flex-direction: column; gap: 1px; margin-bottom: 18px; }
-.docs-group-label { font: 13px/1.4 var(--mono); letter-spacing: .01em; color: var(--muted); padding: 0 12px 6px; text-transform: none; }
-.docs-link { position: relative; padding: 8px 12px; border-radius: 12px; font-weight: 700; font-size: 15px; color: var(--muted); transition: color .2s; }
+.docs-group-label { font: var(--text-meta)/1.4 var(--mono); letter-spacing: .01em; color: var(--muted); padding: 0 12px 6px; text-transform: none; }
+.docs-link { position: relative; padding: 8px 12px; border-radius: 12px; font-weight: 700; font-size: var(--text-label); color: var(--muted); transition: color .2s; }
 .docs-link:hover { color: var(--fg); }
 .docs-link.on { color: var(--ink); }
 .docs-link > span:last-child { position: relative; z-index: 1; }
 .docs-link-fill { position: absolute; inset: 0; border-radius: 12px; background: var(--accent); }
 .docs-results { display: flex; flex-direction: column; gap: 4px; }
+.docs-empty { line-height: 1.5; text-transform: none; }
 .docs-result { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 12px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); }
 .docs-result:hover { box-shadow: inset 0 0 0 1.5px var(--accent); }
-.docs-result b { font-size: 14px; }
-.docs-result span { font-size: 14px; line-height: 1.4; color: var(--muted); text-transform: none; }
-.small { font-size: 14px; }
+.docs-result b { font-size: var(--text-small); }
+.docs-result span { font-size: var(--text-small); line-height: 1.4; color: var(--muted); text-transform: none; }
+.small { font-size: var(--text-small); }
 
 .docs-main { min-width: 0; padding-bottom: 40px; }
-.docs-crumb { font-size: 13px; color: var(--accent-text); margin-bottom: 14px; }
+.docs-crumb { font-size: var(--text-meta); color: var(--accent-text); margin-bottom: 14px; }
 
 .md { font-size: 17px; font-weight: 400; line-height: 1.7; color: color-mix(in srgb, var(--fg) 88%, var(--muted)); }
 .md h1 + p, .md th, .md b { font-weight: 500; }
 .md > * + * { margin-top: 18px; }
+/* Prose keeps to about 70 characters a line however wide the column is; code, tables and callouts may use all of it. */
+.md > :is(p, ul, ol, blockquote) { max-width: 37em; }
 .md h1, .md h2, .md h3, .md h4 { color: var(--fg); text-transform: lowercase; position: relative; }
 .md h1 { font-size: clamp(36px, 5vw, 54px); line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 8px; }
 .md h1 + p { font-size: 20px; line-height: 1.5; color: var(--sub); }
@@ -52,28 +55,34 @@
 .md hr { border: 0; height: 1px; background: var(--line); margin: 40px 0; }
 .md .code { margin-top: 18px; }
 .md .table { overflow-x: auto; border-radius: 18px; box-shadow: inset 0 0 0 1px var(--line); background: var(--panel); }
-.md table { width: 100%; border-collapse: collapse; font-size: 15px; line-height: 1.55; }
-.md th { text-align: left; padding: 12px 16px; font-size: 13px; font-weight: 700; letter-spacing: .01em; color: var(--muted); text-transform: lowercase; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.md table { width: 100%; border-collapse: collapse; font-size: var(--text-label); line-height: 1.55; }
+.md th { text-align: left; padding: 12px 16px; font-size: var(--text-meta); font-weight: 700; letter-spacing: .01em; color: var(--muted); text-transform: lowercase; border-bottom: 1px solid var(--line); white-space: nowrap; }
 .md td { padding: 11px 16px; border-top: 1px solid var(--line); vertical-align: top; }
 .md tr:first-child td { border-top: 0; }
 .md td code.inline { white-space: normal; overflow-wrap: anywhere; }
 .md td:first-child code.inline { white-space: nowrap; }
 .md td:first-child { white-space: nowrap; }
 .md .callout { display: flex; gap: 12px; margin: 22px 0 0; padding: 14px 18px; border-radius: 18px; background: var(--accent-soft); color: var(--fg); }
-.md .callout-icon { color: var(--accent-text); margin-top: 4px; }
+.md .callout-icon { flex: none; color: var(--accent-text); margin-top: 4px; }
+/* Callouts ranked by what's at stake (Markdown.tsx): a warning in amber, a danger (what can brick the R1 or erase it)
+   in red with a firmer edge. Both fixed, whatever accent the visitor picked. */
+.md .callout.warning { background: color-mix(in srgb, var(--warn) 12%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--warn) 32%, transparent); }
+.md .callout.warning .callout-icon { color: var(--warn); }
+.md .callout.danger { background: color-mix(in srgb, var(--danger) 12%, transparent); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--danger) 55%, transparent); }
+.md .callout.danger .callout-icon { color: var(--danger); }
 .md .callout > div > * + * { margin-top: 10px; }
 .md img { max-width: 100%; border-radius: 16px; }
 
 .docs-pager { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 64px; text-transform: lowercase; }
-.docs-pager-link { display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; border-radius: 18px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); transition: box-shadow .2s, transform .25s cubic-bezier(.2, .9, .3, 1.3); }
-.docs-pager-link:hover { box-shadow: inset 0 0 0 1.5px var(--accent); transform: translateY(-2px); }
+.docs-pager-link { display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; border-radius: 18px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); transition: box-shadow .2s, transform .25s cubic-bezier(.25, 1, .5, 1); }
+.docs-pager-link:hover { box-shadow: inset 0 0 0 1.5px var(--accent); transform: translateY(-1px); }
 .docs-pager-link b { display: inline-flex; align-items: center; gap: 8px; font-size: 17px; }
 .docs-pager-link.next { text-align: right; align-items: flex-end; }
 
 .docs-toc { position: sticky; top: 92px; max-height: calc(100vh - 110px); overflow: auto; display: flex; flex-direction: column; gap: 2px; text-transform: lowercase; scrollbar-width: thin; }
 .docs-toc .docs-group-label { padding-left: 14px; }
-.docs-toc-link { position: relative; padding: 5px 10px 5px 14px; font-size: 14px; font-weight: 500; color: var(--muted); line-height: 1.4; transition: color .2s; }
-.docs-toc-link.d3 { padding-left: 26px; font-size: 13.5px; }
+.docs-toc-link { position: relative; padding: 5px 10px 5px 14px; font-size: var(--text-small); font-weight: 500; color: var(--muted); line-height: 1.4; transition: color .2s; }
+.docs-toc-link.d3 { padding-left: 26px; font-size: var(--text-meta); }
 .docs-toc-link:hover { color: var(--fg); }
 .docs-toc-link.on { color: var(--fg); }
 .docs-toc-mark { position: absolute; left: 0; top: 4px; bottom: 4px; width: 3px; border-radius: 2px; background: var(--accent); }
@@ -82,19 +91,19 @@
 .skill { margin-top: 18px; }
 .skill-box { margin-top: 18px; border-radius: 22px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); overflow: hidden; }
 .skill-tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 10px; border-bottom: 1px solid var(--line); }
-.skill-tab { position: relative; border: 0; background: none; padding: 7px 12px; border-radius: 11px; font: 400 13.5px var(--mono); color: var(--muted); transition: color .2s; }
+.skill-tab { position: relative; border: 0; background: none; padding: 7px 12px; border-radius: 11px; font: 400 var(--text-meta) var(--mono); color: var(--muted); transition: color .2s; }
 .skill-tab > span:last-child { position: relative; z-index: 1; }
 .skill-tab.on { color: var(--ink); }
 .skill-tab-fill { position: absolute; inset: 0; border-radius: 11px; background: var(--accent); }
-.skill-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.skill-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: var(--text-meta); }
 .skill-bar .btn { text-decoration: none !important; color: var(--fg) !important; }
 .skill-body { padding: 8px 26px 30px; }
 .skill-body .md { font-size: 16px; }
 .skill-body .md h1 { font-size: 32px; margin-top: 18px; }
 .skill-body .md h2 { font-size: 22px; margin-top: 34px; }
 .skill-meta .readout { align-self: flex-start; }
-.skill-meta { display: flex; flex-direction: column; gap: 8px; margin: 18px 0 4px; padding: 14px 16px; border-radius: 16px; background: var(--bg2); box-shadow: inset 0 0 0 1px var(--line); font-size: 14px; }
-.skill-meta p { font-size: 15px; line-height: 1.5; color: var(--sub); }
+.skill-meta { display: flex; flex-direction: column; gap: 8px; margin: 18px 0 4px; padding: 14px 16px; border-radius: 16px; background: var(--bg2); box-shadow: inset 0 0 0 1px var(--line); font-size: var(--text-small); }
+.skill-meta p { font-size: var(--text-label); line-height: 1.5; color: var(--sub); }
 
 @media (max-width: 1180px) {
   .docs { grid-template-columns: 220px minmax(0, 1fr); }

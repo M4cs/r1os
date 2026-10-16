@@ -5,26 +5,25 @@
 .droid-device { display: flex; flex-direction: column; align-items: center; gap: 22px; width: min(440px, 100%); justify-self: center; }
 .droid-side { container-type: inline-size; min-width: 0; }
 
-/* The points: plain until one is lit, then a card with an accent bar, the same card springing from one to the next. */
+/* The points: plain until one is lit, then a card, the same card springing from one to the next. */
 .droid-points { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 .droid-point { position: relative; display: flex; align-items: flex-start; gap: 16px; padding: 16px 18px 17px 20px; border-radius: 22px; }
 .droid-point > :not(.droid-point-fill) { position: relative; }
 .droid-point-fill { position: absolute; inset: 0; border-radius: 22px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); }
-.droid-point-fill::before { content: ""; position: absolute; left: 0; top: 18px; bottom: 18px; width: 4px; border-radius: 0 4px 4px 0; background: var(--accent); }
 .droid-icon { flex: none; width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: var(--panel2); color: var(--fg); transition: background-color .3s, color .3s; }
-.droid-point.on .droid-icon { background: var(--accent); color: var(--ink); }
+.droid-point.on .droid-icon { background: var(--accent-soft); color: var(--accent-text); }
 .droid-words { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding-top: 1px; }
-.droid-words b { font-size: 19px; font-weight: 700; line-height: 1.25; letter-spacing: -0.01em; }
-.droid-words span { font-size: 16px; line-height: 1.5; color: var(--sub); }
+.droid-words b { font-size: var(--text-item); font-weight: 700; line-height: 1.25; letter-spacing: -0.01em; }
+.droid-words span { font-size: var(--text-body); line-height: 1.5; color: var(--sub); }
 
 /* And a full Android device: a panel with the accent's glow behind its words, and chips. */
 .droid-band { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; margin-top: clamp(64px, 9vw, 112px); padding: clamp(32px, 5vw, 60px) clamp(20px, 4vw, 52px); border-radius: 28px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); overflow: hidden; }
-.droid-band::before { content: ""; position: absolute; left: 50%; top: -55%; width: 70%; height: 100%; transform: translateX(-50%); border-radius: 50%; background: var(--accent); opacity: .12; filter: blur(70px); pointer-events: none; }
+.droid-band::before { content: ""; position: absolute; left: 50%; top: -55%; width: 70%; height: 100%; transform: translateX(-50%); border-radius: 50%; background: var(--accent); opacity: .06; filter: blur(70px); pointer-events: none; }
 .droid-band > * { position: relative; }
-.droid-band h3 { font-size: clamp(30px, 4.6vw, 56px); letter-spacing: -0.03em; line-height: 1.08; }
-.droid-band p { font-size: clamp(17px, .5vw + 14px, 20px); line-height: 1.5; color: var(--sub); max-width: 34em; margin-top: 14px; }
+.droid-band h3 { font-size: var(--text-title); letter-spacing: -0.025em; line-height: 1.1; }
+.droid-band p { font-size: var(--text-lede); line-height: 1.5; letter-spacing: -0.005em; color: var(--sub); max-width: 34em; margin-top: 14px; }
 .droid-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 28px; max-width: 820px; }
-.droid-chip { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; padding: 9px 15px 9px 12px; border-radius: 999px; background: var(--panel2); font-size: 15px; font-weight: 500; line-height: 1.3; color: var(--fg); white-space: nowrap; }
+.droid-chip { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; padding: 9px 15px 9px 12px; border-radius: 999px; background: var(--panel2); font-size: var(--text-small); font-weight: 500; line-height: 1.3; color: var(--fg); white-space: nowrap; }
 .droid-chip .ph-icon { color: var(--accent-text); }
 
 @media (max-width: 860px) {
@@ -35,7 +34,5 @@
 @media (max-width: 560px) {
   .droid-point { gap: 14px; padding: 14px 14px 15px 16px; }
   .droid-icon { width: 40px; height: 40px; border-radius: 12px; }
-  .droid-words b { font-size: 18px; }
-  .droid-words span { font-size: 15px; }
   .droid-chip { white-space: normal; text-align: left; }
 }

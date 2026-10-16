@@ -1,37 +1,21 @@
-// Quick, then quiet: r1os is fast while you use it and idle once it sleeps, said without a single number (the measured
-// ones are in the docs, /docs/architecture#speed-and-battery). A band of light streaks glides by, near ones quicker
-// than far ones: CSS animations, transform only, resting while the band is out of sight or the tab is hidden, and a
-// still frame of them with reduced motion. Under it, four points rise in one after another.
+// Quick, then quiet: r1os is fast while you use it and idle once it sleeps, with the numbers measured on the device
+// (all from /docs/architecture#speed-and-battery and the introduction; change them there first). A band of light
+// streaks glides by, near ones quicker than far ones: CSS animations, transform only, resting while the band is out of
+// sight or the tab is hidden, and a still frame of them with reduced motion. Under it, four points rise in one after
+// another, each led by its number in one of the R1's mono readouts.
 
-import { Icon } from "@r1os/icons";
 import { motion, useReducedMotion, type Variants } from "motion/react";
 import { type CSSProperties, useRef } from "react";
-import { after, popIn, reveal, soft } from "../site/motion";
+import { after, reveal, soft } from "../site/motion";
 import { rest, useSeen } from "../site/seen";
 import { Head } from "./parts";
 import "../styles/fast.css";
 
 const POINTS = [
-  {
-    icon: "lightning",
-    title: "native, not a web page",
-    line: "smooth on the wheel, while you talk and as replies stream in.",
-  },
-  {
-    icon: "microphone",
-    title: "words as you speak",
-    line: "your words show up on screen as you say them, not after you finish.",
-  },
-  {
-    icon: "sun-horizon",
-    title: "ready when you let go",
-    line: "claude starts warming up while you're still holding the button.",
-  },
-  {
-    icon: "moon",
-    title: "idle when it sleeps",
-    line: "nothing of ours ticks with the screen off, and apps you've left alone close on their own.",
-  },
+  { figure: "36 s", title: "on in half the time", line: "the screen is on 36 s after the kernel starts, down from 72 s." },
+  { figure: "1.6 s", title: "replies start quickly", line: "a warm claude's first word comes about 1.6 s after your message. it warms up while you're still holding the button." },
+  { figure: "60 fps", title: "smooth on the wheel", line: "the wheel, talking and streaming replies run at 60 fps, and your words show up as you say them." },
+  { figure: "0 polls", title: "idle when it sleeps", line: "asleep, r1os itself polls nothing, and apps you've left alone close on their own." },
 ];
 
 /** A streak's lane: where it runs (`y`, % of the band), how thick (px) and long (% of the band) it is, one crossing's
@@ -74,16 +58,16 @@ export function Speed() {
         <Head
           title="quick, then quiet."
           sub="fast while you use it, idle the moment it sleeps, and tuned on the device to stay that way."
-          link={{ to: "/docs/architecture#speed-and-battery", label: "how it's tuned" }}
+          link={{ to: "/docs/architecture#speed-and-battery", label: "how it's measured" }}
         />
         <Streaks still={!!reduce} />
         <motion.ul className="fast-points" {...(reduce ? {} : reveal)}>
           {POINTS.map((p, i) => (
-            <motion.li key={p.title} className="fast-point" variants={after(i * 0.09, 20)}>
+            <motion.li key={p.title} className="fast-point" variants={after(i * 0.09, 12)}>
               <motion.span className="fast-bar" variants={draw(0.15 + i * 0.09)} aria-hidden />
-              <motion.span className="fast-icon" variants={popIn(0.1 + i * 0.09)}>
-                <Icon name={p.icon} weight="bold" size={22} />
-              </motion.span>
+              <span className="readout">
+                <b>{p.figure}</b>
+              </span>
               <h3>{p.title}</h3>
               <p>{p.line}</p>
             </motion.li>

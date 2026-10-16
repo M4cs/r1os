@@ -103,7 +103,7 @@ export function DockMode() {
   return (
     <section className="section" id="dock" ref={box} {...rest(seen)}>
       <div className="wrap">
-        <Head title="set it on its side." sub="with dock mode on, it becomes a bedside clock with your widgets and agents, run by touch." link={{ to: "/docs/using#dock-mode", label: "how it works" }} />
+        <Head title="set it on its side." sub="with dock mode on, it becomes a bedside clock with your widgets and agents, run by touch." link={{ to: "/docs/using#dock-mode", label: "how dock mode works" }} />
         <div className="dock">
           <div className="dock-device" ref={stage} aria-hidden>
             <R1 glow={accent} docked={reduce || side}>

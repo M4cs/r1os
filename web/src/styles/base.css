@@ -3,27 +3,49 @@
 
 @import "@companion/fonts/r1/fonts.css";
 
-@font-face { font-family: "Rubik"; src: url("@companion/fonts/rubik_regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
-@font-face { font-family: "Rubik"; src: url("@companion/fonts/rubik_medium.ttf") format("truetype"); font-weight: 500 600; font-display: swap; }
-@font-face { font-family: "Rubik"; src: url("@companion/fonts/rubik_bold.ttf") format("truetype"); font-weight: 700 900; font-display: swap; }
+/* Rubik as WOFF2, the companion's TTFs repackaged (NOTICE.md). */
+@font-face { font-family: "Rubik"; src: url("@companion/fonts/rubik_regular.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Rubik"; src: url("@companion/fonts/rubik_medium.woff2") format("woff2"); font-weight: 500 600; font-display: swap; }
+@font-face { font-family: "Rubik"; src: url("@companion/fonts/rubik_bold.woff2") format("woff2"); font-weight: 700 900; font-display: swap; }
+/* Until Rubik arrives, Arial (or Roboto, on Android) stands in, scaled to Rubik's average lowercase width and given its
+   line box, so the page doesn't jump when Rubik swaps in. Worked out per weight from the fonts' own metrics. */
+@font-face { font-family: "Rubik fallback"; src: local("Arial"), local("Roboto"); font-weight: 400; size-adjust: 105.73%; ascent-override: 88.43%; descent-override: 23.64%; line-gap-override: 0%; }
+@font-face { font-family: "Rubik fallback"; src: local("Arial"), local("Roboto"); font-weight: 500 600; size-adjust: 109.92%; ascent-override: 85.06%; descent-override: 22.74%; line-gap-override: 0%; }
+@font-face { font-family: "Rubik fallback"; src: local("Arial Bold"), local("Arial-BoldMT"), local("Roboto Bold"), local("Roboto-Bold"); font-weight: 700 900; size-adjust: 105.34%; ascent-override: 88.76%; descent-override: 23.73%; line-gap-override: 0%; }
 
 /* Text in four steps: --fg for words, --sub for the line under a head and captions (≥ 10:1), --muted for labels and
-   meta (≥ 7:1), --faint only for what isn't read (dots, anchors). The accent's shades follow below. */
+   meta (≥ 7:1), --faint only for what isn't read (dots, anchors). The accent's shades follow below.
+   Type in nine roles, each one size wherever it appears: --text-display for the hero's line; --text-headline for a
+   section's head; --text-title for a heading inside a section; --text-lede for the line under a head; --text-item for
+   a point's title; --text-body for sentences (never smaller); --text-label for the bar, tiles and short labels;
+   --text-small for chips and footnotes; --text-meta for mono labels and crumbs. The docs' prose has its own reading
+   scale (docs.css). */
 :root {
   --bg: #000; --bg2: #08080a; --fg: #f2f2f2; --sub: #c4c7cc; --muted: #a3a8b0; --faint: #787d86;
   --panel: #111215; --panel2: #1a1c21; --line: #22252b;
   --accent: #ff8a3d; --ink: #0b0b0c;
-  --good: #3ddc84; --bad: #f2555a;
-  --font: Rubik, system-ui, sans-serif;
+  --good: #3ddc84; --bad: #f2555a; --warn: #f5b33d; --danger: #f2555a;
+  --font: Rubik, "Rubik fallback", system-ui, sans-serif;
   --mono: "R1 Droid Sans Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --text-display: clamp(44px, 7vw, 96px);
+  --text-headline: clamp(30px, 5vw, 64px);
+  --text-title: clamp(26px, 3vw, 40px);
+  --text-lede: clamp(18px, 1.1vw + 13px, 22px);
+  --text-item: 19px;
+  --text-body: 16px;
+  --text-label: 15px;
+  --text-small: 14px;
+  --text-meta: 13px;
   --max: 1220px;
   --gutter: clamp(16px, 4vw, 40px);
   --r: 18px;
   color-scheme: dark;
 }
+@media (max-width: 520px) { :root { --text-item: 18px; } }
 :root[data-mode="light"] {
   --bg: #f3f2ef; --bg2: #ecebe7; --fg: #16171a; --sub: #33363b; --muted: #464a52; --faint: #646971;
   --panel: #ffffff; --panel2: #e9e8e4; --line: #dcdcd8;
+  --warn: #a35f00; --danger: #c42a30;
   color-scheme: light;
 }
 
@@ -53,7 +75,7 @@ html { -webkit-text-size-adjust: 100%; scroll-padding-top: 88px; font-kerning: n
 html, body { margin: 0; }
 body {
   background: var(--bg); color: var(--fg);
-  font: 500 16px/1.5 var(--font);
+  font: 500 var(--text-body)/1.5 var(--font);
   -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
   transition: background-color .4s ease, color .4s ease;
@@ -75,6 +97,10 @@ p { text-wrap: pretty; }
 p { margin: 0; }
 code, pre, kbd { font-family: var(--mono); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+/* A link inside a line of text, in the accent, underlined so it reads as one without the colour. */
+.text-link, .hero-today a, .open-card p a { color: var(--accent-text); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent-text) 45%, transparent); text-underline-offset: 3px; text-decoration-thickness: 1.5px; transition: text-decoration-color .15s; }
+.text-link:hover, .hero-today a:hover, .open-card p a:hover { text-decoration-color: currentColor; }
+button.text-link { border: 0; background: none; padding: 0; font: inherit; }
 
 .muted { color: var(--muted); }
 .mono { font-family: var(--mono); text-transform: none; }
@@ -85,41 +111,47 @@ code, pre, kbd { font-family: var(--mono); }
 
 .site { min-height: 100vh; display: flex; flex-direction: column; }
 .site > main { flex: 1; }
+main:focus { outline: none; }
+/* Skip to the page: out of sight until the keyboard reaches it. */
+.skip { position: fixed; left: var(--gutter); top: 10px; z-index: 60; padding: 10px 14px; border-radius: 12px; background: var(--accent); color: var(--ink); font-weight: 700; text-transform: lowercase; transform: translateY(-160%); transition: transform .15s; }
+.skip:focus { transform: none; }
 /* Nothing on a page scrolls it sideways (a turning R1's corners, a long line); clip makes no scroll container, so sticky
    parts still stick. */
 main { overflow-x: clip; }
 
 .top { position: sticky; top: 0; z-index: 40; text-transform: lowercase; }
 .top-bar { display: flex; align-items: center; gap: 6px; height: 64px; }
-.top::before { content: ""; position: absolute; inset: 0; background: color-mix(in srgb, var(--bg) 72%, transparent); backdrop-filter: blur(16px) saturate(1.3); -webkit-backdrop-filter: blur(16px) saturate(1.3); border-bottom: 1px solid transparent; transition: border-color .3s; z-index: -1; }
+.top::before { content: ""; position: absolute; inset: 0; background: color-mix(in srgb, var(--bg) 72%, transparent); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid transparent; transition: border-color .3s; z-index: -1; }
 .top.scrolled::before { border-bottom-color: var(--line); }
 .brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 19px; letter-spacing: -0.01em; margin-right: 14px; }
-.brand-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 14px var(--accent); transition: background .4s, box-shadow .4s; }
+.brand-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); transition: background .4s; }
 .nav { display: flex; gap: 2px; }
-.nav-item { position: relative; padding: 8px 14px; border-radius: 12px; font-weight: 700; font-size: 15px; color: var(--muted); transition: color .2s; }
+/* The part you're on takes the accent's soft fill, not the solid one: the bar keeps one solid accent, get started. */
+.nav-item { position: relative; padding: 8px 14px; border-radius: 12px; font-weight: 500; font-size: var(--text-label); color: var(--muted); transition: color .2s; }
 .nav-item:hover { color: var(--fg); }
-.nav-item.on { color: var(--ink); }
+.nav-item.on { color: var(--accent-text); }
 .nav-item > span:last-child { position: relative; z-index: 1; }
-.nav-fill { position: absolute; inset: 0; border-radius: 12px; background: var(--accent); }
+.nav-fill { position: absolute; inset: 0; border-radius: 12px; background: var(--accent-soft); }
 .nav-hover { position: absolute; inset: 0; border-radius: 12px; background: var(--panel2); }
 .grow { flex: 1; }
 .menu-btn { display: none; width: 40px; height: 40px; border: 0; border-radius: 12px; background: var(--panel2); place-items: center; }
+/* On a phone the source moves into the menu, so the bar keeps to the brand, the look, install and the menu. */
 @media (max-width: 860px) {
-  .nav.wide { display: none; }
+  .nav.wide, .top .source-link { display: none; }
   .menu-btn { display: grid; }
 }
 /* The narrowest phones: a little less room around the brand and the link, so the menu button stays in the gutter. */
 @media (max-width: 340px) { .top .brand { margin-right: 0; } .top .btn.small { padding: 9px 11px; } }
 .menu-btn, .look-btn { flex-shrink: 0; }
 .sheet-nav { position: fixed; inset: 64px 0 auto 0; z-index: 39; padding: 10px var(--gutter) 22px; background: color-mix(in srgb, var(--bg) 94%, transparent); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px; text-transform: lowercase; }
-.sheet-nav a { padding: 12px 14px; border-radius: 14px; font-weight: 700; font-size: 20px; }
-.sheet-nav a.on { background: var(--accent); color: var(--ink); }
+.sheet-nav a { display: flex; align-items: center; gap: 6px; padding: 12px 14px; border-radius: 14px; font-weight: 500; font-size: 20px; }
+.sheet-nav a.on { background: var(--accent-soft); color: var(--accent-text); }
 
 /* The look: dark or light, and an accent. */
 .look-btn { position: relative; width: 40px; height: 40px; border: 0; border-radius: 12px; background: transparent; display: grid; place-items: center; color: var(--muted); transition: background .15s, color .15s; }
 .look-btn:hover { background: var(--panel2); color: var(--fg); }
 .look-pop { position: absolute; right: 0; top: 50px; width: 252px; padding: 14px; border-radius: 20px; background: var(--panel); box-shadow: 0 30px 70px -20px rgba(0, 0, 0, .55), inset 0 0 0 1px var(--line); text-transform: lowercase; z-index: 50; }
-.look-pop h4 { font-size: 13px; font-weight: 700; line-height: 1.2; color: var(--muted); margin: 2px 2px 8px; }
+.look-pop h4 { font-size: var(--text-meta); font-weight: 700; line-height: 1.2; color: var(--muted); margin: 2px 2px 8px; }
 .look-pop h4 + * { margin-bottom: 14px; }
 /* On a narrow bar the get-started link and the menu sit right of the look button: the popover hangs from the screen's
    edge instead, so it all fits. */
@@ -131,7 +163,7 @@ main { overflow-x: clip; }
 .seg { position: relative; display: inline-flex; gap: 2px; padding: 3px; border-radius: 13px; background: var(--panel2); }
 .seg.wide { display: flex; }
 .seg.wide .seg-item { flex: 1; justify-content: center; }
-.seg-item { position: relative; display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; padding: 7px 12px; border-radius: 10px; font-size: 13px; font-weight: 700; color: var(--muted); transition: color .2s; white-space: nowrap; text-transform: lowercase; }
+.seg-item { position: relative; display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; padding: 7px 12px; border-radius: 10px; font-size: var(--text-meta); font-weight: 700; color: var(--muted); transition: color .2s; white-space: nowrap; text-transform: lowercase; }
 .seg-item > span:last-child, .seg-item > svg { position: relative; z-index: 1; }
 .seg-item.on { color: var(--ink); }
 .seg-fill { position: absolute; inset: 0; border-radius: 10px; background: var(--accent); }
@@ -143,11 +175,11 @@ main { overflow-x: clip; }
 .btn:active { transform: scale(.97); }
 .btn.primary { background: var(--accent); color: var(--ink); }
 .btn.ghost { background: transparent; box-shadow: inset 0 0 0 1.5px var(--line); }
-.btn.small { padding: 9px 14px; font-size: 14px; border-radius: 12px; }
-.chip { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 999px; background: color-mix(in srgb, var(--panel) 80%, transparent); box-shadow: inset 0 0 0 1px var(--line); font-size: 14px; font-weight: 500; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); text-transform: lowercase; white-space: nowrap; }
-.chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--good); box-shadow: 0 0 8px color-mix(in srgb, var(--good) 60%, transparent); }
+.btn.small { padding: 9px 14px; font-size: var(--text-small); border-radius: 12px; }
+.chip { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 999px; background: color-mix(in srgb, var(--panel) 80%, transparent); box-shadow: inset 0 0 0 1px var(--line); font-size: var(--text-small); font-weight: 500; text-transform: lowercase; white-space: nowrap; }
+.chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--good); }
 /* A readout: the R1's mono boxes (the Translator's "load", the Recorder's counter). */
-.readout { display: inline-flex; align-items: center; gap: 10px; padding: 6px 11px; border-radius: 8px; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--fg) 22%, transparent); font: 14px/1.3 var(--mono); color: var(--fg); text-transform: none; }
+.readout { display: inline-flex; align-items: center; gap: 10px; padding: 6px 11px; border-radius: 8px; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--fg) 22%, transparent); font: var(--text-small)/1.3 var(--mono); color: var(--fg); text-transform: none; }
 .readout b { font-weight: 400; color: var(--accent-text); }
 .kbd { display: inline-grid; place-items: center; min-width: 26px; height: 26px; padding: 0 7px; border-radius: 8px; background: var(--panel2); box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--fg) 10%, transparent); font: 12px var(--mono); }
 
@@ -156,20 +188,20 @@ main { overflow-x: clip; }
 .foot { margin-top: 120px; border-top: 1px solid var(--line); padding: 48px 0 56px; text-transform: lowercase; }
 .foot-grid { display: grid; grid-template-columns: 1.4fr repeat(3, 1fr); gap: 32px; }
 .foot-col { display: flex; flex-direction: column; gap: 10px; }
-.foot-col h4 { font-size: 14px; color: var(--muted); margin-bottom: 4px; }
+.foot-col h4 { font-size: var(--text-small); color: var(--muted); margin-bottom: 4px; }
 .foot-col a { font-weight: 500; color: var(--fg); opacity: .85; }
 .foot-col a:hover { opacity: 1; color: var(--accent-text); }
-.foot-note { margin-top: 40px; font-size: 14px; line-height: 1.55; color: var(--muted); max-width: 46em; }
+.foot-note { margin-top: 40px; font-size: var(--text-small); line-height: 1.55; color: var(--muted); max-width: 38em; }
 @media (max-width: 760px) { .foot-grid { grid-template-columns: 1fr 1fr; } .foot-col.first { grid-column: 1 / -1; } }
 
 /* ---- the lost page --------------------------------------------------------------------------------------------- */
 
 .lost { min-height: 70vh; display: grid; place-items: center; text-align: center; text-transform: lowercase; padding: 40px var(--gutter); }
-.lost h1 { font-size: clamp(40px, 7vw, 72px); margin: 18px 0 10px; }
+.lost h1 { font-size: var(--text-headline); letter-spacing: -0.03em; line-height: 1.06; margin: 18px 0 10px; }
 .lost p { margin-bottom: 26px; }
 
 /* A part of the page that's scrolled away, or in a hidden tab, rests: its looping CSS animations (the characters'
-   breathing and blinking, floating screens) pause until it's seen again (site/seen.ts). */
+   breathing and blinking, the speed band's streaks) pause until it's seen again (site/seen.ts). */
 [data-rest] *, [data-rest] *::before, [data-rest] *::after { animation-play-state: paused !important; }
 
 @media (prefers-reduced-motion: reduce) {

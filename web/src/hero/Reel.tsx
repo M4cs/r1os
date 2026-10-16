@@ -1,9 +1,11 @@
 // The hero's turning words: a wheel of phrases that springs a detent at a time, as the R1's wheel does. The column
-// overshoots and settles; while it moves, a vertical blur grows with its speed (an SVG filter fed by the spring's
+// overshoots a little and settles; while it moves, a vertical blur grows with its speed (an SVG filter fed by the spring's
 // velocity), so the words smear like a reel spun past the eye. The phrase on the detent sits in the accent's fill,
 // centred and springing to its width; inside the fill an ink copy of the column turns in step, like a picker's lens.
 // With a `delay`, its first detent comes that long after it's drawn: it turns in from the phrase before, its fill
-// opening from nothing. It tells its line how wide its widest phrase is, so the line can shrink to fit a phone.
+// opening from nothing. It tells its line how wide its widest phrase is, so the line can shrink to fit a phone. Its
+// rows draw their words from `data-text` (home.css), so the heading's own text is just the sentence a screen reader
+// hears, not every phrase three times over.
 
 import { animate, motion, useMotionValue, useMotionValueEvent, useReducedMotion, useTransform, useVelocity, type MotionValue } from "motion/react";
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
@@ -122,7 +124,7 @@ export function Reel({
       </svg>
       <div className="reel-measure" ref={measure}>
         {items.map((it) => (
-          <span key={it.text}>{it.text}</span>
+          <span key={it.text} data-text={it.text} />
         ))}
       </div>
       <div className="reel-rows" ref={(el) => void (el && (layers.current[0] = el))}>
@@ -145,8 +147,6 @@ function Row({ i, pos, h, text, faded }: { i: number; pos: MotionValue<number>; 
   const y = useTransform(pos, (p) => (i - p) * h);
   const opacity = useTransform(pos, (p) => (faded ? Math.max(0, 0.3 - 0.2 * Math.max(0, Math.abs(i - p) - 1)) : 1));
   return (
-    <motion.span className="reel-row" style={{ x: "-50%", y, opacity }}>
-      {text}
-    </motion.span>
+    <motion.span className="reel-row" data-text={text} style={{ x: "-50%", y, opacity }} />
   );
 }

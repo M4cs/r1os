@@ -1,7 +1,7 @@
-// Every page's frame: the bar at the top (r1os, the pages, the look), the page, and the footer. The page you're on is
-// filled with the accent and the fill springs between pages, as the device's focus does between rows. On the home
-// page the fill follows the part you're reading, and a thin accent line under the bar shows how far down you are. A
-// new page rises in softly. With reduced motion nothing moves; it's simply there.
+// Every page's frame: the bar at the top (r1os, the pages, the look, the source), the page, and the footer. The page
+// you're on takes the accent's soft fill, and the fill springs between pages, as the device's focus does between rows.
+// On the home page the fill follows the part you're reading, and a thin accent line under the bar shows how far down
+// you are. A new page rises in softly. With reduced motion nothing moves; it's simply there.
 
 import { Icon } from "@r1os/icons";
 import { AnimatePresence, LayoutGroup, motion, MotionConfig, useReducedMotion, useScroll, useSpring } from "motion/react";
@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, Outlet, ScrollRestoration, useLocation, useNavigationType } from "react-router";
 import { arrive, spring } from "./motion";
 import { LookPicker } from "./LookPicker";
+import { ISSUES, REPO } from "./repo";
 
 const PAGES = [
   { to: "/#android", label: "android", hash: "#android" },
@@ -74,6 +75,8 @@ export function Root() {
   const [scrolled, setScrolled] = useState(false);
   const [menu, setMenu] = useState(false);
   const [hover, setHover] = useState<string | null>(null);
+  const bar = useRef<HTMLElement>(null);
+  const sheet = useRef<HTMLElement>(null);
   // The first page is there at once; later ones rise in.
   const [settled, setSettled] = useState(false);
   useEffect(() => setSettled(true), []);
@@ -83,6 +86,21 @@ export function Root() {
     window.addEventListener("scroll", on, { passive: true });
     return () => window.removeEventListener("scroll", on);
   }, []);
+  // The phone's menu closes as the look's picker does: on Escape, or a press anywhere outside it and the bar.
+  useEffect(() => {
+    if (!menu) return;
+    const away = (e: PointerEvent) => {
+      const t = e.target as Node;
+      if (!sheet.current?.contains(t) && !bar.current?.contains(t)) setMenu(false);
+    };
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setMenu(false);
+    document.addEventListener("pointerdown", away);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("pointerdown", away);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [menu]);
   // Every navigation closes the menu, and a link to a part of a page scrolls to it once it's drawn, even a link to the
   // address you're already on. Back or Forward to another page leaves the place to ScrollRestoration. With reduced
   // motion the scroll is a jump.
@@ -106,7 +124,10 @@ export function Root() {
   return (
     <MotionConfig reducedMotion="user">
       <div className="site">
-        <header className={`top ${scrolled ? "scrolled" : ""}`}>
+        <a className="skip" href="#main">
+          skip to the page
+        </a>
+        <header className={`top ${scrolled ? "scrolled" : ""}`} ref={bar}>
           <div className="wrap top-bar">
             <Link to="/" className="brand" aria-label="r1os home">
               <span className="brand-dot" />
@@ -131,8 +152,12 @@ export function Root() {
             </LayoutGroup>
             <div className="grow" />
             <LookPicker />
+            <a href={REPO} className="btn ghost small source-link">
+              <Icon name="github-logo" weight="bold" size={16} />
+              source
+            </a>
             <Link to="/docs/start" className="btn primary small" style={{ marginLeft: 6 }}>
-              get started
+              install
             </Link>
             <button className="menu-btn" aria-label="menu" aria-expanded={menu} onClick={() => setMenu((m) => !m)} style={{ marginLeft: 6 }}>
               <Icon name={menu ? "x" : "list"} weight="bold" size={20} />
@@ -142,16 +167,19 @@ export function Root() {
         </header>
         <AnimatePresence>
           {menu && (
-            <motion.nav className="sheet-nav" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0, transition: spring }} exit={{ opacity: 0, y: -6, transition: { duration: 0.14 } }}>
+            <motion.nav ref={sheet} className="sheet-nav" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0, transition: spring }} exit={{ opacity: 0, y: -4, transition: { duration: 0.14 } }}>
               {PAGES.map((p) => (
                 <Link key={p.label} to={p.to} className={on(p) ? "on" : ""} aria-current={on(p) ? ("hash" in p ? "location" : "page") : undefined}>
                   {p.label}
                 </Link>
               ))}
+              <a href={REPO}>
+                source <Icon name="arrow-up-right" weight="bold" size={16} />
+              </a>
             </motion.nav>
           )}
         </AnimatePresence>
-        <main>
+        <main id="main" tabIndex={-1}>
           <motion.div key={top} {...arrive} initial={settled && !reduce ? arrive.initial : false}>
             <Outlet />
           </motion.div>
@@ -173,7 +201,7 @@ function Footer() {
               <span className="brand-dot" />
               r1os
             </Link>
-            <p style={{ maxWidth: 320, color: "var(--sub)" }}>an agent-first os, with a full android device inside.</p>
+            <p style={{ maxWidth: 320, color: "var(--sub)" }}>an agent-first os for the rabbit r1, with a full android device inside.</p>
           </div>
           <div className="foot-col">
             <h4>the os</h4>
@@ -187,18 +215,21 @@ function Footer() {
           </div>
           <div className="foot-col">
             <h4>build</h4>
-            <Link to="/docs/start">get started</Link>
+            <Link to="/docs/start">install r1os</Link>
+            <Link to="/docs/develop#the-simulator">try the simulator</Link>
             <Link to="/docs/apps">build an app</Link>
             <Link to="/docs/extend">bring your own agent</Link>
             <Link to="/docs/api">the api</Link>
           </div>
           <div className="foot-col">
-            <h4>for agents</h4>
+            <h4>open source</h4>
+            <a href={REPO}>the source</a>
+            <a href={ISSUES}>report an issue</a>
+            <Link to="/docs/develop">develop r1os</Link>
             <Link to="/docs/skill">the r1os skill</Link>
             <a href="/skills/r1os/SKILL.md" style={{ textTransform: "none" }}>
               SKILL.md
             </a>
-            <Link to="/docs/develop">develop r1os</Link>
           </div>
         </div>
         <p className="foot-note">

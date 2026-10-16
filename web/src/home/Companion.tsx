@@ -1,7 +1,8 @@
 // Your PC, too: the desktop companion (docs/specs/companion.md; companion/src/App.tsx), its window drawn small, as it
 // is: the title bar with manage and chats, your devices down the side with a device's pages, and the one you picked.
 // The window takes the device's look, as the real one does. A chat's lines arrive one after another as you open
-// chats, and its characters rest while it's scrolled away.
+// chats, and its characters rest while it's scrolled away. It's a picture you can click, not the page's own structure:
+// no landmarks or headings of its own, and a screen reader hears it named as a demo.
 
 import { Icon } from "@r1os/icons";
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/react";
@@ -38,8 +39,8 @@ export function CompanionSection() {
   return (
     <section className="section" id="companion" ref={section} {...rest(seen)}>
       <div className="wrap">
-        <Head title="your pc, too." sub="pair once, then manage r1os and chat from anywhere, and let agents work in your folders." />
-        <motion.div className="cwin" {...(reduce ? {} : rise)}>
+        <Head title="your pc, too." sub="pair once, then manage r1os and chat from anywhere, and let agents work in your folders." link={{ to: "/docs/companion", label: "about the companion" }} />
+        <motion.div className="cwin" role="group" aria-label="a demo of the companion's window" {...(reduce ? {} : rise)}>
           <div className="cwin-bar">
             <span className="brand">
               <span className="brand-dot" />
@@ -67,7 +68,7 @@ export function CompanionSection() {
           <AnimatePresence mode="wait" initial={false}>
             {mode === "manage" ? (
               <motion.div key="manage" className="cwin-body" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={spring}>
-                <aside className="cwin-side">
+                <div className="cwin-side">
                   <div className="cwin-label">your devices</div>
                   <div className="cwin-device on">
                     <Character form="orb" color="orange" finish="soft" state="idle" size={34} />
@@ -79,7 +80,7 @@ export function CompanionSection() {
                     </span>
                   </div>
                   <LayoutGroup id="cwin-pages">
-                    <nav className="cwin-pages">
+                    <div className="cwin-pages">
                       {PAGES.map((p) => (
                         <button key={p.id} className={`cwin-page ${page === p.id ? "on" : ""}`} onClick={() => setPage(p.id)}>
                           {page === p.id && <motion.span className="cwin-page-fill" layoutId="cwin-page" transition={spring} />}
@@ -87,9 +88,9 @@ export function CompanionSection() {
                           <span>{p.id}</span>
                         </button>
                       ))}
-                    </nav>
+                    </div>
                   </LayoutGroup>
-                </aside>
+                </div>
                 <div className="cwin-main">
                   <div className="cwin-chips">
                     <span className="chip">
@@ -100,9 +101,9 @@ export function CompanionSection() {
                     </span>
                   </div>
                   <AnimatePresence mode="popLayout" initial={false}>
-                    <motion.h4 key={page} className="cwin-h" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={spring}>
+                    <motion.p key={page} className="cwin-h" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={spring}>
                       {page === "overview" ? "pocket" : page}
-                    </motion.h4>
+                    </motion.p>
                   </AnimatePresence>
                   <div className="cwin-agents">
                     {agents.map((a, i) => (
@@ -139,7 +140,7 @@ export function CompanionSection() {
               </motion.div>
             ) : (
               <motion.div key="chats" className="cwin-body chats" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={spring}>
-                <aside className="cwin-side">
+                <div className="cwin-side">
                   {CREW.slice(0, 5).map((a, i) => (
                     <div key={a.name} className={`cwin-chat-agent ${i === 4 ? "on" : ""}`}>
                       <Character form={a.form} color={a.color} finish={a.finish} eyes={a.eyes} wear={a.wear} state="idle" size={30} />
@@ -149,7 +150,7 @@ export function CompanionSection() {
                       </span>
                     </div>
                   ))}
-                </aside>
+                </div>
                 <div className="cwin-main cwin-chat">
                   <motion.div className="cwin-bubble mine" {...line(0, reduce)}>
                     tidy the photos folder on my desktop by month

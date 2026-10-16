@@ -7,11 +7,20 @@ order: 2
 
 # Install
 
-r1os runs on the Rabbit R1. There's no prebuilt image or over-the-air update yet: you build the image from r1os's source and flash it yourself.
+r1os runs on the Rabbit R1. There's no prebuilt image or over-the-air update yet: you build the image from [r1os's source](https://github.com/M4cs/r1os) and flash it yourself.
 
+> [!CAUTION]
 > **Read this first.** Installing r1os means unlocking the bootloader and flashing a system image. The R1 has no volume keys and no recovery menu, so a write to the wrong partition can brick it. Back up first, and follow each step exactly.
 
-This guide hasn't been run end to end from a stock R1 yet. If a step doesn't match what you see, stop and open an issue.
+## Before you start
+
+- **You'll need** an R1 whose bootloader you can unlock, Linux (or WSL) with room for the Android source (~60–90 GB), and a Claude or ChatGPT subscription. The full list is [below](#what-you-need).
+- **What it costs:** Rabbit says unlocking voids the warranty, and flashing erases everything on the R1. You can [go back to stock rabbitOS](#if-it-gets-stuck) later.
+- **The steps:** [unlock and back up](#unlock-and-back-up), [build](#build), [flash](#flash), [deploy](#deploy), then [first boot](#first-boot).
+- **No R1, or not ready to flash?** [The simulator](/docs/develop#the-simulator) runs r1os's daemon and shell on your computer, with nothing to flash.
+
+> [!WARNING]
+> This guide hasn't been run end to end from a stock R1 yet. If a step doesn't match what you see, stop and [open an issue](https://github.com/M4cs/r1os/issues).
 
 The [companion](/docs/companion#installing-r1os-over-usb) is getting a wizard that does these steps for you. It hasn't run on an R1 yet, so for now this guide is the way.
 
@@ -54,13 +63,19 @@ It syncs AOSP's Android 15, adds TrebleDroid's patches and r1os's layer, and wri
 
 ## Flash
 
-With the device in fastboot, and the latest release of [Rabbit's published stock firmware](https://github.com/rabbit-hmi-oss/firmware/releases) unzipped as `<rabbit-firmware>` (only its vbmeta images and empty userdata are used):
+Before you flash, check that:
+
+- [ ] your backup is in `backups/<date>-stock/`, with its `SHA256SUMS`;
+- [ ] the image is built, as `out/image/r1os-system-a15-<date>.img`;
+- [ ] the latest release of [Rabbit's published stock firmware](https://github.com/rabbit-hmi-oss/firmware/releases) is unzipped as `<rabbit-firmware>` (only its vbmeta images and empty userdata are used);
+- [ ] the R1 is in fastboot, and `fastboot devices` lists it.
+
+> [!CAUTION]
+> **This erases everything on the R1.** `tools/flash-gsi.sh` refuses to run without a backup. It turns verified boot off, erases all data, removes the stock product partition, and flashes r1os to the active slot's system partition.
 
 ```bash
 tools/flash-gsi.sh out/image/r1os-system-a15-<date>.img <rabbit-firmware>
 ```
-
-It refuses to run without a backup. It turns verified boot off, **erases all data**, removes the stock product partition, and flashes r1os to the active slot's system partition.
 
 ## Deploy
 
@@ -83,7 +98,7 @@ tools/agent-box.sh install   # Alpine, with Claude Code and Codex
 
 ## If it gets stuck
 
-- **It starts Android's recovery** ("Can't load Android system", "Try again or factory data reset"). Don't choose factory data reset: it erases your data and doesn't fix a system that won't start. Choose try again once. If it comes back to recovery, stop there and open an issue with what the screen says. Getting it to start again depends on what broke.
+- **It starts Android's recovery** ("Can't load Android system", "Try again or factory data reset"). Don't choose factory data reset: it erases your data and doesn't fix a system that won't start. Choose try again once. If it comes back to recovery, stop there and [open an issue](https://github.com/M4cs/r1os/issues) with what the screen says. Getting it to start again depends on what broke.
 - **Back to stock rabbitOS:** both of these erase everything on the R1.
   - [Rabbit's web flashing tool](https://rabbit-hmi-oss.github.io/flashing/) restores rabbitOS v0.8.293, which then takes Rabbit's updates. It's reported to relock the bootloader; that isn't confirmed.
   - From the command line, with the R1 in fastboot and Rabbit's `rabbit_OS_v0.8.293.zip` extracted: `tools/flash-stock-base.sh <that folder>` puts v0.8.293's kernel, `dtbo`, `vbmeta` and `super` on slot a, with verified boot off and the bootloader left unlocked. It never touches the boot chain or the R1's calibration, and it refuses to run without a backup of this R1.

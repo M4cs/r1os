@@ -93,7 +93,8 @@ The companion draws the R1's screen with the R1's own typefaces: `companion/src/
 | Roboto Flex | OFL-1.1 | `external/roboto-flex-fonts` |
 | Source Sans Pro | OFL-1.1 | `external/google-fonts/source-sans-pro` |
 
-The companion's Rubik (`companion/src/fonts/rubik_*.ttf`) is the same as the shell's, above.
+The companion's Rubik (`companion/src/fonts/rubik_*.ttf`) is the same as the shell's, above. The website's
+(`companion/src/fonts/rubik_*.woff2`) is those files repackaged as WOFF2 by fontTools, every glyph and table kept.
 
 ## Phosphor Icons (MIT)
 

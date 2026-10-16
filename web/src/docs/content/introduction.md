@@ -7,7 +7,7 @@ order: 1
 
 # Introduction
 
-r1os is an agent-first operating system. It covers most of the everyday things Rabbit's OS3 does, then goes further: your agents are the real Claude Code and Codex, on the device, with a full Android 15 device underneath. It runs on the Rabbit R1, and it's open source under the [MIT licence](/docs/develop#licence).
+r1os is an agent-first operating system. It covers most of the everyday things Rabbit's OS3 does, then goes further: your agents are the real Claude Code and Codex, on the device, with a full Android 15 device underneath. It runs on the Rabbit R1, and it's open source under the [MIT licence](/docs/develop#licence), [on GitHub](https://github.com/M4cs/r1os).
 
 > r1os is an independent project. It isn't made by, affiliated with or endorsed by Rabbit Inc., Anthropic, OpenAI or Google.
 

@@ -41,7 +41,7 @@ export function LookPicker() {
             <h4>accent</h4>
             <div className="swatches">
               {Object.entries(ACCENTS).map(([name, c]) => (
-                <button key={name} className="swatch" style={{ background: c }} aria-label={name} title={name} onClick={() => setLook({ accent: c })}>
+                <button key={name} className="swatch" style={{ background: c }} aria-label={name} aria-pressed={look.accent === c} title={name} onClick={() => setLook({ accent: c })}>
                   {look.accent === c && <motion.span className="swatch-ring" layoutId="accent-ring" style={{ borderColor: c }} transition={spring} />}
                 </button>
               ))}

@@ -67,7 +67,15 @@ function Sidebar() {
       </label>
       {q.trim() ? (
         <div className="docs-results">
-          {results.length === 0 && <p className="muted small">nothing matches “{q}”.</p>}
+          {results.length === 0 && (
+            <p className="muted small docs-empty">
+              nothing matches “{q}”. try a single word, or{" "}
+              <button className="text-link" onClick={() => setQ("")}>
+                see every page
+              </button>
+              .
+            </p>
+          )}
           {results.map((r) => (
             <Link key={r.to} to={r.to} className="docs-result" onClick={() => setQ("")}>
               <b>{r.title}</b>
@@ -138,7 +146,8 @@ export function DocPage() {
       <article className="docs-main">
         <h1>nothing here</h1>
         <p className="muted">
-          this page isn't in the docs. <Link to="/docs">start from the introduction</Link>.
+          this page isn't in the docs. <Link to="/docs" className="text-link">start from the introduction</Link>, or search
+          for it on the left.
         </p>
       </article>
     );
