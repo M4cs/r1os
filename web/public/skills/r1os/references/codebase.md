@@ -31,7 +31,7 @@ Where everything lives, one line each, from the module headers. Paths are relati
 | `firmware/`, `backups/`, `out/` | **Git-ignored.** Stock firmware/GSIs/Magisk; partition dumps (IMEI, radio calibration); build outputs. Never commit, upload or paste |
 | `artifacts/` | Git-ignored harness output (`r1h screenshot` → `artifacts/screenshots/`, `artifacts/power/`, `artifacts/evals/`) |
 | `.r1os-sim/` | Git-ignored simulator data dir (`r1d --sim --data`) |
-| `pnpm-workspace.yaml` | `shell`, `companion`, `web` (the website and this skill), `packages/*` |
+| `package.json`, `bun.lock` | The Bun workspace: `shell`, `companion`, `web` (the website and this skill), `packages/*` |
 | `Cargo.toml` | Workspace: r1d, r1-link, r1-usb, r1-bootlog, enee-spec, enee-data, companion/src-tauri. Release profile: `opt-level="s"`, thin LTO, strip, **`panic = "abort"`** |
 
 r1os's signing keys are never in the repository (ADR-0062): `tools/make-keys.sh` makes them outside it, and `R1OS_KEYS` points there.
@@ -112,7 +112,7 @@ r1os's signing keys are never in the repository (ADR-0062): `tools/make-keys.sh`
 ## `companion/`
 
 - `src-tauri/src`: `main.rs` (tray app; link runs start to quit), `link.rs` (iroh endpoint R1s dial; its key and trusted R1s live in the companion's app-data folder), `runner.rs` (agents on the computer: the unmodified `claude` CLI in the agent's folders), `codex.rs` (Codex app-server JSON-RPC).
-- `src`: `App.tsx`, `link.ts` (calls to an R1's allowed API; r1d's `link::allowed` decides), `theme.ts`, `motion.ts`, `demo.ts`/`demo-more.ts` (fake R1 for `pnpm --dir companion dev`), `r1screen/` (R1 home/glance painted like the host), `views/` (About/backup, Accounts, Agents, Alarms, Apps, Chats, Computer, Connections, Files, Look, Pair, R1View, Settings).
+- `src`: `App.tsx`, `link.ts` (calls to an R1's allowed API; r1d's `link::allowed` decides), `theme.ts`, `motion.ts`, `demo.ts`/`demo-more.ts` (fake R1 for `bun run --cwd companion dev`), `r1screen/` (R1 home/glance painted like the host), `views/` (About/backup, Accounts, Agents, Alarms, Apps, Chats, Computer, Connections, Files, Look, Pair, R1View, Settings).
 
 ## `tools/` (script → what → device effect)
 
@@ -134,7 +134,7 @@ Python scripts run with `python3` (`py -3` on Windows); bash scripts source `lib
 | `fetch-speech.sh`, `fetch-models.sh`, `fetch-aurora.sh` | Pinned, hash-checked downloads into `out/` (`translator-models.txt` pins the Translator's) | computer only |
 | `optimize-stt.py` | ONNX → `.ort` for the R1 (ORT minor must match the R1's) | computer only |
 | `power.py` | Diffs two power snapshots (used by `r1h power`) | computer only |
-| `notices.py` | Third-party notices for what r1os ships (r1d, r1-bootlog, the companion, the shell, the site) into `out/notices/`, from `cargo tree` and `pnpm licenses` | computer only |
+| `notices.py` | Third-party notices for what r1os ships (r1d, r1-bootlog, the companion, the shell, the site) into `out/notices/`, from `cargo tree` and what's in `node_modules` | computer only |
 | `deploy.sh [--host] [--no-build]` | Pushes r1d, shell, libs, models; `restorecon -RF`; `pkill -x r1d`; `--host` installs, AOT-compiles, sets HOME and IME | **writes** (ask before first deploy of a session) |
 | `agent-box.sh` | `install`, `codex-host`, `run -- CMD`, `root -- CMD`, `shell`, `status` | `status` read-only; others **write** |
 | `agent-test.py` | New chat through r1d's API, prints tools/timings/replies | spends subscription; delete chats after |

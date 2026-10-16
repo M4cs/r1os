@@ -8,12 +8,12 @@
 set -euo pipefail
 source "$(dirname "$0")/lib.sh"
 need cargo
-need pnpm
+need bun
 cd "$ROOT"
-[ -d shell/node_modules ] || pnpm --dir shell install
-[ -f shell/dist/index.html ] || pnpm --dir shell build
+[ -d node_modules ] || bun install --frozen-lockfile
+[ -f shell/dist/index.html ] || bun run --cwd shell build
 if [ "${1:-}" = --dev ]; then
-  pnpm --dir shell dev &
+  bun run --cwd shell dev &
   trap 'kill %1 2>/dev/null || true' EXIT
   say "Shell with hot reload: http://127.0.0.1:5171"
 fi

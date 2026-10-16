@@ -32,7 +32,7 @@ r1os/
 
 | For | You need |
 |---|---|
-| r1d, the shell, the website | Rust 1.95+, pnpm |
+| r1d, the shell, the website | Rust 1.95+, Bun 1.3+ |
 | r1d for the device, the host app | The Android SDK and NDK, JDK 17+ |
 | Speech models, evals | uv, Python 3.11 |
 | The system image | Linux (WSL works); see [Install](/docs/start) |
@@ -45,10 +45,10 @@ The tools are bash: on Windows, use Git Bash or WSL (and `MSYS_NO_PATHCONV=1` fo
 |---|---|
 | r1d tests and lint | `cargo test -p r1d` · `cargo clippy -p r1d --all-targets -- -D warnings` |
 | r1d for the device | `tools/build-r1d.sh` (lint: `CARGO_CMD=clippy tools/build-r1d.sh -- -D warnings`) |
-| Shell | `pnpm --dir shell build` · `pnpm --dir shell typecheck` |
+| Shell | `bun run --cwd shell build` · `bun run --cwd shell typecheck` |
 | Host app | `tools/build-host.sh` → `out/r1os-host.apk` |
-| Companion | `pnpm --dir companion tauri build --no-bundle` |
-| Website | `pnpm --dir web dev` · `pnpm --dir web build` · `pnpm --dir web typecheck` |
+| Companion | `bun run --cwd companion tauri build --no-bundle` |
+| Website | `bun run --cwd web dev` · `bun run --cwd web build` · `bun run --cwd web typecheck` |
 | Drive the device | `tools/r1h state \| events \| wheel N \| button tap \| launch <id> \| screenshot \| logs` |
 | Measure | `tools/r1h power` (battery, CPU, wakeups) · `tools/r1h perf` (latency, frames) |
 | Agent box | `tools/agent-box.sh install \| status \| run -- CMD` (all but `status` write to the device) |

@@ -21,16 +21,12 @@ jobs:
       RUSTFLAGS: ""
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: oven-sh/setup-bun@v2
         with:
-          version: 10.20.0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+          bun-version: 1.3.2
+      - run: bun install --frozen-lockfile
       # The companion's Rust build embeds its built front end (tauri.conf.json's frontendDist).
-      - run: pnpm --dir companion build
+      - run: bun run --cwd companion build
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
@@ -42,17 +38,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: oven-sh/setup-bun@v2
         with:
-          version: 10.20.0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm --dir shell typecheck
-      - run: pnpm --dir companion typecheck
-      - run: pnpm --dir web typecheck
+          bun-version: 1.3.2
+      - run: bun install --frozen-lockfile
+      - run: bun run --cwd shell typecheck
+      - run: bun run --cwd companion typecheck
+      - run: bun run --cwd web typecheck
+      # What Railway deploys (railway.json).
+      - run: bun run --cwd web build
 
   secrets:
     runs-on: ubuntu-latest

@@ -37,9 +37,9 @@ cd "$ROOT"
 
 if [ "$BUILD" = 1 ]; then
   tools/build-r1d.sh
-  need pnpm
-  [ -d shell/node_modules ] || pnpm --dir shell install
-  pnpm --dir shell build >/dev/null
+  need bun
+  [ -d node_modules ] || bun install --frozen-lockfile
+  bun run --cwd shell build >/dev/null
   say "Built shell/dist"
   if [ "$HOST" = 1 ]; then tools/build-host.sh; fi
 fi

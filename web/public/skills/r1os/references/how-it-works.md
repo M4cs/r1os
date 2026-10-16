@@ -15,8 +15,8 @@ The mechanics an agent needs before changing anything: layers, ports, the token,
 | 7172 | computer | `adb forward tcp:7172 tcp:7171` by `tools/lib.sh` (`R1D_LOCAL_PORT`), used by `r1h`, `agent-test.py`, the evals, `curl` recipes |
 | 7173 | R1 loopback | The host's mic socket into r1d: hello `r1os-mic 1 16000 <token>`, then 16 kHz mono s16le while r1d says `S` until `E` |
 | 5171 | computer | Vite hot reload for the shell (proxies to r1d on 7171) |
-| 1420 | computer | `pnpm --dir companion dev` (window with a demo R1) |
-| 5180 | computer | `pnpm --dir web dev`: the website |
+| 1420 | computer | `bun run --cwd companion dev` (window with a demo R1) |
+| 5180 | computer | `bun run --cwd web dev`: the website |
 | random | R1 LAN | Share-by-QR server, `/s/<128-bit token>/<name>`, 10 min (`share.rs`) |
 
 ## The per-boot token (ADR-0026, ADR-0036)

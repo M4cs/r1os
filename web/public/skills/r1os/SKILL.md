@@ -71,7 +71,7 @@ The R1 has no volume keys and no recovery menu. A bad write can hard-brick it. T
 |---|---|
 | r1d tests and lint | `cargo test -p r1d` · `cargo clippy -p r1d --all-targets -- -D warnings` |
 | r1d for the R1 | `tools/build-r1d.sh` (always this: it sets its own `RUSTFLAGS`) |
-| Shell | `pnpm --dir shell typecheck` · `pnpm --dir shell build` · `pnpm --dir shell dev` |
+| Shell | `bun run --cwd shell typecheck` · `bun run --cwd shell build` · `bun run --cwd shell dev` |
 | Signing keys (once) | `tools/make-keys.sh` (refuses to overwrite keys that exist) |
 | Host app | `tools/build-host.sh` → `out/r1os-host.apk`, signed with r1os's platform key (it stops without the key) |
 | Simulator | `tools/sim.sh`, then http://127.0.0.1:7171 (↑/↓ wheel, Space button) · `R1H_TARGET=sim tools/r1h …` |
@@ -80,8 +80,8 @@ The R1 has no volume keys and no recovery menu. A bad write can hard-brick it. T
 | Docked, without hands | `POST /harness/tilt {side}` (1 on its right side, 0 upright, `null` back to the accelerometer) · `POST /harness/rest {step}` |
 | Measure | `tools/r1h power [seconds]` · `tools/r1h perf` (before and after any change to latency, frames or energy) |
 | Evals (spend a little; ask first) | `python3 tools/eval-control.py` (app window and browser, dry runs) · `python3 tools/eval-apps.py` (app builds) |
-| Companion | `pnpm --dir companion dev` (window with a demo R1) · `pnpm --dir companion tauri build --no-bundle` |
-| Website | `pnpm --dir web dev` (:5180) · `pnpm --dir web typecheck` · `pnpm --dir web build` |
+| Companion | `bun run --cwd companion dev` (window with a demo R1) · `bun run --cwd companion tauri build --no-bundle` |
+| Website | `bun run --cwd web dev` (:5180) · `bun run --cwd web typecheck` · `bun run --cwd web build` |
 
 The tools are bash, for Linux, macOS or Git Bash on Windows; the AOSP image build needs Linux (WSL works). Scripts use Python (`python3`; `py -3` on Windows), not `jq`. Under Git Bash, `tools/lib.sh` exports `MSYS_NO_PATHCONV=1`; prefix adb by hand the same way (`MSYS_NO_PATHCONV=1 adb shell cat /proc/version`).
 

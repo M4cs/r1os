@@ -64,7 +64,7 @@ Each step says what it does, what to do with your hands, and what to do if it go
   - It plans only what isn't there yet.
   - An R1 that isn't on Wi-Fi gets the rest now, and its agent box once it's online.
 
-**Status:** the flash has been checked on a computer against a real R1's partition layout, but it hasn't yet run end to end on an R1. Until it has, install with the [guide](/docs/start). To try the wizard without an R1, run `pnpm --dir companion dev` and choose **install r1os**.
+**Status:** the flash has been checked on a computer against a real R1's partition layout, but it hasn't yet run end to end on an R1. Until it has, install with the [guide](/docs/start). To try the wizard without an R1, run `bun run --cwd companion dev` and choose **install r1os**.
 
 ## Signing in
 

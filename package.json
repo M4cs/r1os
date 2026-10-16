@@ -2,9 +2,16 @@
   "name": "r1os",
   "private": true,
   "license": "MIT",
+  "packageManager": "bun@1.3.2",
+  "workspaces": [
+    "shell",
+    "companion",
+    "web",
+    "packages/*"
+  ],
   "scripts": {
-    "build": "pnpm --filter @r1os/shell build",
-    "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r --if-present test"
+    "build": "bun run --filter @r1os/shell build",
+    "typecheck": "bun run --filter '*' typecheck",
+    "test": "bun run --filter '*' test"
   }
 }

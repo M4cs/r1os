@@ -7,7 +7,7 @@ licence, and the licence texts the packages carry, one file each in out/notices/
   npm packages): from `cargo tree`'s normal dependencies for that target, so build tools and proc-macros, which aren't
   linked in, are left out.
 - **The shell** (served by r1d to the host's WebViews) and **the website**: their npm production dependencies, with
-  their workspace packages' (`pnpm --filter <name>... licenses list --prod`).
+  their workspace packages', found in node_modules as Node would load them (after `bun install`).
 
 Each text is written once, with every package that carries it. Read only: Cargo.lock, the cargo registry's sources and
 node_modules. It prints what to look at before a release: copyleft licences, and packages with no licence text in them.
@@ -81,18 +81,51 @@ def rust(package, target, dirs):
     return [(n, v, l, d) for (n, v), (l, d) in sorted(seen.items())]
 
 
+def resolve(start, dep):
+    """Where Node finds [dep] from the package at [start]: the nearest node_modules/<dep> up from it."""
+    here = start
+    while True:
+        found = os.path.join(here, "node_modules", *dep.split("/"))
+        if os.path.isfile(os.path.join(found, "package.json")):
+            return found
+        up = os.path.dirname(here)
+        if up == here:
+            return None
+        here = up
+
+
+def licence_of(pkg):
+    """A package.json's licence: `license`, or the old `licenses` list."""
+    lic = pkg.get("license")
+    if isinstance(lic, dict):
+        lic = lic.get("type")
+    if not lic and isinstance(pkg.get("licenses"), list):
+        lic = " OR ".join(str(x.get("type", x) if isinstance(x, dict) else x) for x in pkg["licenses"])
+    return lic or "unknown"
+
+
 def npm(folder):
     """[(name, version, licence, folder)] for an npm package's production dependencies (with its workspace packages'),
-    without r1os's own. `--dir` would list the whole workspace's."""
-    with open(os.path.join(ROOT, folder, "package.json"), encoding="utf-8") as f:
-        name = json.load(f)["name"]
-    found = json.loads(run(["pnpm", "--filter", f"{name}...", "licenses", "list", "--prod", "--json"]) or "{}")
-    out = {}
-    for licence, pkgs in found.items():
-        for p in pkgs:
-            for version, path in zip(p["versions"], p["paths"]):
-                if "node_modules" in path:
-                    out[(p["name"], version)] = (licence, path)
+    without r1os's own: its `dependencies` and installed `optionalDependencies`, then theirs, each found from the
+    package that asks for it, as Node would (any package manager's layout)."""
+    out, seen, todo = {}, set(), [os.path.join(ROOT, folder)]
+    while todo:
+        real = os.path.realpath(todo.pop())
+        if real in seen:
+            continue
+        seen.add(real)
+        with open(os.path.join(real, "package.json"), encoding="utf-8") as f:
+            pkg = json.load(f)
+        # r1os's own (a workspace package) is anything under the repo that isn't in a node_modules.
+        if "node_modules" in os.path.relpath(real, ROOT).split(os.sep):
+            out[(pkg["name"], pkg.get("version", "?"))] = (licence_of(pkg), real)
+        optional = pkg.get("optionalDependencies", {})
+        for dep in {**pkg.get("dependencies", {}), **optional}:
+            found = resolve(real, dep)
+            if found:
+                todo.append(found)
+            elif dep not in optional:
+                print(f"{pkg['name']}: {dep} isn't installed (run bun install)", file=sys.stderr)
     return [(n, v, l, d) for (n, v), (l, d) in sorted(out.items())]
 
 

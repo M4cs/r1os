@@ -31,7 +31,7 @@ How work is planned and recorded in r1os's docs vault, how commits are written, 
 - Build for the R1: `tools/build-r1d.sh` (needs `tools/fetch-speech.sh` once) → `target/aarch64-linux-android/release/r1d`.
 
 **Shell (simulator UI, app.html)**
-- `pnpm --dir shell typecheck`, `pnpm --dir shell build`; hot reload `pnpm --dir shell dev` (:5171, proxies to :7171).
+- `bun run --cwd shell typecheck`, `bun run --cwd shell build`; hot reload `bun run --cwd shell dev` (:5171, proxies to :7171).
 - Simulator: `tools/sim.sh`, open `http://127.0.0.1:7171` (↑/↓ wheel, Space button), drive it with `R1H_TARGET=sim tools/r1h …`. No agent box: builds and agent turns fail there. The simulator lags the R1's native shell (no light mode, approvals, pinned apps…).
 
 **Host app (Kotlin)**
@@ -41,10 +41,10 @@ How work is planned and recorded in r1os's docs vault, how commits are written, 
 - `tools/build-image.sh` in Linux (WSL works), as root: stages `init sync patch layer build export`, and `layer policy` for the SELinux policy alone (~7 min). `export` refuses an image whose `framework-res.apk` or host isn't signed with r1os's platform key. Before an image build: `tools/build-host.sh`, `tools/fetch-aurora.sh`, `tools/build-bootlog.sh`, and `tools/r1h bootanim default` if an R1 runs r1os (the animated boot animation into `out/bootanim`; without it the image gets a still, `device/aosp/bootanimation-still.png`, so a first build needs no R1). Flashing is a device write: ask.
 
 **Companion**
-- `pnpm --dir companion tauri build --no-bundle` → `target/release/r1os-companion.exe`; window only, demo R1: `pnpm --dir companion dev` (:1420); link test: `cargo run -p r1-link --bin r1-link-pc -- pair`.
+- `bun run --cwd companion tauri build --no-bundle` → `target/release/r1os-companion.exe`; window only, demo R1: `bun run --cwd companion dev` (:1420); link test: `cargo run -p r1-link --bin r1-link-pc -- pair`.
 
 **Website and this skill**
-- `pnpm --dir web typecheck`, `pnpm --dir web build` → `web/dist`; `pnpm --dir web dev` (:5180). The docs pages are `web/src/docs/content/*.md`; this skill is `web/public/skills/r1os/`.
+- `bun run --cwd web typecheck`, `bun run --cwd web build` → `web/dist`; `bun run --cwd web dev` (:5180); hosted on Railway (`railway.json`: the site built with Bun, served by `bun web/serve.ts`). The docs pages are `web/src/docs/content/*.md`; this skill is `web/public/skills/r1os/`.
 
 **Prompts / app builds**
 - `cargo test -p r1d` (example sync); `tools/r1h install fixtures/apps/water.enee.yaml` to check a spec; `tools/r1h create "<brief>"` (spends a little); evals `python3 tools/eval-apps.py [--model …] [--only 1,3] [--edits]` (asks first; reports to `artifacts/evals/`).

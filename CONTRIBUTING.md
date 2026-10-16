@@ -30,9 +30,9 @@ The full table is in CLAUDE.md. The usual ones:
 |---|---|
 | r1d tests and lint | `cargo test -p r1d` · `cargo clippy -p r1d --all-targets -- -D warnings` |
 | Everything in Rust | `cargo test --workspace` · `cargo clippy --workspace --all-targets -- -D warnings` |
-| The shell, companion and site | `pnpm install`, then `pnpm -r typecheck` |
+| The shell, companion and site | `bun install`, then `bun run typecheck` |
 | The desktop simulator (no R1 needed) | `tools/sim.sh`, then open http://127.0.0.1:7171 |
-| The companion with a pretend R1 | `pnpm --dir companion dev` |
+| The companion with a pretend R1 | `bun run --cwd companion dev` |
 
 CI runs the Rust tests and lint, the typechecks and a secret scan on every pull request.
 To scan for secrets before each commit too, turn on the hook: `git config core.hooksPath tools/hooks` (it needs

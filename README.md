@@ -17,7 +17,7 @@ vendor stay as the hardware layer; r1os's own Android system image sits on top.
 tools/sim.sh      # then open http://127.0.0.1:7171: ↑/↓ is the wheel, Space is the side button
 ```
 
-The desktop companion, with a pretend R1: `pnpm install`, then `pnpm --dir companion dev`.
+The desktop companion, with a pretend R1: `bun install`, then `bun run --cwd companion dev`.
 
 ## Read more
 

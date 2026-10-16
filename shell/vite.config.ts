@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { phosphorIcons } from "@r1os/icons/vite-plugin";
 
-// `pnpm dev` serves the shell with hot reload and proxies r1d's endpoints to a simulator
+// `bun run dev` serves the shell with hot reload and proxies r1d's endpoints to a simulator
 // (tools/sim.sh) or to the R1 through `adb forward tcp:7171 tcp:7171`.
 const r1d = "http://127.0.0.1:7171";
 

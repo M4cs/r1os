@@ -8,7 +8,7 @@
 
 ## Checklist
 
-- [ ] `cargo test` and `cargo clippy -- -D warnings` pass for what I touched; `pnpm -r typecheck` too.
+- [ ] `cargo test` and `cargo clippy -- -D warnings` pass for what I touched; `bun run typecheck` too.
 - [ ] Docs updated if behaviour changed: `web/src/docs/content`, and the agent skill if a rule changed.
 - [ ] Nothing here writes a partition outside CLAUDE.md's list, and nothing that writes to an R1 bypasses `crates/r1-usb/src/safety.rs`.
 - [ ] No serial numbers, IMEIs, keys, `firmware/`, `backups/` or `out/` in the diff.

@@ -28,7 +28,7 @@ The [companion](/docs/companion#installing-r1os-over-usb) is getting a wizard th
 
 - **A Rabbit R1** whose bootloader you can unlock.
 - **Linux for the image** (WSL works), with plenty of RAM, swap and disk: the Android source sync alone is ~60–90 GB.
-- **The tools:** Android's platform tools and NDK, Rust with the `aarch64-linux-android` target, Node with pnpm, JDK 17+, `uv` and `openssl`. Set `ANDROID_HOME` to your Android SDK, and `ANDROID_NDK_HOME` if the NDK isn't inside it. The scripts in `tools/` are bash; on Windows, use Git Bash or WSL. Python scripts use `python3`; on Windows, `py -3`.
+- **The tools:** Android's platform tools and NDK, Rust with the `aarch64-linux-android` target, Bun 1.3+, JDK 17+, `uv` and `openssl`. Set `ANDROID_HOME` to your Android SDK, and `ANDROID_NDK_HOME` if the NDK isn't inside it. The scripts in `tools/` are bash; on Windows, use Git Bash or WSL. Python scripts use `python3`; on Windows, `py -3`.
 - **A Claude or ChatGPT subscription** for your agents.
 
 ## Unlock and back up
