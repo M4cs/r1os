@@ -112,7 +112,7 @@ The first message is `{"type": "hello", "state": …}`; then one JSON event per 
 |---|---|
 | Input | `wheel {delta}`, `wheel_suppressed`, `button {down}`, `gesture {kind, held_ms?, woke?}`, `motor {deg, moving}`, `volume {on}`, `tilt {side}` and `rest {step, brightness}` (from the harness, for docked mode) |
 | Voice | `voice {state, text?, intent?}`, `voice_level`, `intent`, `talk_cancel` |
-| Agents | `agent_state {agent, state, chat, by?}`, `chat {agent, chat, kind, text?…}` (user, delta, tool, build, done, error, note, mail, mail_out, card, stopped, routine), `unread`, `mail`, `agents_changed`, `account` |
+| Agents | `agent_state {agent, state, chat, by?}`, `chat {agent, chat, kind, text?…}` (user, delta, tool, build, done, error, note, mail, mail_out, card, stopped, routine, quiet), `unread`, `mail`, `agents_changed`, `account` |
 | Apps | `build {stage…}`, `app_installed`, `app_removed`, `app_changed {app, tables}`, `app_services`, `app_permissions`, `app_errors`, `app_player`, `open`, `open_link`, `copy`, `notify` |
 | The R1 | `look`, `home`, `glance`, `device_set`, `lock`, `approval_asked`, `approval_done`, `open_screen`, `connections_changed`, `link`, `changed_from`, `bootanim` |
 | For the host | `browser {id, op, agent, chat, args}` and `app_window {id, op, agent, chat, args}` (do `op`, answer at the result route), `android_media`, `android_notice` |

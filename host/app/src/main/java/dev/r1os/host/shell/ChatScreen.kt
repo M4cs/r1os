@@ -379,7 +379,22 @@ class ChatScreen(
             this.text = "$title · $day$time"
             gravity = Gravity.CENTER
             setPadding(context.dpi(12f), context.dpi(14f), context.dpi(12f), context.dpi(4f))
+            tag = ROUTINE
         }, stretch = true)
+    }
+
+    /** A routine's run that had nothing to tell: r1d kept nothing of it, so its divider and its tools' badge go. */
+    private fun dropQuietRun() {
+        val divider = (list.childCount - 1 downTo 0).map { list.getChildAt(it) }.firstOrNull { it.tag == ROUTINE }
+        listOfNotNull(toolBadge?.takeIf { it.parent != null }, divider).forEach {
+            list.removeView(it)
+            count--
+        }
+        // That was all the chat had: its empty line again.
+        if (count <= 0 && empty.parent == null) {
+            count = 0
+            list.addView(empty, 0, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+        }
     }
 
     /** r1d tidied a long chat into a fresh session here: a quiet line, no rules around it. */
@@ -838,7 +853,14 @@ class ChatScreen(
                     "done" -> {
                         clearStream()
                         endTools()
-                        addBubble("assistant", text.orEmpty())
+                        // No words: a routine's run that showed a card but had nothing to say.
+                        if (!text.isNullOrBlank()) addBubble("assistant", text)
+                        setBusy(false)
+                    }
+                    "quiet" -> {
+                        clearStream()
+                        dropQuietRun()
+                        endTools()
                         setBusy(false)
                     }
                     "error" -> {
@@ -1101,6 +1123,8 @@ class ChatScreen(
         const val PHOTO_DP = 120f
         /** Messages a chat opens with, and adds each time you turn up past the top (T-106). */
         const val RECENT = 40
+        /** The tag on a routine's divider. */
+        const val ROUTINE = "routine"
         /** Replies are for a tiny screen: markdown links become their text, emphasis goes. */
         fun plain(text: String): String = text
             .replace(Regex("""\[([^\]]+)]\((?:https?:)?[^)]*\)"""), "$1")

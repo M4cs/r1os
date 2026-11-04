@@ -930,6 +930,24 @@ impl Core {
         Ok(meta.flatten().and_then(|m| serde_json::from_str::<Value>(&m).ok()).and_then(|v| v["routine"].as_str().map(str::to_owned)))
     }
 
+    /// A routine's run that had nothing to tell (crate::chat::says_nothing): its prompt goes, if it's still the chat's
+    /// latest message (the run kept nothing else, such as a card), and the chat's `updated` goes back to its latest
+    /// message's. Whether it went.
+    pub fn drop_routine_prompt(&self, chat: &str) -> anyhow::Result<bool> {
+        let db = self.db.lock().unwrap();
+        let last: Option<(i64, String, Option<String>)> = db
+            .query_row("SELECT id, role, meta FROM messages WHERE chat = ?1 ORDER BY id DESC LIMIT 1", [chat], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
+            .optional()?;
+        let Some((id, role, meta)) = last else { return Ok(false) };
+        let routine = meta.and_then(|m| serde_json::from_str::<Value>(&m).ok()).is_some_and(|v| v["routine"].is_string());
+        if role != "user" || !routine {
+            return Ok(false);
+        }
+        db.execute("DELETE FROM messages WHERE id = ?1", [id])?;
+        db.execute("UPDATE chats SET updated = COALESCE((SELECT max(at) FROM messages WHERE chat = ?1), updated) WHERE id = ?1", [chat])?;
+        Ok(true)
+    }
+
     pub fn messages(&self, chat: &str) -> anyhow::Result<Vec<Message>> {
         let db = self.db.lock().unwrap();
         let mut st = db.prepare("SELECT id, role, text, at, meta FROM messages WHERE chat = ?1 ORDER BY id")?;
@@ -1167,6 +1185,14 @@ mod tests {
         assert_eq!(core.last_turn_routine("c2").unwrap().as_deref(), Some("Morning"));
         assert_eq!(core.last_turn_routine("c1").unwrap(), None);
         assert_eq!(core.last_turn_routine("nope").unwrap(), None);
+        // A run with nothing to tell leaves nothing: its prompt goes while it's the chat's latest message.
+        let before = core.chat("c2").unwrap().unwrap().updated;
+        core.add_message_at("c2", "user", "the weather and my day", &serde_json::json!({ "routine": "Morning" }), before + 60_000).unwrap();
+        assert!(core.drop_routine_prompt("c2").unwrap());
+        assert_eq!((core.messages("c2").unwrap().len(), core.chat("c2").unwrap().unwrap().updated), (2, before));
+        core.add_message("c2", "card", "Sunny, 18°", &Value::Null).unwrap();
+        assert!(!core.drop_routine_prompt("c2").unwrap(), "not once the run kept something else");
+        assert!(!core.drop_routine_prompt("c1").unwrap(), "nor anything but a routine's prompt");
         core.mark_seen("c2").unwrap();
         assert_eq!(core.chats(None, "all").unwrap().len(), 2);
         // A reply is unread until the chat is seen (the user's own words and notes never are).

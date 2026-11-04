@@ -144,7 +144,12 @@ export function ChatView({
           case "done":
             setStream("");
             setBusy(false);
-            setItems((xs) => [...xs, { kind: "msg", m: { role: "assistant", text: ev.text ?? "", key } }]);
+            if (ev.text) setItems((xs) => [...xs, { kind: "msg", m: { role: "assistant", text: ev.text ?? "", key } }]);
+            break;
+          // A routine's run with nothing to tell: r1d kept nothing of it.
+          case "quiet":
+            setStream("");
+            setBusy(false);
             break;
           case "error":
             setStream("");

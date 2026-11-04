@@ -380,7 +380,7 @@ fn tools() -> Value {
         ),
         tool(
             "set_routine",
-            "Make a routine: you get `prompt` at a time of day (the R1's local time), once or on chosen weekdays, in the chat the user has with you now (their most recent with you), and your reply waits for them there (show: true also wakes the R1 and says so). For \"every weekday at 7:30, tell me the weather and what's on my day\". To change one, pass its id (list_routines); with id and only `on`, it turns it on or off.",
+            "Make a routine: you get `prompt` at a time of day (the R1's local time), once or on chosen weekdays, in the chat the user has with you now (their most recent with you), and your reply waits for them there (show: true also wakes the R1 and says so). For \"every weekday at 7:30, tell me the weather and what's on my day\". A run with nothing worth telling can say nothing, so it can be \"only if …\" (\"tell me if it'll rain\"). To change one, pass its id (list_routines); with id and only `on`, it turns it on or off.",
             json!({
                 "time": { "type": "string", "description": "e.g. 7:30, 19:05" },
                 "days": { "type": "array", "items": { "type": "string" }, "description": "Weekdays it runs on (mon…sun, or weekdays, weekends, daily). Leave out to run once." },

@@ -106,7 +106,7 @@ function AgentRow({ a, on, onClick }: { a: Agent; on: boolean; onClick: () => vo
 function ChatList({ r1, agent, open, onOpen }: { r1: R1Info; agent: Agent; open: string | null; onOpen: (c: string | null) => void }) {
   const { data, reload } = useGet<{ chats: Chat[] }>(r1.id, `/api/chats?agent=${agent.id}`, ["unread", "agents_changed"]);
   // A turn that ended moves its chat to the top, with its newest words.
-  useR1Events(r1.id, (e) => e.type === "chat" && e.agent === agent.id && (e.kind === "done" || e.kind === "user" || e.kind === "routine") && reload());
+  useR1Events(r1.id, (e) => e.type === "chat" && e.agent === agent.id && (e.kind === "done" || e.kind === "user" || e.kind === "routine" || e.kind === "quiet") && reload());
   const chats = data?.chats ?? [];
   return (
     <>
@@ -280,6 +280,16 @@ function ChatWindow({ r1, agent, agents, chatId, onChat }: { r1: R1Info; agent: 
         setTool(null);
         setBusy(false);
         if (text) setItems((xs) => [...xs, { k: "agent", key, text, at: Date.now() }]);
+        break;
+      // A routine's run with nothing to tell: r1d kept nothing of it, so its divider and its tools go.
+      case "quiet":
+        setStream("");
+        setTool(null);
+        setBusy(false);
+        setItems((xs) => {
+          const at = xs.map((x) => x.k).lastIndexOf("routine");
+          return at < 0 ? xs : [...xs.slice(0, at), ...xs.slice(at + 1).filter((x) => x.k !== "tool")];
+        });
         break;
       case "error":
         setStream("");
