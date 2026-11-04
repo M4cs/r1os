@@ -219,8 +219,9 @@ pub fn system_prompt(agent: &Agent, others: &[Agent], memories: &[Memory], brain
          description). Use one when the task matches it. To add one the user asks for (\"add the pdf skill from \
          anthropics/skills\", a GitHub link), add_skill: it asks the user on the R1 first. Never install skills or \
          packages any other way.\n\
-         - Routines: set_routine runs you on a schedule (\"every weekday at 7:30, the weather and my day\"), in a chat of \
-         its own; list_routines, cancel_routine. whats_up is what's new on the R1 (unread, reminders, timers, today's \
+         - Routines: set_routine runs you on a schedule (\"every weekday at 7:30, the weather and my day\"), in the \
+         user's latest chat with you. A run with nothing worth telling can say nothing, so a routine can be \"only if \
+         …\" (\"tell me if it'll rain\"). list_routines, cancel_routine. whats_up is what's new on the R1 (unread, reminders, timers, today's \
          journal and recordings, notifications), for \"catch me up\" and briefings.\n\
          - Music in the user's music apps (Spotify, YouTube Music…): play_music plays something; for Spotify, find the \
          artist's, album's, playlist's or song's open.spotify.com link with a web search first and pass it as `link`, so it \
@@ -332,9 +333,25 @@ pub enum OnScreen {
     Routine(String),
 }
 
+/// What a routine's run replies when it has nothing worth telling (crate::routines): r1d keeps nothing of it.
+pub const NOTHING: &str = "[nothing]";
+
+/// How a routine's run starts, to its agent: a run that waited for its computer is known by it ([again]).
+const ROUTINE_RUNS: &str = "[A routine the user set up runs now:";
+
+/// A routine's reply that tells nothing: [NOTHING], however it's dressed ("**Nothing.**"), or no words at all
+/// (2026-10-17, Max: with nothing to say, Newsey's runs sent "—" and Archer's said there was nothing to do).
+pub fn says_nothing(reply: &str) -> bool {
+    let words: String =
+        reply.chars().filter(|c| !(c.is_whitespace() || c.is_ascii_punctuation() || ('\u{2000}'..='\u{206f}').contains(c))).collect();
+    words.is_empty() || words.eq_ignore_ascii_case("nothing")
+}
+
 /// Runs one user turn in `chat` to completion. Errors are reported as events too. `on_screen` is
 /// the app the user was looking at, which the agent is told about (the transcript keeps the words).
-pub async fn turn(hub: Arc<Hub>, chat_id: String, text: String, on_screen: Option<OnScreen>, images: Vec<String>) -> anyhow::Result<()> {
+/// Returns the reply, or None when there's none to show: the message waits for the agent's computer, or a routine's
+/// run had nothing to tell.
+pub async fn turn(hub: Arc<Hub>, chat_id: String, text: String, on_screen: Option<OnScreen>, images: Vec<String>) -> anyhow::Result<Option<String>> {
     // One turn at a time per chat, and never during a tidy.
     let lock = hub.sessions.chat_lock(&chat_id);
     let _turn = lock.lock().await;
@@ -375,6 +392,7 @@ pub async fn turn(hub: Arc<Hub>, chat_id: String, text: String, on_screen: Optio
         None
     };
     let from_pc = matches!(on_screen, Some(OnScreen::Computer(_)));
+    let routine = matches!(on_screen, Some(OnScreen::Routine(_)));
     let said = match on_screen {
         Some(OnScreen::App(id)) => match hub.apps.get(&id) {
             Some(i) => format!(
@@ -393,10 +411,13 @@ pub async fn turn(hub: Arc<Hub>, chat_id: String, text: String, on_screen: Optio
             "[The user typed this on their computer ({name}), in r1os's companion app: they read your reply there, on a \
              big screen, so it can be longer than usual and use markdown. It's the same chat as on the R1.]\n{text}"
         ),
-        // A routine (crate::routines): set up by the user, run on its schedule while they're elsewhere.
+        // A routine (crate::routines): set up by the user, run on its schedule while they're elsewhere. With nothing
+        // to tell, it can say nothing (NOTHING), rather than a message that there's nothing.
         Some(OnScreen::Routine(title)) => format!(
-            "[A routine the user set up runs now: \"{title}\". They aren't looking at the R1: your reply waits for them in \
-             this chat, so make it worth coming back to, and short. whats_up has what's new on the R1.]\n{text}"
+            "{ROUTINE_RUNS} \"{title}\". They aren't looking at the R1: your reply waits for them in this chat, so make it \
+             worth coming back to, and short. If there's nothing worth telling them this time (and the routine doesn't \
+             ask to hear either way), reply with just {NOTHING}: then nothing waits for them, and the chat shows nothing \
+             of this run. whats_up has what's new on the R1.]\n{text}"
         ),
         None => text.clone(),
     };
@@ -412,13 +433,13 @@ pub async fn turn(hub: Arc<Hub>, chat_id: String, text: String, on_screen: Optio
         None => said,
     };
     let said = with_mail(&hub, &agent.id, said);
-    match respond(&hub, &chat, &agent, &said, &photos).await {
+    match respond(&hub, &chat, &agent, &said, &photos, routine).await {
         // Its computer isn't there: the message waits for it (crate::remote::flush).
         Err(e) if e.downcast_ref::<crate::remote::Waiting>().is_some() => {
             hub.core.add_waiting(&chat_id, &said, &photos.iter().map(|p| p.id.clone()).collect::<Vec<_>>())?;
-            Ok(())
+            Ok(None)
         }
-        other => other.map(drop),
+        other => other.map(|reply| Some(reply).filter(|r| !r.is_empty())),
     }
 }
 
@@ -433,7 +454,8 @@ pub async fn again(hub: Arc<Hub>, chat_id: String, said: String, images: Vec<Str
     let agent = hub.core.agent(&chat.agent).context("the agent is gone")?;
     let photos: Vec<crate::media::Item> =
         hub.core.with(|db| images.iter().filter_map(|id| crate::media::get(db, id).ok().flatten()).filter(|i| i.kind == "photo").collect());
-    match respond(&hub, &chat, &agent, &said, &photos).await {
+    let routine = said.contains(ROUTINE_RUNS);
+    match respond(&hub, &chat, &agent, &said, &photos, routine).await {
         Err(e) if e.downcast_ref::<crate::remote::Waiting>().is_some() => {
             hub.core.add_waiting(&chat_id, &said, &images)?;
             Ok(())
@@ -455,7 +477,7 @@ pub async fn woken(hub: Arc<Hub>, chat_id: String, said: String, wake: crate::ma
     let agent = hub.core.agent(&chat.agent).context("the agent is gone")?;
     let said = with_mail(&hub, &agent.id, said);
     hub.mail.begin(&chat_id, wake);
-    let out = respond(&hub, &chat, &agent, &said, &[]).await;
+    let out = respond(&hub, &chat, &agent, &said, &[], false).await;
     hub.mail.end(&chat_id);
     out
 }
@@ -468,8 +490,26 @@ fn with_mail(hub: &Hub, agent: &str, said: String) -> String {
     }
 }
 
-/// Runs `agent` on `said` in `chat` and keeps what comes of it: its reply, or the error. Returns the reply.
-async fn respond(hub: &Arc<Hub>, chat: &Chat, agent: &Agent, said: &str, photos: &[crate::media::Item]) -> anyhow::Result<String> {
+/// How many times a turn is tried again when Claude Code's sign-in was being refreshed ([refresh_busy]).
+const REFRESH_TRIES: u32 = 2;
+
+/// Claude Code refreshes its sign-in one process at a time, and every agent shares the one login (T-005). A process
+/// that starts while another is refreshing, or after one quit mid-refresh, fails with "another Claude Code process is
+/// refreshing it … retry in a minute": three routines due at the same minute all failed so on 2026-10-16. Not the
+/// turn's fault, so it's tried again ([REFRESH_TRIES]) rather than kept as the chat's error.
+fn refresh_busy(e: &anyhow::Error) -> bool {
+    format!("{e:#}").contains("another Claude Code process is refreshing")
+}
+
+/// A minute or so, a little different for each chat, so turns that failed together don't meet again.
+fn refresh_wait(chat_id: &str) -> std::time::Duration {
+    let spread = chat_id.bytes().fold(0u64, |h, b| h.wrapping_mul(31).wrapping_add(b as u64)) % 30;
+    std::time::Duration::from_secs(45 + spread)
+}
+
+/// Runs `agent` on `said` in `chat` and keeps what comes of it: its reply, or the error. Returns the reply. A
+/// `routine`'s run may tell nothing ([says_nothing]): then nothing is kept, and the reply is empty.
+async fn respond(hub: &Arc<Hub>, chat: &Chat, agent: &Agent, said: &str, photos: &[crate::media::Item], routine: bool) -> anyhow::Result<String> {
     let chat_id = chat.id.as_str();
     // You stopped its last answer (crate::stops): it hears so, whatever it remembers of it.
     let said = match hub.stops.take_note(chat_id) {
@@ -481,20 +521,44 @@ async fn respond(hub: &Arc<Hub>, chat: &Chat, agent: &Agent, said: &str, photos:
     hub.emit(Event::agent_state(&agent.id, "thinking", chat_id), Source::Api);
     // You can stop it while it runs (crate::stops).
     let _running = hub.stops.begin(chat_id);
-    let result = match (agent.computer(), chat.brain.as_str()) {
-        // It works on a linked computer: its companion runs the turn (crate::remote).
-        (Some(_), _) => crate::remote::turn(hub, chat, agent, said, false, photos).await,
-        (None, "codex") => codex_turn(hub, chat, agent, said, false, photos).await,
-        _ => hub.sessions.turn(hub, chat, said, photos).await,
+    let mut tries = 0;
+    let result = loop {
+        let result = match (agent.computer(), chat.brain.as_str()) {
+            // It works on a linked computer: its companion runs the turn (crate::remote).
+            (Some(_), _) => crate::remote::turn(hub, chat, agent, said, false, photos).await,
+            (None, "codex") => codex_turn(hub, chat, agent, said, false, photos).await,
+            _ => hub.sessions.turn(hub, chat, said, photos).await,
+        };
+        match result {
+            Err(e) if refresh_busy(&e) && tries < REFRESH_TRIES => {
+                tries += 1;
+                let wait = refresh_wait(chat_id);
+                tracing::info!(chat = %chat_id, tries, wait_s = wait.as_secs(), "Claude's sign-in was being refreshed: trying again");
+                tokio::time::sleep(wait).await;
+            }
+            other => break other,
+        }
     };
     match result {
         Ok(t) => {
-            hub.core.add_message(chat_id, "assistant", &t.text, &t.meta)?;
-            hub.core.set_context(chat_id, t.context)?;
-            hub.emit(Event::chat(&agent.id, chat_id, "done", Some(t.text.clone())), Source::Api);
+            // A routine's run with nothing to tell: its words aren't kept, so nothing waits for you, and nor is its
+            // prompt (its divider), unless the run kept something else (a card). `quiet` has open chats drop what they
+            // showed of it.
+            let nothing = routine && says_nothing(&t.text);
+            let mut left_nothing = false;
+            if nothing {
+                left_nothing = hub.core.drop_routine_prompt(chat_id)?;
+                tracing::info!(chat = %chat_id, left_nothing, "a routine's run had nothing to tell");
+                hub.core.set_context(chat_id, t.context)?;
+                hub.emit(Event::chat(&agent.id, chat_id, if left_nothing { "quiet" } else { "done" }, None), Source::Api);
+            } else {
+                hub.core.add_message(chat_id, "assistant", &t.text, &t.meta)?;
+                hub.core.set_context(chat_id, t.context)?;
+                hub.emit(Event::chat(&agent.id, chat_id, "done", Some(t.text.clone())), Source::Api);
+            }
             hub.emit(Event::agent_state(&agent.id, "idle", chat_id), Source::Api);
             // An answer in a thread is for the other agent, not a reply to the user (core's UNREAD).
-            if chat.kind != "thread" {
+            if chat.kind != "thread" && !left_nothing {
                 hub.unread_changed(&agent.id, chat_id);
             }
             if t.compacted {
@@ -509,7 +573,7 @@ async fn respond(hub: &Arc<Hub>, chat: &Chat, agent: &Agent, said: &str, photos:
                     }
                 });
             }
-            Ok(t.text)
+            Ok(if nothing { String::new() } else { t.text })
         }
         // Its computer isn't there: a note, not an error (the message waits for it).
         Err(e) if e.downcast_ref::<crate::remote::Waiting>().is_some() => {
@@ -921,5 +985,33 @@ mod tests {
         assert_eq!(tidy_at(200_000), 100_000);
         assert_eq!(tidy_at(1_000_000), 100_000);
         assert_eq!(tidy_at(64_000), 32_000);
+    }
+
+    #[test]
+    fn a_busy_sign_in_refresh_is_tried_again_apart() {
+        // Claude Code 2.1.295's words, as r1d logged them for three routines at once (2026-10-16).
+        let busy = anyhow::anyhow!(
+            "Failed to refresh OAuth token: another Claude Code process is refreshing it or exited mid-refresh. This is \
+             usually transient; retry in a minute, and if it persists close other Claude Code processes or sign in again"
+        );
+        assert!(refresh_busy(&busy));
+        assert!(refresh_busy(&busy.context("claude exited")));
+        assert!(!refresh_busy(&anyhow::anyhow!("Failed to authenticate: OAuth token revoked")));
+        // About a minute, and not the same for every chat.
+        let waits: std::collections::HashSet<_> = ["c8cd1ce7", "e08d9058", "eb27df67"].iter().map(|c| refresh_wait(c)).collect();
+        assert!(waits.iter().all(|w| (45..75).contains(&w.as_secs())));
+        assert!(waits.len() > 1);
+    }
+
+    #[test]
+    fn a_routine_can_say_nothing() {
+        // As it's asked to, however it's dressed, or with no words at all (Newsey's "—", 2026-10-17).
+        for quiet in [NOTHING, "  [Nothing] ", "**NOTHING.**", "`[nothing]`", "—", "…", "", " - "] {
+            assert!(says_nothing(quiet), "{quiet:?}");
+        }
+        // Anything with words in it is a reply, even a short one.
+        for reply in ["Nothing new in your inbox.", "Rain at 3.", "☔", "No.", "[nothing] but rain at 3"] {
+            assert!(!says_nothing(reply), "{reply:?}");
+        }
     }
 }

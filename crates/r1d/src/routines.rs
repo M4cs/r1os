@@ -8,6 +8,9 @@
 //!   next one, and the host holds the CPU awake while the turn runs (`awake` events), at most five minutes.
 //! - **What you see:** the reply waits in its chat, as unread (the glance screen's greeting counts it). With `show` on,
 //!   the R1 wakes and a note at the top says it's there.
+//! - **Nothing to tell:** a run can say nothing (2026-10-17, Max: Newsey sent "—" and Archer that there was nothing to
+//!   do). Its agent replies just [nothing] (crate::chat::NOTHING), or with no words at all, and r1d keeps nothing of
+//!   it: no reply, no divider, nothing unread, no note. So a routine can be "only if …" ("tell me if it'll rain").
 //! - **Late:** one more than half an hour late (the R1 was off) doesn't run; it moves on to its next day.
 //! - An agent that works on a computer runs it there (crate::remote), and it waits for that computer like any message.
 
@@ -223,11 +226,14 @@ async fn run_turn(hub: &Arc<Hub>, r: &Routine) -> anyhow::Result<()> {
     }
     // Not the prompt as if you'd said it (T-092): its title, which an open chat shows as a divider between runs.
     hub.emit(Event::chat(&agent.id, &chat.id, "routine", Some(r.title.clone())), Source::Api);
-    let done = crate::chat::turn(hub.clone(), chat.id.clone(), r.prompt.clone(), Some(crate::chat::OnScreen::Routine(r.title.clone())), Vec::new()).await;
+    let reply = crate::chat::turn(hub.clone(), chat.id.clone(), r.prompt.clone(), Some(crate::chat::OnScreen::Routine(r.title.clone())), Vec::new()).await;
     hub.chat_busy.lock().unwrap().remove(&chat.id);
-    done?;
+    // Nothing to show: it had nothing to tell, so nothing of it was kept, or it waits for its computer.
+    let Some(text) = reply? else {
+        tracing::info!(routine = %r.id, "routine: nothing to show");
+        return Ok(());
+    };
     if r.show {
-        let text = hub.core.messages(&chat.id)?.into_iter().rev().find(|m| m.role == "assistant").map(|m| m.text).unwrap_or_default();
         crate::scheduler::wake_display().await;
         hub.emit(Event::Routine { id: r.id.clone(), agent: agent.id.clone(), chat: chat.id.clone(), title: r.title.clone(), text: text.chars().take(200).collect() }, Source::Api);
     }

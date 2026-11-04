@@ -110,7 +110,7 @@ export type R1Event = { seq: number; t_ms: number; source: "hw" | "sim" | "api" 
   | { type: "build"; id: number; stage: "writing" | "checking" | "repairing" | "installing" | "done" | "failed"; section?: string; chars?: number; app?: string; name?: string; error?: string; stopped?: boolean; problems?: string[]; cost_usd?: number; seconds?: number; kind?: "edit"; said?: string; deleted?: string[] }
   | { type: "account"; brain: "claude" | "codex"; state: "waiting" | "code_entered" | "signed_in" | "signed_out" | "failed" | "expired"; detail?: string }
   /** `mail` / `mail_out`: another agent's message landed in the chat, or the agent sent one from it (ADR-0012). */
-  | { type: "chat"; agent?: string; chat: string; kind: "user" | "delta" | "tool" | "build" | "done" | "error" | "note" | "mail" | "mail_out" | "card" | "stopped" | "routine"; text?: string; build?: number; app?: string; mail?: MailCard }
+  | { type: "chat"; agent?: string; chat: string; kind: "user" | "delta" | "tool" | "build" | "done" | "error" | "note" | "mail" | "mail_out" | "card" | "stopped" | "routine" | "quiet"; text?: string; build?: number; app?: string; mail?: MailCard }
   /** `by`: the agent whose message started this turn (not the user): the focus stays put. */
   | { type: "agent_state"; agent?: string; state: AgentLive; chat?: string; by?: string }
   | { type: "agents_changed" }
