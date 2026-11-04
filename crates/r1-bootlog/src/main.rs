@@ -382,8 +382,8 @@ fn main() {
         // Every record waiting (one a read); EAGAIN when there are none.
         loop {
             match kmsg.read(&mut buf) {
-                Ok(n) if n > 0 => {
-                    let rec = String::from_utf8_lossy(&buf[..n]);
+                Ok(len) if len > 0 => {
+                    let rec = String::from_utf8_lossy(&buf[..len]);
                     let Some(line) = parse(&rec) else { continue };
                     let c = if line.level <= 3 { bad } else if line.text.starts_with("init:") { init_c } else { fg };
                     let full = format!("{:>5.1} {}", line.secs, line.text);
