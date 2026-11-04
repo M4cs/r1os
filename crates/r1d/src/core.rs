@@ -185,6 +185,9 @@ pub struct Chat {
     pub last: Option<String>,
     /// The context the CLI session holds, in tokens, after its last turn (0 = not known).
     pub context: i64,
+    /// The least this session has held (0 = not known): about what a new one would start with (crate::chat::needs_tidy).
+    #[serde(skip)]
+    pub fresh: i64,
     /// Replies (assistant, build and error messages) the user hasn't seen yet.
     pub unread: i64,
     /// What came before the current session, written by the agent when r1d tidied the context
@@ -248,7 +251,7 @@ const CHAT_COLUMNS: &str = "c.id, c.agent, c.title, c.brain, c.session, c.create
        AND NOT (m.role = 'user' AND json_extract(m.meta, '$.routine') IS NOT NULL) ORDER BY m.id DESC LIMIT 1),
     (SELECT count(*) FROM messages m WHERE m.chat = c.id AND (CASE WHEN c.kind = 'thread' THEN m.role = 'mail'
        ELSE m.role IN ('assistant', 'build', 'error', 'mail') END) AND m.at > c.seen),
-    c.kind, c.peer, c.mode";
+    c.kind, c.peer, c.mode, c.fresh";
 
 fn chat_row(r: &rusqlite::Row) -> rusqlite::Result<Chat> {
     Ok(Chat {
@@ -266,6 +269,7 @@ fn chat_row(r: &rusqlite::Row) -> rusqlite::Result<Chat> {
         kind: r.get(11)?,
         peer: r.get(12)?,
         mode: r.get(13)?,
+        fresh: r.get(14)?,
     })
 }
 
@@ -305,6 +309,8 @@ fn migrate(db: &Connection) -> anyhow::Result<()> {
     // ADR-0012: an agent's threads with other agents.
     add_column(db, "chats", "kind", "TEXT NOT NULL DEFAULT 'user'")?;
     add_column(db, "chats", "peer", "TEXT")?;
+    // T-202: what a session started from, so a tidy runs only once it has grown.
+    add_column(db, "chats", "fresh", "INTEGER NOT NULL DEFAULT 0")?;
     add_column(db, "chats", "mode", "TEXT")?;
     // Messages for an agent whose computer wasn't there (crate::remote): sent when it's back.
     db.execute_batch(
@@ -787,6 +793,7 @@ impl Core {
             updated: t,
             last: None,
             context: 0,
+            fresh: 0,
             unread: 0,
             summary: None,
             kind: "user".into(),
@@ -855,14 +862,17 @@ impl Core {
 
     /// Records how much context the chat's CLI session holds after a turn.
     pub fn set_context(&self, chat: &str, tokens: i64) -> anyhow::Result<()> {
-        self.db.lock().unwrap().execute("UPDATE chats SET context = ?2 WHERE id = ?1", params![chat, tokens])?;
+        self.db.lock().unwrap().execute(
+            "UPDATE chats SET context = ?2, fresh = CASE WHEN ?2 > 0 AND (fresh = 0 OR ?2 < fresh) THEN ?2 ELSE fresh END WHERE id = ?1",
+            params![chat, tokens],
+        )?;
         Ok(())
     }
 
     /// The conversation continues in a fresh CLI session that starts from `summary`.
     pub fn set_summary(&self, chat: &str, summary: &str) -> anyhow::Result<()> {
         self.db.lock().unwrap().execute(
-            "UPDATE chats SET summary = ?2, session = NULL, context = 0 WHERE id = ?1",
+            "UPDATE chats SET summary = ?2, session = NULL, context = 0, fresh = 0 WHERE id = ?1",
             params![chat, summary],
         )?;
         Ok(())
@@ -1216,6 +1226,14 @@ mod tests {
         core.set_summary("c1", "We talked about water.").unwrap();
         let tidied = core.chat("c1").unwrap().unwrap();
         assert_eq!((tidied.session, tidied.context, tidied.summary.as_deref()), (None, 0, Some("We talked about water.")));
+        // The least a session has held: its first turn, or less if the CLI compacted it; not known doesn't count.
+        assert_eq!(tidied.fresh, 0);
+        for (tokens, fresh) in [(0, 0), (105_000, 105_000), (120_000, 105_000), (0, 105_000), (90_000, 90_000)] {
+            core.set_context("c1", tokens).unwrap();
+            assert_eq!(core.chat("c1").unwrap().unwrap().fresh, fresh, "after {tokens}");
+        }
+        core.set_summary("c1", "We talked about water.").unwrap();
+        assert_eq!(core.chat("c1").unwrap().unwrap().fresh, 0, "a tidy starts over");
 
         core.delete_chat("c1").unwrap();
         assert!(core.messages("c1").unwrap().is_empty());

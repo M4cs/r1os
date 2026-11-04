@@ -21,7 +21,7 @@ Each agent's brain is Claude (the default), Codex or your own Hermes gateway, an
 
 Up to 3 CLI processes run at once; the least recently used idle one makes room. One turn runs per chat, and different chats run in parallel.
 
-A cold Claude takes over 5 s to start, so r1d warms one as you start holding the button. Warm, the first word comes about 1.6 s after your message. Past half the context window, a chat carries on in a fresh session from a short note; the transcript keeps everything.
+A cold Claude takes over 5 s to start, so r1d warms one as you start holding the button. Warm, the first word comes about 1.6 s after your message. Past half the context window, once it has grown well beyond where its session started, a chat carries on in a fresh session from a short note; the transcript keeps everything.
 
 ## Memory
 

@@ -9,8 +9,9 @@
 //! - **What you see:** the reply waits in its chat, as unread (the glance screen's greeting counts it). With `show` on,
 //!   the R1 wakes and a note at the top says it's there.
 //! - **Nothing to tell:** a run can say nothing (2026-10-17, Max: Newsey sent "—" and Archer that there was nothing to
-//!   do). Its agent replies just [nothing] (crate::chat::NOTHING), or with no words at all, and r1d keeps nothing of
-//!   it: no reply, no divider, nothing unread, no note. So a routine can be "only if …" ("tell me if it'll rain").
+//!   do). Its agent replies just [nothing] (crate::chat::NOTHING), or with no words at all, or ends its words with
+//!   [nothing] (T-206), and r1d keeps nothing of it: no reply, no divider, nothing unread, no note. So a routine can be
+//!   "only if …" ("tell me if it'll rain").
 //! - **Late:** one more than half an hour late (the R1 was off) doesn't run; it moves on to its next day.
 //! - An agent that works on a computer runs it there (crate::remote), and it waits for that computer like any message.
 

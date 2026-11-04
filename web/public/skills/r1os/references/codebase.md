@@ -53,7 +53,7 @@ r1os's signing keys are never in the repository (ADR-0062): `tools/make-keys.sh`
 | `jail.rs` | The agent box enforced by r1d: memcg 1.5 GB, private mounts, chroot, uid 2950, no caps, no_new_privs, seccomp, `r1d_agent` SELinux; one jail per agent |
 | `session.rs` | Agent CLI processes: `MAX_PROCS = 3`, warm Claude sessions (stream-json), spares, idle stop (15 min screen on / 3 min off) |
 | `agent.rs` | One-shot no-tools build sessions (`claude -p` or `codex exec`) in the jail |
-| `chat.rs` | Conversations: Claude warm sessions, Codex per turn, the system prompt (with its section on the app window), tidy at half the window (≤100k) |
+| `chat.rs` | Conversations: Claude warm sessions, Codex per turn, the system prompt (with its section on the app window), tidy at half the window (≤100k) once the chat has grown |
 | `hermes.rs` | The owner's Hermes gateway as a brain (ADR-0070): `POST /v1/runs` and its SSE events, approvals to the R1's card, stop; the key in `<data>/hermes.json`, never `core.db` |
 | `mcp.rs` | r1d's MCP server (`POST /mcp`, JSON-RPC over HTTP), ~90 tools; token per agent process → `{agent, chat}`; app window and browser tools one at a time |
 | `appwin.rs` | Agents in Android apps (ADR-0061): the `app_*` tools' requests to the host (`app_window` event, `/api/apps/window/result`), first-use, act and final-step cards, the order read from a checkout, dry runs, per-app tips |

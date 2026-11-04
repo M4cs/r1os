@@ -311,7 +311,10 @@ private class Cards(val context: Context, val box: LinearLayout, val accent: Int
                 addView((if (head) context.text(12f, 700, Theme.MUTED) else said(14f, if (i == 0) 700 else 500, lines = 2)).apply {
                     text = cells?.optString(i).orEmpty()
                     if (i > 0) gravity = Gravity.END
-                }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, if (i == 0) 1.3f else 1f))
+                }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, if (i == 0) 1.3f else 1f).apply {
+                    // Right-aligned cells would touch the one before (T-201).
+                    if (i > 0) leftMargin = context.dpi(10f)
+                })
             }
         }
         add(row(columns, true), 6f)
