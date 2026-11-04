@@ -71,5 +71,6 @@ Each step says what it does, what to do with your hands, and what to do if it go
 - **Claude:** the companion starts the CLI's login on the R1 and opens the link in your browser; you paste the code into the companion. It crosses the link once, straight to the CLI, and is forgotten.
 - **Codex:** its device-code flow; the companion opens the page and shows the code.
 - **No computer?** The R1 shows a QR code to sign in from your phone.
+- **Hermes:** not a sign-in but your own gateway. Its address and key go to the R1, which checks and keeps them ([Your own agents](/docs/extend#your-hermes-agent)). This one needs the companion or the API: it's too much to dial in with the wheel.
 
-r1os never stores your credentials or copies them between devices; your computer's CLIs keep their own sign-ins.
+r1os never stores your Claude or ChatGPT credentials or copies them between devices; your computer's CLIs keep their own sign-ins.

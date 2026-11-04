@@ -21,7 +21,7 @@ From the repository's `CLAUDE.md` and its ADRs. The R1 has no volume keys and no
 **Agents and credentials.**
 13. Drive the **unmodified** `claude` and `codex` CLIs (ADR-0003). Never the Claude Agent SDK with a subscription login (Anthropic doesn't allow it). Never pass `--bare`.
 14. r1os never stores long-lived Claude/OpenAI credentials; the CLIs own them in the box. A one-time login code forwarded to a CLI's stdin is never logged or persisted.
-15. Connections stay with the CLIs and their providers; r1os holds no tokens (ADR-0052). Every connector write asks on the R1.
+15. Connections stay with the CLIs and their providers; r1os holds no tokens (ADR-0052). Every connector write asks on the R1. The exception is the owner's own Hermes gateway key (ADR-0070): in `<data>/hermes.json`, never `core.db` (backups copy that, and promise no credentials), never logged, never sent back by the API. Hermes runs on the owner's machine, never in the box.
 
 **Agents in Android apps (ADR-0061).**
 16. A final step (placing an order, requesting a ride, paying, subscribing, sending a message) always asks on a commit card that names the app and what its screen says. No level skips it.

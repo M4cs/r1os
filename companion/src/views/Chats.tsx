@@ -390,7 +390,8 @@ function ChatWindow({ r1, agent, agents, chatId, onChat }: { r1: R1Info; agent: 
             <div className="chat-hello-name">say something to {agent.name}</div>
             <div className="muted">{agent.role || "your agent"} · it works {where.replace("on your", "on the")}</div>
             <div className="chat-pick">
-              <Seg id="new-brain" items={BRAINS} value={pick.brain} onChange={(brain) => setPick((p) => ({ ...p, brain }))} />
+              {/* A Hermes chat runs on its own gateway, so not for an agent on a computer (ADR-0070). */}
+              <Seg id="new-brain" items={agent.computer ? BRAINS : [...BRAINS, ["hermes", "hermes"]]} value={pick.brain} onChange={(brain) => setPick((p) => ({ ...p, brain }))} />
               {agent.computer && <Seg id="new-mode" items={MODES} value={pick.mode} onChange={(mode) => setPick((p) => ({ ...p, mode }))} />}
             </div>
           </motion.div>

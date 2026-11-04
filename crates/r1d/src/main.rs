@@ -43,6 +43,7 @@ mod fetch;
 mod gesture;
 mod glance;
 mod look;
+mod hermes;
 mod hub;
 mod input;
 mod perf;

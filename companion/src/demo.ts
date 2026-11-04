@@ -16,7 +16,7 @@ const agents: Agent[] = [
   { id: "1b7d33e2", name: "Kiwi", form: "bunny", color: "lime", finish: "grain", eyes: "sparkle", wear: ["flower", "blush"], role: "plants and the garden", brain: "claude", personality: "playful", state: "working", works_on: "computer:5596c5bb", folders: [String.raw`C:\Users\you\Documents\garden`], computer: { name: "DESKTOP-R1OS", connected: true } },
 ];
 let device = { brightness: 40, auto_brightness: false, screen_timeout: 60, volume: 56, sounds: true, haptics: "medium", haptics_wheel: true, time_zone: "America/New_York", time_auto: true, build_model: "sonnet", agents_paused: false };
-const accounts = { claude: true, codex: false };
+const accounts = { claude: true, codex: false, hermes: false, hermes_url: null as string | null };
 let look: Look = { mode: "dark", accent: "orange", font: "rubik", home: { background: { kind: "mesh", colors: ["#4ea1ff", "#b07cf6", "#f06aa8"], grain: 0.5 } } };
 const state: LinkState = {
   me: { id: "5596c5bb", name: "DESKTOP-R1OS" },
@@ -164,9 +164,18 @@ export const demo = {
       setTimeout(() => emit("r1", { r1: "b97e6ef64c", event: { type: "account", brain: "claude", state: "signed_in" } }), 900);
       return { status: 200, body: { ok: true } };
     }
-    const out = path.match(/^\/api\/accounts\/(claude|codex)\/logout$/);
+    if (method === "POST" && path === "/api/accounts/hermes/login") {
+      const b = body as { url?: string; key?: string };
+      if (!b.url?.trim() || !b.key?.trim()) return { status: 400, body: { error: "it needs the gateway's address" } };
+      accounts.hermes = true;
+      accounts.hermes_url = b.url.trim();
+      setTimeout(() => emit("r1", { r1: "b97e6ef64c", event: { type: "account", brain: "hermes", state: "signed_in" } }), 300);
+      return { status: 200, body: { url: accounts.hermes_url } };
+    }
+    const out = path.match(/^\/api\/accounts\/(claude|codex|hermes)\/logout$/);
     if (method === "POST" && out) {
-      accounts[out[1] as "claude" | "codex"] = false;
+      accounts[out[1] as "claude" | "codex" | "hermes"] = false;
+      if (out[1] === "hermes") accounts.hermes_url = null;
       return { status: 200, body: { signed_out: out[1] } };
     }
     const can = path.match(/^\/api\/agents\/([^/]+)\/can$/);

@@ -28,7 +28,8 @@ function ago(ms: number): string {
   return `${Math.floor(s / 86400)}d`;
 }
 
-const BRAIN = { claude: "Claude", codex: "Codex" } as const;
+const BRAIN = { claude: "Claude", codex: "Codex", hermes: "Hermes" } as const;
+const BRAINS = Object.keys(BRAIN) as (keyof typeof BRAIN)[];
 
 const LIVE: Record<string, string> = {
   waiting: "Waiting for room to run…",
@@ -109,7 +110,10 @@ export function AgentSpace({ agent, agents, onOpen, onHome }: { agent: AgentInfo
     [agent.id],
   );
 
-  const other = agent.brain === "claude" ? "codex" : "claude";
+  // The next connected brain after this one; with none, the next (which says it isn't connected).
+  const mine = BRAINS.indexOf(agent.brain);
+  const others = [...BRAINS.slice(mine + 1), ...BRAINS.slice(0, mine)];
+  const other = others.find((b) => acc?.[b]) ?? others[0]!;
   const switchBrain = () => {
     if (!acc?.[other]) {
       setMsg(`${BRAIN[other]} isn't connected (Settings › Accounts).`);
@@ -280,7 +284,7 @@ export function MemoryList({ agent, agents = [] }: { agent?: AgentInfo; agents?:
 export function NewAgent({ agents, onMade }: { agents: AgentInfo[]; onMade: (a: Agent) => void }) {
   const [acc, setAcc] = useState<Accounts | null>(null);
   useEffect(() => {
-    void accountsApi.get().then(setAcc, () => setAcc({ claude: true, codex: false }));
+    void accountsApi.get().then(setAcc, () => setAcc({ claude: true, codex: false, hermes: false }));
   }, []);
   // A look nobody has yet: the next unused colour, name and form.
   const [initial] = useState<Agent>(() => {
@@ -292,7 +296,7 @@ export function NewAgent({ agents, onMade }: { agents: AgentInfo[]; onMade: (a: 
     return { id: "", name, form, color, finish: "soft", personality: "friendly", custom: "", role: "", brain: "claude" };
   });
   if (!acc) return <div className="center muted">…</div>;
-  const brain = acc.claude || !acc.codex ? "claude" : "codex";
+  const brain = BRAINS.find((b) => acc[b]) ?? "claude";
   return (
     <AgentDesigner
       initial={{ ...initial, brain }}

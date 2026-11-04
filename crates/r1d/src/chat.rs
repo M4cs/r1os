@@ -7,6 +7,8 @@
 //!   tools.
 //! - **Codex:** one `codex exec` per turn, resuming the chat's thread (`exec resume`), with web
 //!   search, its shell in /work/files (the jail is the sandbox) and the same MCP tools.
+//! - **Hermes:** a run on the owner's own gateway (crate::hermes, ADR-0070): nothing starts here, it has its own tools
+//!   and none of r1d's, and it keeps its own context.
 //! - **Long-running chats:** a chat is one conversation for as long as the user keeps it. When its
 //!   session's context passes [`tidy_at`], r1d tidies it right after the turn ([`tidy`]): the
 //!   agent writes itself a note, and the chat continues in a fresh session that starts from it.
@@ -64,7 +66,7 @@ pub fn tidy_at(window: i64) -> i64 {
     (window / 2).min(100_000)
 }
 
-fn personality(p: &str) -> &'static str {
+pub(crate) fn personality(p: &str) -> &'static str {
     match p {
         "concise" => "Concise and matter-of-fact: get to the point.",
         "playful" => "Playful and curious, with a bit of wit, never at the user's expense.",
@@ -73,7 +75,7 @@ fn personality(p: &str) -> &'static str {
     }
 }
 
-fn bullets(items: &[&str]) -> String {
+pub(crate) fn bullets(items: &[&str]) -> String {
     if items.is_empty() { "(nothing yet)".to_owned() } else { items.iter().map(|m| format!("- {m}")).collect::<Vec<_>>().join("\n") }
 }
 
@@ -384,8 +386,8 @@ pub async fn turn(hub: Arc<Hub>, chat_id: String, text: String, on_screen: Optio
     }
 
     // System One's read of whether a card would suit the answer (ADR-0039): only in the chat, where cards show,
-    // not over an app (the reply shows on a card over it).
-    let hint = if matches!(on_screen, None | Some(OnScreen::Computer(_)) | Some(OnScreen::Routine(_))) {
+    // not over an app (the reply shows on a card over it). Hermes has no show_card (ADR-0070).
+    let hint = if chat.brain != "hermes" && matches!(on_screen, None | Some(OnScreen::Computer(_)) | Some(OnScreen::Routine(_))) {
         let (h, t) = (hub.clone(), text.clone());
         tokio::task::spawn_blocking(move || h.system1.visual(&t)).await.ok().flatten()
     } else {
@@ -524,6 +526,8 @@ async fn respond(hub: &Arc<Hub>, chat: &Chat, agent: &Agent, said: &str, photos:
     let mut tries = 0;
     let result = loop {
         let result = match (agent.computer(), chat.brain.as_str()) {
+            // First: the chat runs on the owner's gateway, wherever the agent has moved since (ADR-0070).
+            (_, "hermes") => crate::hermes::turn(hub, chat, agent, said, photos).await,
             // It works on a linked computer: its companion runs the turn (crate::remote).
             (Some(_), _) => crate::remote::turn(hub, chat, agent, said, false, photos).await,
             (None, "codex") => codex_turn(hub, chat, agent, said, false, photos).await,
@@ -616,8 +620,9 @@ pub async fn tidy(hub: Arc<Hub>, chat_id: String) -> anyhow::Result<()> {
     let lock = hub.sessions.chat_lock(&chat_id);
     let _tidy = lock.lock().await;
     let Some(chat) = hub.core.chat(&chat_id)? else { return Ok(()) };
-    if chat.session.is_none() {
-        return Ok(()); // nothing to tidy (already fresh)
+    // Nothing to tidy: already fresh, or Hermes, which keeps its own context (ADR-0070).
+    if chat.session.is_none() || chat.brain == "hermes" {
+        return Ok(());
     }
     let agent = hub.core.agent_or_first(&chat.agent);
     let tokens = chat.context;
@@ -706,7 +711,7 @@ pub fn stream_event(hub: &Hub, agent: &str, chat_id: &str, ev: &Value, speaking:
     }
 }
 
-fn tool_event(hub: &Hub, agent: &str, chat_id: &str, name: String) {
+pub(crate) fn tool_event(hub: &Hub, agent: &str, chat_id: &str, name: String) {
     hub.emit(Event::chat(agent, chat_id, "tool", Some(name)), Source::Api);
     hub.emit(Event::agent_state(agent, "working", chat_id), Source::Api);
 }

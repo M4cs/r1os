@@ -47,7 +47,7 @@ pub struct Agent {
     pub custom: String,
     /// What it's for, in a few words (≤ 120 chars; empty = a bit of everything).
     pub role: String,
-    /// claude · codex: the brain new chats use. A chat keeps the brain it started with.
+    /// [`BRAINS`]: the brain new chats use. A chat keeps the brain it started with.
     pub brain: String,
     /// What it may change on the R1 (ADR-0045): area (crate::approvals AREAS) → ask, allow or never. Unset: its
     /// area's default (crate::approvals::default_level).
@@ -61,6 +61,9 @@ pub struct Agent {
     /// keeps the one it started with.
     pub mode: String,
 }
+
+/// What an agent can talk with: the CLIs in its box or on a computer, or the owner's own Hermes gateway (ADR-0070).
+pub const BRAINS: &[&str] = &["claude", "codex", "hermes"];
 
 /// How an agent working on a computer asks (Max, 2026-10-10): `manual` (what isn't allowed comes to its levels and
 /// the R1's card), `acceptEdits` (changes files in its folders without asking), `auto` (Claude decides what's safe),
@@ -118,7 +121,7 @@ impl Agent {
             );
         }
         anyhow::ensure!(["friendly", "concise", "playful", "calm"].contains(&self.personality.as_str()), "unknown personality");
-        anyhow::ensure!(["claude", "codex"].contains(&self.brain.as_str()), "unknown brain `{}`", self.brain);
+        anyhow::ensure!(BRAINS.contains(&self.brain.as_str()), "unknown brain `{}`", self.brain);
         for (area, level) in &self.can {
             anyhow::ensure!(crate::approvals::AREAS.contains(&area.as_str()), "unknown area `{area}`");
             anyhow::ensure!(crate::approvals::LEVELS.contains(&level.as_str()), "`{level}` isn't ask, allow or never");
@@ -137,6 +140,7 @@ impl Agent {
             self.works_on == "r1" || computer.is_some_and(|k| !k.is_empty() && k.chars().all(|c| c.is_ascii_alphanumeric())),
             "works_on is r1 or computer:<key>"
         );
+        anyhow::ensure!(self.brain != "hermes" || computer.is_none(), "a Hermes agent works on its own gateway, not on a linked computer");
         self.folders.retain(|f| !f.trim().is_empty());
         self.folders.dedup();
         anyhow::ensure!(self.folders.len() <= 8, "eight folders at most");
@@ -1163,6 +1167,11 @@ mod tests {
 
         let bolt = core.create_agent(Agent { name: "Bolt".into(), color: "blue".into(), brain: "codex".into(), ..Agent::default() }).unwrap();
         assert_eq!(core.agents().unwrap().iter().map(|a| a.name.as_str()).collect::<Vec<_>>(), ["Nova", "Bolt"]);
+        // A brain it knows; and Hermes works on its own gateway, not a linked computer (ADR-0070).
+        assert!(core.create_agent(Agent { name: "Odd".into(), brain: "gpt".into(), ..Agent::default() }).is_err());
+        assert!(core.create_agent(Agent { name: "Mess".into(), brain: "hermes".into(), works_on: "computer:abc".into(), ..Agent::default() }).is_err());
+        let hermes = core.create_agent(Agent { name: "Mess".into(), brain: "hermes".into(), ..Agent::default() }).unwrap();
+        core.delete_agent(&hermes.id).unwrap();
         core.order_agents(std::slice::from_ref(&bolt.id)).unwrap();
         assert_eq!(core.first_agent().id, bolt.id);
         assert_eq!(core.focus().id, bolt.id, "focus falls back to the first agent");

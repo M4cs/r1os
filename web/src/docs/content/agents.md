@@ -11,10 +11,11 @@ An agent is a name, look, personality, role and brain; you can have up to 8, in 
 
 ## Brains
 
-Each agent's brain is Claude (the default) or Codex, and a chat keeps the brain it started with. One sign-in per CLI serves every agent.
+Each agent's brain is Claude (the default), Codex or your own Hermes gateway, and a chat keeps the brain it started with. One sign-in per CLI, or one gateway, serves every agent.
 
 - **Claude** runs as one warm `claude -p` per chat, with its own tools, r1d's and your claude.ai connectors. Anything not allowed outright asks on the device.
 - **Codex** runs `codex exec` per message, with web search and r1d's tools. Its own sandbox can't run on Rabbit's kernel, so r1d's [jail](/docs/architecture#the-agent-jail) confines it.
+- **Hermes** runs on your own machine or server, not on the R1, with its own tools, memory and skills and none of r1d's. See [Your own agents](/docs/extend#your-hermes-agent).
 
 ## Processes
 
@@ -69,4 +70,4 @@ An agent can hand work to one that has what it lacks, like your computer or a co
 
 ## Stopping
 
-Two clicks, "stop", or `POST /api/chats/{id}/stop`. Claude is interrupted and stays warm; Codex is stopped and resumes next time. Waiting cards answer no, and the next turn is told.
+Two clicks, "stop", or `POST /api/chats/{id}/stop`. Claude is interrupted and stays warm; Codex is stopped and resumes next time; Hermes is asked to stop at its gateway. Waiting cards answer no, and the next turn is told.

@@ -46,6 +46,16 @@ function AccountsSettings({ agent, onDone }: { agent: Agent; onDone: () => void 
           )}
         </div>
       ))}
+      {/* Your own Hermes gateway (ADR-0070): its address and key are too much for the wheel, so the companion adds it. */}
+      <div className={`brain${acc?.hermes ? " on" : ""}`}>
+        <span className="brain-name">Hermes</span>
+        <span className="brain-sub">{acc === null ? "…" : acc.hermes ? `Your gateway · ${(acc.hermes_url ?? "").replace(/^.*:\/\//, "")}` : "Not connected · add your gateway in the companion"}</span>
+        {acc?.hermes && (
+          <button className="ghost small" onClick={() => void accountsApi.logout("hermes").then(() => accountsApi.get().then(setAcc))}>
+            Disconnect
+          </button>
+        )}
+      </div>
       <button className="primary" onClick={() => setConnecting(true)}>
         Connect an account
       </button>

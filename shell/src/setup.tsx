@@ -435,10 +435,10 @@ export function BrainSetup({ agent, onDone, doneLabel = "Continue" }: { agent: A
       {card("claude", "Claude", "Sign in with your Claude account")}
       {card("codex", "Codex", "Sign in with ChatGPT")}
       {err && <div className="error small">{err}</div>}
-      <button className="primary" disabled={!acc?.claude && !acc?.codex} onClick={onDone}>
+      <button className="primary" disabled={!acc?.claude && !acc?.codex && !acc?.hermes} onClick={onDone}>
         {doneLabel}
       </button>
-      {acc && !acc.claude && !acc.codex && (
+      {acc && !acc.claude && !acc.codex && !acc.hermes && (
         <button className="ghost" onClick={onDone}>
           Set up later
         </button>

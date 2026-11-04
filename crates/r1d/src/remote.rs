@@ -280,7 +280,7 @@ async fn reach(hub: &Arc<Hub>, agent: &Agent, chat: &Chat, key: &str, name: &str
 }
 
 /// What was said lately in a chat, for a session that starts somewhere new.
-fn recent(hub: &Hub, chat: &str) -> Option<String> {
+pub(crate) fn recent(hub: &Hub, chat: &str) -> Option<String> {
     let messages = hub.core.messages(chat).ok()?;
     let said: Vec<String> = messages
         .iter()

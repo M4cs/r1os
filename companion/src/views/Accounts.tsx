@@ -1,6 +1,7 @@
 // Signing the R1's agent box in from the computer (docs/specs/companion.md §7.1, ADR-0004): the sign-in page opens in
 // this computer's browser; Claude's code is pasted here and crosses the link once, straight to the CLI (never kept);
-// Codex shows a code to enter on its page. The R1's `account` events say how it's going.
+// Codex shows a code to enter on its page. The R1's `account` events say how it's going. Hermes isn't a sign-in: it's
+// the owner's own gateway, whose address and key go to the R1, which checks them and keeps them (ADR-0070).
 
 import { Icon } from "@r1os/icons";
 import { AnimatePresence, motion } from "motion/react";
@@ -22,15 +23,88 @@ interface Flow {
 
 const NAMES: Record<Brain, string> = { claude: "claude", codex: "codex" };
 
+type Status = Record<Brain, boolean> & { hermes: boolean; hermes_url?: string | null };
+
+/** The owner's own Hermes gateway: where it is, and the key it asks for. */
+function HermesCard({ r1, acc, changed }: { r1: R1Info; acc: Status | null; changed: () => void }) {
+  const [adding, setAdding] = useState(false);
+  const [url, setUrl] = useState("");
+  const [key, setKey] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [why, setWhy] = useState<string | null>(null);
+  const [armed, setArmed] = useState(false);
+
+  const connect = async () => {
+    setBusy(true);
+    setWhy(null);
+    try {
+      await api(r1.id, "POST", "/api/accounts/hermes/login", { url: url.trim(), key: key.trim() });
+      setAdding(false);
+      setUrl("");
+      setKey("");
+      changed();
+    } catch (e) {
+      setWhy(String(e));
+    }
+    setBusy(false);
+  };
+  const disconnect = () => {
+    if (!armed) {
+      setArmed(true);
+      setTimeout(() => setArmed(false), 3000);
+      return;
+    }
+    setArmed(false);
+    api(r1.id, "POST", "/api/accounts/hermes/logout").then(changed).catch((e) => setWhy(String(e)));
+  };
+
+  return (
+    <motion.div className="card account" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0, transition: { ...soft, delay: 0.1 } }}>
+      <div className="account-head">
+        <div>
+          <div className="account-name">hermes</div>
+          <div className="muted small">{acc === null ? "…" : acc.hermes ? `your gateway · ${(acc.hermes_url ?? "").replace(/^.*:\/\//, "")}` : "your own hermes agent, running somewhere else"}</div>
+        </div>
+        {acc?.hermes ? (
+          <button className={`btn small ${armed ? "danger" : ""}`} onClick={disconnect}>
+            {armed ? "click again: disconnect" : "disconnect"}
+          </button>
+        ) : (
+          <motion.button className="btn primary small" whileTap={{ scale: 0.96 }} onClick={() => setAdding((a) => !a)}>
+            add it
+          </motion.button>
+        )}
+      </div>
+      <AnimatePresence>
+        {adding && !acc?.hermes && (
+          <motion.div className="flow" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1, transition: soft }} exit={{ height: 0, opacity: 0 }}>
+            <div className="flow-col">
+              <div className="muted">turn on its api server (<span className="keep-case mono">API_SERVER_ENABLED</span>, <span className="keep-case mono">API_SERVER_KEY</span>, and an <span className="keep-case mono">API_SERVER_HOST</span> the r1 can reach). the r1 keeps this address and key, out of its backups. anyone holding them can run things on that machine.</div>
+              <input className="field mono" placeholder="https://hermes.example.com or http://192.168.1.20:8642" value={url} onChange={(e) => setUrl(e.target.value)} disabled={busy} autoFocus />
+              <div className="flow-row">
+                <input className="field mono" type="password" placeholder="its API_SERVER_KEY" value={key} onChange={(e) => setKey(e.target.value)} onKeyDown={(e) => e.key === "Enter" && connect()} disabled={busy} />
+                <motion.button className="btn primary" whileTap={{ scale: 0.96 }} onClick={connect} disabled={busy || !url.trim() || !key.trim()}>
+                  {busy ? "checking…" : "connect"}
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {why && <p className="err small">{why}</p>}
+    </motion.div>
+  );
+}
+
 export function Accounts({ r1 }: { r1: R1Info }) {
-  const [acc, setAcc] = useState<Record<Brain, boolean> | null>(null);
+  const [acc, setAcc] = useState<Status | null>(null);
   const [flow, setFlow] = useState<Flow | null>(null);
   const [code, setCode] = useState("");
   const [armed, setArmed] = useState<Brain | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   const load = useCallback(() => {
-    api<{ accounts: Record<Brain, boolean> }>(r1.id, "GET", "/api/accounts").then((r) => setAcc(r.accounts)).catch((e) => setErr(String(e)));
+    api<{ accounts: Status }>(r1.id, "GET", "/api/accounts").then((r) => setAcc(r.accounts)).catch((e) => setErr(String(e)));
   }, [r1.id]);
   useEffect(load, [load]);
   useR1Events(r1.id, (e) => {
@@ -87,7 +161,7 @@ export function Accounts({ r1 }: { r1: R1Info }) {
 
   return (
     <div className="accounts">
-      <p className="muted lede">one sign-in serves every agent on the r1. the agents' own apps keep the logins, in the r1's agent box; r1os never keeps them.</p>
+      <p className="muted lede">one sign-in serves every agent on the r1. claude's and codex's own apps keep their logins, in the r1's agent box; r1os never keeps them.</p>
       {(["claude", "codex"] as Brain[]).map((b, i) => {
         const on = acc?.[b];
         const f = flow?.brain === b ? flow : null;
@@ -149,6 +223,7 @@ export function Accounts({ r1 }: { r1: R1Info }) {
           </motion.div>
         );
       })}
+      <HermesCard r1={r1} acc={acc} changed={load} />
       {err && <p className="err">{err}</p>}
     </div>
   );

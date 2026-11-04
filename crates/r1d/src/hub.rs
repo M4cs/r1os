@@ -393,6 +393,8 @@ pub struct Hub {
     pub builds: crate::create::Builds,
     pub core: crate::core::Core,
     pub accounts: Arc<crate::accounts::Accounts>,
+    /// The owner's Hermes gateway, for agents whose brain it is (crate::hermes, ADR-0070).
+    pub hermes: crate::hermes::Hermes,
     pub tool_tokens: crate::mcp::Tokens,
     /// Running turns you can stop (crate::stops).
     pub stops: crate::stops::Stops,
@@ -471,6 +473,7 @@ impl Hub {
         let auth = crate::auth::Auth::new(!cfg.sim && !off, &cfg.data);
         let pin = crate::pin::Pin::new(&core);
         let controls = Controls::new(&core);
+        let hermes = crate::hermes::Hermes::new(&cfg.data);
         let hub = Arc::new(Self {
             cfg,
             started: Instant::now(),
@@ -483,6 +486,7 @@ impl Hub {
             builds: crate::create::Builds::default(),
             core,
             accounts: Arc::default(),
+            hermes,
             tool_tokens: crate::mcp::Tokens::default(),
             stops: crate::stops::Stops::default(),
             perf: crate::perf::Perf::default(),

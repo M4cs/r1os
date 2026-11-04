@@ -53,7 +53,7 @@ curl -s -H "Authorization: Bearer $T" 127.0.0.1:7172/api/state
 | `/api/memories` | GET | `?agent=`: shared facts plus that agent's own |
 | `/api/mail` | GET | Messages between agents |
 | `/api/approvals`, `/api/approvals/{id}` | GET, POST | Waiting requests; `{allow, always?}` (the shell's card answers) |
-| `/api/accounts`, `/api/accounts/{brain}/login`, `/logout` | GET, POST | Sign the CLIs in and out |
+| `/api/accounts`, `/api/accounts/{brain}/login`, `/logout` | GET, POST | Sign the CLIs in and out; for `hermes`, `POST …/login {url, key}` checks and keeps the owner's gateway (ADR-0070). GET says `hermes` and `hermes_url`, never the key |
 | `/api/connections` (+ `/check`, `/login`, `/agent`, `/always`, `/add`, `/remove`) | GET, POST | The CLIs' connectors and your own MCP servers |
 | `/api/skills`, `/api/skills/on`, `/api/skills/{name}` | GET, POST, DELETE | Agent Skills |
 
