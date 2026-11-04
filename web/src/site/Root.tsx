@@ -9,7 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, Outlet, ScrollRestoration, useLocation, useNavigationType } from "react-router";
 import { arrive, spring } from "./motion";
 import { LookPicker } from "./LookPicker";
-import { ISSUES, REPO } from "./repo";
+import { DISCORD, ISSUES, REPO } from "./repo";
 
 const PAGES = [
   { to: "/#android", label: "android", hash: "#android" },
@@ -156,6 +156,9 @@ export function Root() {
               <Icon name="github-logo" weight="bold" size={16} />
               source
             </a>
+            <a href={DISCORD} className="btn ghost small source-link icon-link" aria-label="discord" title="discord" style={{ marginLeft: 6 }}>
+              <Icon name="discord-logo" weight="bold" size={16} />
+            </a>
             <Link to="/docs/start" className="btn primary small" style={{ marginLeft: 6 }}>
               install
             </Link>
@@ -175,6 +178,9 @@ export function Root() {
               ))}
               <a href={REPO}>
                 source <Icon name="arrow-up-right" weight="bold" size={16} />
+              </a>
+              <a href={DISCORD}>
+                discord <Icon name="arrow-up-right" weight="bold" size={16} />
               </a>
             </motion.nav>
           )}
@@ -225,6 +231,7 @@ function Footer() {
             <h4>open source</h4>
             <a href={REPO}>the source</a>
             <a href={ISSUES}>report an issue</a>
+            <a href={DISCORD}>join the discord</a>
             <Link to="/docs/develop">develop r1os</Link>
             <Link to="/docs/skill">the r1os skill</Link>
             <a href="/skills/r1os/SKILL.md" style={{ textTransform: "none" }}>

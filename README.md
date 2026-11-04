@@ -1,6 +1,6 @@
 # r1os
 
-An agent-first OS for the Rabbit R1, open source under the MIT licence.
+An agent-first OS for the Rabbit R1, open source under the MIT licence. [Join the Discord](https://discord.gg/c2qx3AD99X).
 
 ![r1os on an R1: the glance screen, turning through agents, designing one, a spoken question answered with a card, an app on the wheel and the built-in tools. Recorded on a real R1, then cut and sped up.](web/public/media/r1os-feature.gif)
 
@@ -35,6 +35,7 @@ The desktop companion, with a pretend R1: `bun install`, then `bun run --cwd com
 | Understand how it's built | [How it's built](web/src/docs/content/architecture.md) |
 | Install it on an R1 | [Install](web/src/docs/content/start.md): read the warnings first, since a bad write can brick an R1 |
 | Contribute | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Ask a question or talk it over | [The Discord server](https://discord.gg/c2qx3AD99X) |
 | Report a security hole | [SECURITY.md](SECURITY.md) (privately, please) |
 | Work on it with an AI agent | [CLAUDE.md](CLAUDE.md) |
 

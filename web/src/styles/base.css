@@ -143,6 +143,10 @@ main { overflow-x: clip; }
 /* The narrowest phones: a little less room around the brand and the link, so the menu button stays in the gutter. */
 @media (max-width: 340px) { .top .brand { margin-right: 0; } .top .btn.small { padding: 9px 11px; } }
 .menu-btn, .look-btn { flex-shrink: 0; }
+/* Just an icon on the bar, which has no room for another word above the phone width. */
+.top .btn.icon-link { padding-inline: 11px; gap: 0; }
+/* An empty line of text, so it's as tall as the labelled buttons beside it. */
+.top .btn.icon-link::before { content: "\200b"; }
 .sheet-nav { position: fixed; inset: 64px 0 auto 0; z-index: 39; padding: 10px var(--gutter) 22px; background: color-mix(in srgb, var(--bg) 94%, transparent); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px; text-transform: lowercase; }
 .sheet-nav a { display: flex; align-items: center; gap: 6px; padding: 12px 14px; border-radius: 14px; font-weight: 500; font-size: 20px; }
 .sheet-nav a.on { background: var(--accent-soft); color: var(--accent-text); }

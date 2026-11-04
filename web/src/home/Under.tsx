@@ -9,7 +9,7 @@ import { useRef } from "react";
 import { Link } from "react-router";
 import { Character } from "@shell/ui/Character";
 import { after, popIn, reveal, soft } from "../site/motion";
-import { REPO } from "../site/repo";
+import { DISCORD, REPO } from "../site/repo";
 import { rest, useSeen } from "../site/seen";
 import { Head } from "./parts";
 
@@ -87,6 +87,9 @@ export function OpenSource() {
             <Link to="/docs/extend" className="btn ghost">
               <Icon name="plugs-connected" weight="bold" size={17} /> bring your agent
             </Link>
+            <a href={DISCORD} className="btn ghost">
+              <Icon name="discord-logo" weight="bold" size={17} /> join the discord
+            </a>
           </motion.div>
         </motion.div>
       </div>
