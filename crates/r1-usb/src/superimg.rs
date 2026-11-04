@@ -25,6 +25,11 @@ fn replaced(name: &str) -> bool {
     matches!(name, "system_a" | "system_b" | "product_a" | "product_b")
 }
 
+/// r1os's own system copies: `system_a` and `system_b`, not a leftover Virtual A/B snapshot such as `system_b-cow`.
+fn is_system(name: &str) -> bool {
+    matches!(name, "system_a" | "system_b")
+}
+
 fn other(slot: char) -> char {
     if slot == 'a' { 'b' } else { 'a' }
 }
@@ -194,7 +199,7 @@ pub fn build(current: &Metadata, slot: char, system: &Path, out: &Path, mut prog
     }
     // What's written where: the metadata region, then every new system extent in order on the device.
     let mut writes: Vec<(u64, u64, Option<u64>)> = vec![(lp::METADATA_OFFSET, current.geometry.region_len(), None)];
-    for p in new.partitions.iter().filter(|p| p.name.starts_with("system_")) {
+    for p in new.partitions.iter().filter(|p| is_system(&p.name)) {
         let mut logical = 0u64;
         for e in &p.extents {
             writes.push((e.target_data * SECTOR, e.sectors * SECTOR, Some(logical)));
@@ -203,7 +208,7 @@ pub fn build(current: &Metadata, slot: char, system: &Path, out: &Path, mut prog
     }
     writes.sort();
     let region = new.region()?;
-    let total = system_bytes * new.partitions.iter().filter(|p| p.name.starts_with("system_")).count() as u64;
+    let total = system_bytes * new.partitions.iter().filter(|p| is_system(&p.name)).count() as u64;
     let mut done = 0u64;
     let mut img = std::fs::File::open(system)?;
     let file = std::fs::File::create(out)?;
@@ -248,7 +253,7 @@ pub fn verify(current: &Metadata, image: &SuperImage) -> Result<()> {
     }
     let region = (lp::METADATA_OFFSET, lp::METADATA_OFFSET + current.geometry.region_len());
     let systems: Vec<&Partition> =
-        if image.probe.is_some() { Vec::new() } else { image.metadata.partitions.iter().filter(|p| p.name.starts_with("system_")).collect() };
+        if image.probe.is_some() { Vec::new() } else { image.metadata.partitions.iter().filter(|p| is_system(&p.name)).collect() };
     let mut allowed = vec![region];
     for p in &systems {
         allowed.extend(p.extents.iter().map(|e| (e.target_data * SECTOR, (e.target_data + e.sectors) * SECTOR)));
@@ -456,6 +461,27 @@ pub(crate) mod tests {
         // And one whose system isn't the image.
         let wrong = SuperImage { system_sha256: "00".repeat(32), ..image };
         assert!(verify(&current, &wrong).is_err());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn built_leaves_a_leftover_snapshot_alone() {
+        // An R1 that took a Rabbit OTA can keep its Virtual A/B snapshots in `super` after the merge (para says none):
+        // `system_a-cow` and friends, in group `cow`. They're kept like any other partition, and never mistaken for a
+        // system copy (seen on an R1, 2026-11-04: the image wrote the system over `system_b-cow`, and verify refused it).
+        let dir = std::env::temp_dir().join(format!("r1-usb-super-cow-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let system = dir.join("system.img");
+        std::fs::write(&system, vec![7u8; 2 << 20]).unwrap();
+        let mut current = small(0);
+        current.groups.push(Group { name: "cow".into(), flags: 0, maximum_size: 0 });
+        let cow = current.groups.len() as u32 - 1;
+        current.partitions.push(Partition { name: "system_a-cow".into(), attributes: 0, group: cow, extents: vec![lin(2048, 12288)] });
+        let image = build(&current, 'a', &system, &dir.join("super.img"), |_, _| {}).unwrap();
+        assert_eq!(image.metadata.partition("system_a-cow"), current.partition("system_a-cow"), "kept as it was");
+        let (_, spans) = sparse::spans(image.path()).unwrap();
+        let (ca, cb) = (12288 * SECTOR, (12288 + 2048) * SECTOR);
+        assert!(spans.iter().all(|s| s.range().1 <= ca || cb <= s.range().0), "system_a-cow written");
         let _ = std::fs::remove_dir_all(&dir);
     }
 

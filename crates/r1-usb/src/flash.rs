@@ -155,7 +155,7 @@ impl Plan {
     /// The plan in words, for the screen before [CONFIRM] is typed.
     pub fn describe(&self) -> Vec<String> {
         let name = self.system.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-        let slots: Vec<String> = self.image.metadata.partitions.iter().filter_map(|p| p.name.strip_prefix("system_").map(str::to_owned)).collect();
+        let slots: Vec<String> = self.image.metadata.partitions.iter().filter_map(|p| p.name.strip_prefix("system_").filter(|s| !s.contains('-')).map(str::to_owned)).collect();
         let mut lines = vec![
             "Verification off in vbmeta, vbmeta_system and vbmeta_vendor, on slots a and b".to_owned(),
             format!(
