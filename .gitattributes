@@ -9,6 +9,8 @@ update-binary text eol=lf
 updater-script text eol=lf
 # Everything we push to the R1 (Magisk modules, keylayouts, XML, scripts) is read by Android: LF only.
 device/** text eol=lf
+# Images under device/ are bytes, not text: without this, the line above turned the boot still's CRLFs into LFs.
+*.png binary
 # Shell scripts without a .sh extension (tools/r1h, Gradle's wrapper) must stay LF too.
 tools/** text eol=lf
 gradlew text eol=lf
