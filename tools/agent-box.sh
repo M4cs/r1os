@@ -76,7 +76,8 @@ case "$cmd" in
     fi
     say "Building the box (Alpine $ALPINE_VER, Codex $CODEX_TAG, Claude Code latest)"
     # Then its SELinux labels (ADR-0035): the rootfs is r1os_agent_root_file, the rest r1os_agent_file.
-    root_sh 'sh /data/local/tmp/setup-rootfs.sh /data/local/tmp/alpine.tar.gz /data/local/tmp/codex.tar.gz /data/local/tmp/codex-host.tar.gz; rc=$?; rm -f /data/local/tmp/alpine.tar.gz /data/local/tmp/codex.tar.gz /data/local/tmp/codex-host.tar.gz /data/local/tmp/setup-rootfs.sh; restorecon -RF /data/r1os/bin /data/r1os/agent; exit $rc' | tr -d '\r'
+    root_sh 'sh /data/local/tmp/setup-rootfs.sh /data/local/tmp/alpine.tar.gz /data/local/tmp/codex.tar.gz /data/local/tmp/codex-host.tar.gz; rc=$?; rm -f /data/local/tmp/alpine.tar.gz /data/local/tmp/codex.tar.gz /data/local/tmp/codex-host.tar.gz /data/local/tmp/setup-rootfs.sh; restorecon -RF /data/r1os/bin /data/r1os/agent; exit $rc' | tr -d '\r' \
+      || die "The box's build stopped partway (above). The box as it was is still there."
     ;;
   codex-host)
     # Adds Codex's code-mode host to an existing box, matching the box's Codex version.

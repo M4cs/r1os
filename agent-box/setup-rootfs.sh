@@ -42,9 +42,10 @@ chown 2950:2950 "$BOX/home" "$BOX/work"
 chmod 700 "$BOX/home" "$BOX/work"
 
 echo "== packages"
+# quickjs: r1d runs a trial of an app's logic with it before installing the app (ADR-0041). Comments stay out here:
+# an apostrophe inside the single-quoted script below would end it early (2026-10-16, T-198).
 "$EXEC" --root -- /bin/sh -c '
   apk update -q
-  # quickjs: r1d runs a trial of an app's logic with it before installing the app (ADR-0041).
   apk add -q --no-cache bash curl ca-certificates libgcc libstdc++ ripgrep git setpriv procps-ng quickjs nodejs npm
   sed -i "s#^agent:\(.*\):/bin/sh\$#agent:\1:/bin/bash#" /etc/passwd
 '
