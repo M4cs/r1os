@@ -5,6 +5,7 @@ released under it too.
 
 ## Before you start
 
+- **Questions:** ask on [the Discord server](https://discord.gg/c2qx3AD99X).
 - **Bugs and ideas:** open an issue (there are templates). For a security hole, don't: see [SECURITY.md](SECURITY.md).
 - **A bigger change:** open an issue first, so we can agree on the shape before you build it.
 - **Working with a coding agent?** [CLAUDE.md](CLAUDE.md) holds the rules it should follow. They're the rules for people

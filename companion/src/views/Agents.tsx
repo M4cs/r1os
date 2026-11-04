@@ -13,7 +13,7 @@ import type { R1Data } from "./R1View";
 import { Item, Section, Seg } from "./Settings";
 
 const PERSONALITIES: [string, string][] = [["friendly", "friendly"], ["concise", "concise"], ["playful", "playful"], ["calm", "calm"]];
-const BRAINS: [string, string][] = [["claude", "claude"], ["codex", "codex"]];
+const BRAINS: [string, string][] = [["claude", "claude"], ["codex", "codex"], ["hermes", "hermes"]];
 const AREAS: { id: string; label: string; sub: string }[] = [
   { id: "look", label: "look and home", sub: "colours, widgets, home" },
   { id: "device", label: "the r1's settings", sub: "brightness, sleep, volume" },
@@ -118,7 +118,8 @@ function AgentCard({ r1, agent: a, change, onDelete, lastOne }: { r1: R1Info; ag
         <Field value={a.custom ?? ""} max={200} placeholder="say hi in spanish" onSave={(custom) => change({ custom })} wide />
       </Item>
       <Item label="brain" sub="new chats use it; a chat keeps the one it started with">
-        <Seg id={`brain-${a.id}`} items={BRAINS} value={a.brain} onChange={(brain) => change({ brain })} />
+        {/* A Hermes agent works on its own gateway, not a linked computer (ADR-0070). */}
+        <Seg id={`brain-${a.id}`} items={(a.works_on ?? "r1") === "r1" ? BRAINS : BRAINS.filter(([b]) => b !== "hermes")} value={a.brain} onChange={(brain) => change({ brain })} />
       </Item>
 
       <Section title="how it looks" />
@@ -171,14 +172,19 @@ function AgentCard({ r1, agent: a, change, onDelete, lastOne }: { r1: R1Info; ag
         );
       })}
 
-      <Where r1={r1} agent={a} change={change} />
+      {/* A Hermes agent works on its own gateway, with none of the r1's tools (ADR-0070). */}
+      {a.brain !== "hermes" && (
+        <>
+          <Where r1={r1} agent={a} change={change} />
 
-      <Section title="what it can change" />
-      {AREAS.map((area) => (
-        <Item key={area.id} label={area.label} sub={area.sub}>
-          <CanSeg r1={r1} agent={a} area={area.id} />
-        </Item>
-      ))}
+          <Section title="what it can change" />
+          {AREAS.map((area) => (
+            <Item key={area.id} label={area.label} sub={area.sub}>
+              <CanSeg r1={r1} agent={a} area={area.id} />
+            </Item>
+          ))}
+        </>
+      )}
 
       <Memories r1={r1} agent={a} />
       <Chats r1={r1} agent={a} />

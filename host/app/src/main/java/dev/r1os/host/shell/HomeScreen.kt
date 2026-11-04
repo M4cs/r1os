@@ -771,7 +771,7 @@ class HomeScreen(shell: Shell) : Screen(shell) {
             else -> "Building an app${b.section?.let { " · $it" } ?: "…"}" to busy
         }
         val acc = accounts
-        if (acc != null && !acc.optBoolean("claude") && !acc.optBoolean("codex")) return "Not connected: Settings › Accounts" to bad
+        if (acc != null && !acc.optBoolean("claude") && !acc.optBoolean("codex") && !acc.optBoolean("hermes")) return "Not connected: Settings › Accounts" to bad
         // Another agent's message (ADR-0012): who it's answering, or what's waiting from whom.
         val by = a.by?.let { shell.agent(it)?.name }
         if (by != null && a.state in BUSY) return "Answering $by…" to busy

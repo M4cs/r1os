@@ -7,9 +7,12 @@
 //!   tools.
 //! - **Codex:** one `codex exec` per turn, resuming the chat's thread (`exec resume`), with web
 //!   search, its shell in /work/files (the jail is the sandbox) and the same MCP tools.
+//! - **Hermes:** a run on the owner's own gateway (crate::hermes, ADR-0070): nothing starts here, it has its own tools
+//!   and none of r1d's, and it keeps its own context.
 //! - **Long-running chats:** a chat is one conversation for as long as the user keeps it. When its
-//!   session's context passes [`tidy_at`], r1d tidies it right after the turn ([`tidy`]): the
-//!   agent writes itself a note, and the chat continues in a fresh session that starts from it.
+//!   session's context passes [`tidy_at`] and has grown well past where it started ([`needs_tidy`]), r1d tidies it
+//!   right after the turn ([`tidy`]): the agent writes itself a note, and the chat continues in a fresh session that
+//!   starts from it.
 //!   The transcript the user sees keeps everything. The CLIs' own compaction stays on as a backstop.
 //!
 //! - **Other agents** (ADR-0012, crate::mail): a turn can also start from another agent's message
@@ -64,7 +67,16 @@ pub fn tidy_at(window: i64) -> i64 {
     (window / 2).min(100_000)
 }
 
-fn personality(p: &str) -> &'static str {
+/// Whether a tidy would help: the session is past [`tidy_at`] and has grown well beyond `fresh`, the least it has held.
+/// A tidy only leaves what a new session starts with, and that can be over the line by itself: the CLI's prompt and
+/// its connectors' tools came to ~105k by 2026-11-03, and every turn was tidied, spending a turn and the warm process
+/// each time for nothing (T-202).
+pub fn needs_tidy(context: i64, window: i64, fresh: i64) -> bool {
+    let line = tidy_at(window);
+    context >= line && context - fresh >= line / 2
+}
+
+pub(crate) fn personality(p: &str) -> &'static str {
     match p {
         "concise" => "Concise and matter-of-fact: get to the point.",
         "playful" => "Playful and curious, with a bit of wit, never at the user's expense.",
@@ -73,7 +85,7 @@ fn personality(p: &str) -> &'static str {
     }
 }
 
-fn bullets(items: &[&str]) -> String {
+pub(crate) fn bullets(items: &[&str]) -> String {
     if items.is_empty() { "(nothing yet)".to_owned() } else { items.iter().map(|m| format!("- {m}")).collect::<Vec<_>>().join("\n") }
 }
 
@@ -340,11 +352,15 @@ pub const NOTHING: &str = "[nothing]";
 const ROUTINE_RUNS: &str = "[A routine the user set up runs now:";
 
 /// A routine's reply that tells nothing: [NOTHING], however it's dressed ("**Nothing.**"), or no words at all
-/// (2026-10-17, Max: with nothing to say, Newsey's runs sent "—" and Archer's said there was nothing to do).
+/// (2026-10-17, Max: with nothing to say, Newsey's runs sent "—" and Archer's said there was nothing to do). Or words
+/// that end in [NOTHING]: the agent saying why it's staying quiet, which isn't worth telling either (T-206).
 pub fn says_nothing(reply: &str) -> bool {
     let words: String =
         reply.chars().filter(|c| !(c.is_whitespace() || c.is_ascii_punctuation() || ('\u{2000}'..='\u{206f}').contains(c))).collect();
-    words.is_empty() || words.eq_ignore_ascii_case("nothing")
+    if words.is_empty() || words.eq_ignore_ascii_case("nothing") {
+        return true;
+    }
+    reply.trim_end_matches(|c: char| c.is_whitespace() || matches!(c, '*' | '_' | '`' | '.')).to_lowercase().ends_with(NOTHING)
 }
 
 /// Runs one user turn in `chat` to completion. Errors are reported as events too. `on_screen` is
@@ -384,8 +400,8 @@ pub async fn turn(hub: Arc<Hub>, chat_id: String, text: String, on_screen: Optio
     }
 
     // System One's read of whether a card would suit the answer (ADR-0039): only in the chat, where cards show,
-    // not over an app (the reply shows on a card over it).
-    let hint = if matches!(on_screen, None | Some(OnScreen::Computer(_)) | Some(OnScreen::Routine(_))) {
+    // not over an app (the reply shows on a card over it). Hermes has no show_card (ADR-0070).
+    let hint = if chat.brain != "hermes" && matches!(on_screen, None | Some(OnScreen::Computer(_)) | Some(OnScreen::Routine(_))) {
         let (h, t) = (hub.clone(), text.clone());
         tokio::task::spawn_blocking(move || h.system1.visual(&t)).await.ok().flatten()
     } else {
@@ -416,7 +432,7 @@ pub async fn turn(hub: Arc<Hub>, chat_id: String, text: String, on_screen: Optio
         Some(OnScreen::Routine(title)) => format!(
             "{ROUTINE_RUNS} \"{title}\". They aren't looking at the R1: your reply waits for them in this chat, so make it \
              worth coming back to, and short. If there's nothing worth telling them this time (and the routine doesn't \
-             ask to hear either way), reply with just {NOTHING}: then nothing waits for them, and the chat shows nothing \
+             ask to hear either way), reply with just {NOTHING} and no other words: then nothing waits for them, and the chat shows nothing \
              of this run. whats_up has what's new on the R1.]\n{text}"
         ),
         None => text.clone(),
@@ -524,6 +540,8 @@ async fn respond(hub: &Arc<Hub>, chat: &Chat, agent: &Agent, said: &str, photos:
     let mut tries = 0;
     let result = loop {
         let result = match (agent.computer(), chat.brain.as_str()) {
+            // First: the chat runs on the owner's gateway, wherever the agent has moved since (ADR-0070).
+            (_, "hermes") => crate::hermes::turn(hub, chat, agent, said, photos).await,
             // It works on a linked computer: its companion runs the turn (crate::remote).
             (Some(_), _) => crate::remote::turn(hub, chat, agent, said, false, photos).await,
             (None, "codex") => codex_turn(hub, chat, agent, said, false, photos).await,
@@ -564,7 +582,9 @@ async fn respond(hub: &Arc<Hub>, chat: &Chat, agent: &Agent, said: &str, photos:
             if t.compacted {
                 tracing::info!(chat = %chat_id, "the CLI compacted this session itself");
             }
-            if t.context >= tidy_at(t.window) {
+            // The least this session has held, this turn included (crate::core set_context keeps the same).
+            let fresh = if chat.fresh > 0 { chat.fresh.min(t.context) } else { t.context };
+            if needs_tidy(t.context, t.window, fresh) {
                 // Right away, while the user reads the reply: the next turn waits for it (chat lock).
                 let (h, id) = (hub.clone(), chat_id.to_owned());
                 tokio::spawn(async move {
@@ -616,8 +636,9 @@ pub async fn tidy(hub: Arc<Hub>, chat_id: String) -> anyhow::Result<()> {
     let lock = hub.sessions.chat_lock(&chat_id);
     let _tidy = lock.lock().await;
     let Some(chat) = hub.core.chat(&chat_id)? else { return Ok(()) };
-    if chat.session.is_none() {
-        return Ok(()); // nothing to tidy (already fresh)
+    // Nothing to tidy: already fresh, or Hermes, which keeps its own context (ADR-0070).
+    if chat.session.is_none() || chat.brain == "hermes" {
+        return Ok(());
     }
     let agent = hub.core.agent_or_first(&chat.agent);
     let tokens = chat.context;
@@ -706,7 +727,7 @@ pub fn stream_event(hub: &Hub, agent: &str, chat_id: &str, ev: &Value, speaking:
     }
 }
 
-fn tool_event(hub: &Hub, agent: &str, chat_id: &str, name: String) {
+pub(crate) fn tool_event(hub: &Hub, agent: &str, chat_id: &str, name: String) {
     hub.emit(Event::chat(agent, chat_id, "tool", Some(name)), Source::Api);
     hub.emit(Event::agent_state(agent, "working", chat_id), Source::Api);
 }
@@ -985,6 +1006,15 @@ mod tests {
         assert_eq!(tidy_at(200_000), 100_000);
         assert_eq!(tidy_at(1_000_000), 100_000);
         assert_eq!(tidy_at(64_000), 32_000);
+        // A session that started small, past the line: tidied, as ever.
+        assert!(needs_tidy(100_000, 200_000, 15_000));
+        assert!(!needs_tidy(99_999, 200_000, 15_000));
+        // One that started over the line isn't, until it has grown (T-202: every turn was tidied at ~105k).
+        assert!(!needs_tidy(105_000, 200_000, 105_000), "a first turn");
+        assert!(!needs_tidy(120_000, 200_000, 105_000), "a short chat");
+        assert!(needs_tidy(155_000, 200_000, 105_000), "a long one");
+        // Not known.
+        assert!(!needs_tidy(0, 200_000, 0));
     }
 
     #[test]
@@ -1010,7 +1040,16 @@ mod tests {
             assert!(says_nothing(quiet), "{quiet:?}");
         }
         // Anything with words in it is a reply, even a short one.
-        for reply in ["Nothing new in your inbox.", "Rain at 3.", "☔", "No.", "[nothing] but rain at 3"] {
+        // Words that end in it: the agent saying why it's quiet (T-206, seen on the glance screen).
+        for quiet in [
+            "ZEC is still at +12.8%, essentially unchanged, so I'm staying silent.\n\n[nothing]",
+            "Nothing to report. [Nothing]",
+            "All quiet. **[nothing]**",
+            "All quiet. `[nothing]`.",
+        ] {
+            assert!(says_nothing(quiet), "{quiet:?}");
+        }
+        for reply in ["Nothing new in your inbox.", "Rain at 3.", "☔", "No.", "[nothing] but rain at 3", "There's nothing", "Rain at 3, otherwise nothing"] {
             assert!(!says_nothing(reply), "{reply:?}");
         }
     }

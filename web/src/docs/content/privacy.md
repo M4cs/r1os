@@ -28,6 +28,10 @@ Your agents are the unmodified `claude` and `codex` CLIs, signed in with your ow
 
 The CLIs run with their own settings. Whatever they send by default (usage statistics, error reports, update checks), they send: see Anthropic's and OpenAI's documentation.
 
+### To your Hermes gateway
+
+An agent whose brain is [your Hermes gateway](/docs/extend#your-hermes-agent) sends it each message, photos you attach, your shared memories and the agent's own, its name and personality, and your time zone. From there it goes wherever your Hermes is set up to send it, under your own accounts. r1os doesn't see that.
+
 ### To other services
 
 - **The time zone.** When the R1 joins a network (at most every 10 minutes), it asks ipinfo.io, or else wttr.in, for the time zone of its public address. Each of them sees the R1's IP address. Pick a zone in Settings › Date & time and the R1 stops asking.
@@ -46,13 +50,13 @@ The CLIs run with their own settings. Whatever they send by default (usage stati
 
 ### Kept on the R1
 
-Everything r1os keeps is in `/data/r1os`, readable only by root. That's your chats, memories, journal, photos, recordings, apps and their data, the CLIs' sign-ins, and notifications that came while the screen was off (kept 24 hours, at most 300). r1d's log records how long things were, never what you said or wrote.
+Everything r1os keeps is in `/data/r1os`, readable only by root. That's your chats, memories, journal, photos, recordings, apps and their data, the CLIs' sign-ins, your Hermes gateway's address and key if you added one (the one credential r1os itself keeps, in its own file and out of backups), and notifications that came while the screen was off (kept 24 hours, at most 300). r1d's log records how long things were, never what you said or wrote.
 
 ## Who can reach the R1
 
 | Who | How | What they get |
 |---|---|---|
-| **Anyone with a USB cable** | adb, which is on and doesn't ask today | **Root:** everything on the R1, including the CLIs' sign-ins. This is the biggest gap ([below](#not-safe-yet)). The PIN lock doesn't stop it |
+| **Anyone with a USB cable** | adb, which is on and doesn't ask today | **Root:** everything on the R1, including the CLIs' sign-ins and any Hermes gateway's key, which lets them run things on that machine. This is the biggest gap ([below](#not-safe-yet)). The PIN lock doesn't stop it |
 | **A computer on your Wi-Fi** | Wireless debugging, only if you turn it on in Android's developer options | The same as a USB cable |
 | **Your local network** | Two short-lived servers: the sign-in page (port 7180, while you sign an agent in from your phone: up to 10 minutes, one try) and sharing (a random port, up to 10 minutes) | One page or one file, behind a one-time token in the link. Both are plain HTTP and listen only on the R1's Wi-Fi address. The sign-in page keeps its token on your phone and sends the code sealed with it, so someone watching your Wi-Fi can't read the code. What you share crosses as it is |
 | **A linked computer** | The link: the R1 dials the computer, never the reverse, and you confirm a matching code on both at pairing | What Settings can do. It can read chats, memories, media, notifications, and a full backup. It can change agents, apps, Wi-Fi and the CLIs' sign-ins, and talk to your agents. Not the test harness, approvals, the PIN lock or the camera motor ([Companion](/docs/companion)) |

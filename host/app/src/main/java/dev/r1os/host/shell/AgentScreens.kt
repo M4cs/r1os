@@ -18,7 +18,7 @@ import org.json.JSONObject
 // An agent's space and what hangs off it (docs/specs/experience.md §2.7, ADR-0011; ported from
 // shell/src/space.tsx): its chats, memory, look and brain, managing its chats, and making a new agent.
 
-private val BRAIN = mapOf("claude" to "Claude", "codex" to "Codex")
+private val BRAIN = mapOf("claude" to "Claude", "codex" to "Codex", "hermes" to "Hermes")
 
 private val LIVE = mapOf(
     "waiting" to "Waiting for room to run…", "thinking" to "Thinking…", "speaking" to "Talking…",
@@ -106,7 +106,9 @@ class SpaceScreen(shell: Shell, private val agentKey: String) : ListPage(shell, 
 
     private fun render() {
         val a = agent
-        val other = if (a.brain == "claude") "codex" else "claude"
+        // The next connected brain after this one; with none, the next (which says it isn't connected).
+        val others = BRAIN.keys.toList().let { all -> all.indexOf(a.brain).let { i -> all.drop(i + 1) + all.take(i) } }
+        val other = others.firstOrNull { acc?.optBoolean(it) == true } ?: others.first()
         val at = shell.agents.indexOfFirst { it.id == agentKey }
         list.rebuild {
             // The head: the agent, what it's for, what it's doing.
@@ -173,15 +175,19 @@ class SpaceScreen(shell: Shell, private val agentKey: String) : ListPage(shell, 
             section(a.name)
             item("sparkle", "Memory", trailing = memories?.toString() ?: "") { shell.open(Target.of("memory", "agent" to agentKey)) }
             item("palette", "Look and personality") { shell.open(Target.of("agent-look", "id" to agentKey)) }
+            // A Hermes agent has none of the R1's tools and works on its own gateway (ADR-0070).
+            val hermes = a.brain == "hermes"
             // What it may change on the R1, and whether it asks first (ADR-0045).
-            val can = a.raw.optJSONObject("can")
-            val allowed = listOf("look", "device", "apps").count { can?.optString(it) == "allow" }
-            item("shield-check", "What it can change", trailing = if (allowed > 0) "$allowed allowed" else "asks you") {
-                shell.open(Target.of("agent-can", "id" to agentKey))
+            if (!hermes) {
+                val can = a.raw.optJSONObject("can")
+                val allowed = listOf("look", "device", "apps").count { can?.optString(it) == "allow" }
+                item("shield-check", "What it can change", trailing = if (allowed > 0) "$allowed allowed" else "asks you") {
+                    shell.open(Target.of("agent-can", "id" to agentKey))
+                }
             }
             item("lightning", "talks with ${BRAIN[a.brain]}", trailing = if (acc?.optBoolean(other) == true) "switch to ${BRAIN[other]}" else "") { switchBrain(other) }
             // Where it works (docs/specs/companion.md §7.2): the R1, or a linked computer.
-            item("desktop", if (a.computer != null) "works on ${a.computer}" else "works on the R1", sub = if (a.computer != null && !a.computerHere) "not linked now" else null) {
+            if (!hermes) item("desktop", if (a.computer != null) "works on ${a.computer}" else "works on the R1", sub = if (a.computer != null && !a.computerHere) "not linked now" else null) {
                 shell.open(Target.of("agent-where", "id" to agentKey))
             }
             if (!cs.isNullOrEmpty()) item("list", "Manage chats") { shell.open(Target.of("chats", "agent" to agentKey)) }
@@ -334,10 +340,10 @@ fun newAgentPage(shell: Shell): Screen {
     val initial = DesignerPanel.freshAgent(shell.agents)
     val panel = DesignerPanel(shell, initial, "Make it",
         onSave = { a, ok, fail ->
-            // It talks with whichever account is connected (Claude if both, or neither).
+            // It talks with whichever account is connected: Claude first, and Claude with none.
             R1d.get("/api/accounts", onError = { fail(it) }) { r ->
                 val acc = r.optJSONObject("accounts")
-                val brain = if (acc?.optBoolean("claude") == true || acc?.optBoolean("codex") != true) "claude" else "codex"
+                val brain = BRAIN.keys.firstOrNull { acc?.optBoolean(it) == true } ?: "claude"
                 val body = JSONObject(a.toString()).put("brain", brain)
                 body.remove("id")
                 R1d.post("/api/agents", body, onError = fail) { ok(it.optJSONObject("agent") ?: JSONObject()) }

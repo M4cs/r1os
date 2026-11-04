@@ -9,6 +9,8 @@
 //!   turned off for it; a Codex agent has whatever the user connected on ChatGPT. Agents on a computer have none there.
 //! - **Handing over:** what it can't do, which other agent can, and to ask them with `ask_agent` (crate::mail), or say
 //!   what would make it possible (connect the app, open Chrome, link the computer).
+//! - **A Hermes agent** (ADR-0070) has what its gateway has, on its machine, and nothing here: other agents read that
+//!   in [`line`], and it hears it in crate::hermes's own instructions rather than [`block`].
 
 use crate::core::Agent;
 use crate::hub::Hub;
@@ -52,6 +54,11 @@ pub fn of(hub: &Hub, a: &Agent) -> Can {
 
 /// One line about what an agent can reach: "on Sam's PC: its files and commands, and the user's Chrome".
 pub fn line(hub: &Hub, a: &Agent) -> String {
+    if a.brain == "hermes" {
+        return "works through the user's own Hermes agent, on its own machine, with its tools, memory and skills there; \
+                none of the R1's own tools"
+            .to_owned();
+    }
     let c = of(hub, a);
     let mut s = match &c.pc {
         Some(name) => format!(

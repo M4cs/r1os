@@ -17,7 +17,7 @@ export interface Agent {
   custom: string;
   /** What it's for, in a few words ("" = a bit of everything). */
   role: string;
-  brain: "claude" | "codex";
+  brain: "claude" | "codex" | "hermes";
   /** What it may change on the R1 (ADR-0045): look, device, apps → ask (unset), allow or never. */
   can?: Record<string, "ask" | "allow" | "never">;
 }
@@ -50,6 +50,9 @@ export interface WifiNetwork {
 export interface Accounts {
   claude: boolean;
   codex: boolean;
+  /** The owner's own Hermes gateway (ADR-0070), and where. Its key never comes back. */
+  hermes: boolean;
+  hermes_url?: string | null;
 }
 
 export interface Chat {
@@ -129,7 +132,7 @@ export const accountsApi = {
   get: () => req<{ accounts: Accounts }>("GET", "/api/accounts").then((r) => r.accounts),
   codexLogin: () => req<{ url: string; code: string; expires_in: number }>("POST", "/api/accounts/codex/login", {}),
   claudeLogin: () => req<{ pair_url: string; auth_url: string }>("POST", "/api/accounts/claude/login", {}),
-  logout: (brain: "claude" | "codex") => req("POST", `/api/accounts/${brain}/logout`, {}),
+  logout: (brain: "claude" | "codex" | "hermes") => req("POST", `/api/accounts/${brain}/logout`, {}),
   qrUrl: (text: string) => `/api/qr?text=${encodeURIComponent(text)}`,
 };
 

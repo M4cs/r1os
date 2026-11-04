@@ -56,6 +56,9 @@ The R1 has no volume keys and no recovery menu. A bad write to the wrong partiti
 - Never pass `--bare`.
 - r1os never stores long-lived Claude or OpenAI credentials. The CLIs own them inside the agent box.
   - The pairing flow may forward a one-time login code into a CLI's stdin. It must never log or persist it.
+- **Hermes is the third brain (ADR-0070): the owner's own gateway, reached over its API (`crates/r1d/src/hermes.rs`), never run in the box.** It gets none of r1d's tools.
+  - Its key is the one credential r1d keeps: in `<data>/hermes.json`, never `core.db` (a backup copies that, and promises no credentials), never logged, never sent back by the API.
+  - Every `match` on a chat's brain must handle `hermes`: `chat.rs`'s `_` arm and `remote.rs`'s brain line run anything else as Claude.
 
 ## Building, running & testing
 
@@ -79,6 +82,7 @@ The R1 has no volume keys and no recovery menu. A bad write to the wrong partiti
 | Website | `bun run --cwd web dev` (http://localhost:5180) · `bun run --cwd web build` → `web/dist` · `bun run --cwd web typecheck` · served as Railway does: `bun web/serve.ts` (`web/dist`, on `$PORT`); Railway builds `web/Dockerfile` from the repo's root (`railway.json`; `docker build -f web/Dockerfile .` to try it). Docs pages are `web/src/docs/content/*.md`; the r1os skill for agents is `web/public/skills/r1os/`: when a rule or gotcha here changes, change the skill too |
 | Agent box | `tools/agent-box.sh install \| status \| codex-host \| run -- CMD \| root -- CMD` (`codex-host` adds Codex's code-mode host, without which Codex's tools fail closed) |
 | Drive the agent | `py -3 tools/agent-test.py [codex] "message" …`: a new chat through r1d's API, printing tools, timings and replies (spends a little; delete the chats after) |
+| Hermes brain | `POST /api/accounts/hermes/login {url, key}` adds the owner's gateway ([docs](web/src/docs/content/extend.md)); `POST /api/chats {agent, brain: "hermes"}`. Works in the simulator, which has no box. Marks: `reply.first_word.hermes`, `reply.done.hermes` |
 | Drive the R1 | `tools/r1h state \| events \| wheel N \| button tap\|double\|hold MS \| launch <app-id> \| screenshot \| logs` (`motor` moves the camera: ask first). It forwards local port 7172 to the R1's 7171, so the simulator can keep 7171. |
 | Measure | `tools/r1h power [seconds] [--json]`: over a window (default 60 s), the battery used (unplug the R1 and use Wi-Fi adb for a drain figure), CPU per process, suspends and wakeups (`tools/power.py` reads the device's own counters) · `tools/r1h perf [reset]`: r1d's latency marks (`/harness/perf`: STT load, release → final words, first reply word warm or cold, whole replies, release → first reply word, app window steps as `app.<op>`) and the host's frame times. Measure before and after any change to latency, frames or energy |
 | r1d by hand | On the R1, `/api`, `/harness` and `/ws` need r1d's per-boot token (ADR-0026): `T=$(source tools/lib.sh; r1d_token)`, then `curl -H "Authorization: Bearer $T" …` (after any `tools/r1h` call sets up the forward). r1d makes a new one each start. The simulator is open. |

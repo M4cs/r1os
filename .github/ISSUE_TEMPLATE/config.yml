@@ -3,3 +3,6 @@ contact_links:
   - name: Report a security vulnerability
     url: https://github.com/M4cs/r1os/security/advisories/new
     about: Privately, so it can be fixed before it's known.
+  - name: Ask a question on Discord
+    url: https://discord.gg/c2qx3AD99X
+    about: For questions and talk, rather than a bug or an idea.

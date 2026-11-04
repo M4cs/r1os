@@ -1,6 +1,7 @@
 //! Backing r1os's data up to a linked computer (docs/specs/companion.md §6, About): core.db (agents, chats,
 //! memories, the journal, alarms, the look; a snapshot taken as the backup starts), the apps' specs and data, photos
 //! and recordings, and the trash. Never the agent box (the CLIs' logins and the agents' workspaces), the link's key,
+//! Hermes's gateway key (`hermes.json`, kept out of core.db for this),
 //! r1d's binaries and libraries, models, caches or logs: no partitions, no credentials.
 //!
 //! The companion asks for the list (`GET /api/backup`), then reads each file in parts (`GET /api/backup/file`), so a

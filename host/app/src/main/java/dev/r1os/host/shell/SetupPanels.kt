@@ -640,7 +640,7 @@ class BrainPanel(shell: Shell, private val agent: JSONObject, private val doneLa
                 card(v) { if (!on && starting == null) start(brain) }
             }
             err?.let { note(it, Theme.BAD, 13f) }
-            val any = acc?.optBoolean("claude") == true || acc?.optBoolean("codex") == true
+            val any = acc?.optBoolean("claude") == true || acc?.optBoolean("codex") == true || acc?.optBoolean("hermes") == true
             button(doneLabel, enabled = any) { onDone() }
             if (acc != null && !any) button("Set up later", primary = false) { onDone() }
         }

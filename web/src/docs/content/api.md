@@ -32,7 +32,7 @@ The main ones. Every route, with its body and answer, is in the repo's `docs/spe
 | Device | `GET /api/state` · `POST /api/screen {on}` · `POST /api/motor {deg}` · `/api/device` · `/api/time` · `/api/wifi` · `PUT /api/boot {verbose}` · `POST /api/power {action}` · `GET /api/backup` |
 | Look and home | `/api/look` ([below](#the-look)) · `PUT /api/home {pins}` · `PUT /api/glance {apps}` (widgets, in order) |
 | Voice | `GET /api/voice` · `POST /api/voice/talk {op: start\|send\|cancel}` (talking by touch, as when docked) |
-| Agents | `/api/agents` · `PUT /api/agents/{id}` (the whole profile) · `PUT /api/agents/{id}/can {area, level}` · `/api/memories` · `/api/accounts` · `/api/connections` · `/api/skills` |
+| Agents | `/api/agents` · `PUT /api/agents/{id}` (the whole profile) · `PUT /api/agents/{id}/can {area, level}` · `/api/memories` · `/api/accounts` (`POST /api/accounts/hermes/login {url, key}` adds your [Hermes gateway](/docs/extend#your-hermes-agent); its key never comes back) · `/api/connections` · `/api/skills` |
 | Chats | `POST /api/chats {agent?, brain?}` · `POST /api/chats/{id}/messages {text}` (the reply streams as `chat` events) · `POST /api/chats/warm` · `POST /api/chats/{id}/stop` |
 | Approvals | `GET /api/approvals` · `POST /api/approvals/{id} {allow, always?}` |
 | Apps | `POST /api/apps {source}` (422 with diagnostics) · `POST /api/create {brief}` · `/api/apps/{id}/edit`, `/undo`, `/fix`, `/restore`, `/export`, `/settings`, `/permissions` · `POST /api/apps/{id}/run {action, params}` |

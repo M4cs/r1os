@@ -64,7 +64,7 @@ function statusOf(a: AgentInfo, build: Build | undefined, acc: Accounts | null, 
         return { text: `Building an app${build.section ? ` · ${build.section}` : "…"}`, cls: "" };
     }
   }
-  if (acc && !acc.claude && !acc.codex) return { text: "Not connected: Settings › Accounts", cls: " error" };
+  if (acc && !acc.claude && !acc.codex && !acc.hermes) return { text: "Not connected: Settings › Accounts", cls: " error" };
   switch (a.state) {
     case "thinking":
       return { text: "Thinking…", cls: "" };

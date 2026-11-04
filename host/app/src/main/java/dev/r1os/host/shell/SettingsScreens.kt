@@ -129,6 +129,21 @@ class AccountsScreen(shell: Shell) : ListPage(shell, "Accounts") {
                 }.tag = "out-$b"
             }
         }
+        // Your own Hermes gateway (ADR-0070): its address and key are too much for the wheel, so the companion adds it.
+        val hermes = acc?.optBoolean("hermes") == true
+        place(context.card(
+            context.text(20f, 750).apply { text = "Hermes" },
+            context.text(15f, 500, Theme.MUTED).apply {
+                text = if (acc == null) "…" else if (hermes) "Your gateway · ${acc?.optString("hermes_url").orEmpty().substringAfter("://")}" else "Not connected · add your gateway in the companion"
+            },
+            ok = hermes,
+        ))
+        if (hermes) {
+            val armed = confirm.armed == "hermes"
+            button(if (armed) "Click again to disconnect Hermes" else "Disconnect Hermes", primary = false, small = true) {
+                confirm.tap("hermes") { R1d.post("/api/accounts/hermes/logout") { load() } }
+            }.tag = "out-hermes"
+        }
         button("Connect an account") {
             val panel = BrainPanel(shell, shell.focusAgent().raw, "Done") { shell.back() }
             shell.push(PanelPage(shell, "Connect an account", Theme.accent, panel))

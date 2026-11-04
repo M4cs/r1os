@@ -1670,7 +1670,10 @@ async fn wifi_connect(Json(req): Json<WifiConnect>) -> Response {
 }
 
 async fn accounts_get(State(hub): State<Shared>) -> Json<Value> {
-    Json(json!({ "accounts": hub.accounts.status().await }))
+    let status = hub.accounts.status().await;
+    // Whether Hermes's gateway is connected, and to what. Never its key (crate::hermes).
+    let url = hub.hermes.url();
+    Json(json!({ "accounts": { "claude": status.claude, "codex": status.codex, "hermes": url.is_some(), "hermes_url": url } }))
 }
 
 #[derive(Deserialize, Default)]
@@ -1678,11 +1681,18 @@ struct LoginReq {
     /// `computer`: a linked computer signs Claude in (no LAN page: it opens the link and passes the code back).
     #[serde(default)]
     via: Option<String>,
+    /// Hermes: its gateway's address and API key (never logged; crate::hermes).
+    #[serde(default)]
+    url: Option<String>,
+    #[serde(default)]
+    key: Option<String>,
 }
 
 async fn account_login(State(hub): State<Shared>, Path(brain): Path<String>, body: Option<Json<LoginReq>>) -> Response {
-    let via_computer = body.and_then(|b| b.0.via).as_deref() == Some("computer");
+    let req = body.map(|b| b.0).unwrap_or_default();
+    let via_computer = req.via.as_deref() == Some("computer");
     let r = match brain.as_str() {
+        "hermes" => hub.hermes.connect(&hub, req.url.as_deref().unwrap_or_default(), req.key.as_deref().unwrap_or_default()).await,
         "codex" => hub.accounts.codex_login(hub.clone()).await,
         "claude" if via_computer => hub.accounts.claude_login(hub.clone(), None).await,
         "claude" => match crate::wifi::status().await.ok().and_then(|s| s.ip) {
@@ -1772,7 +1782,8 @@ async fn power(Json(req): Json<PowerReq>) -> Response {
 }
 
 async fn account_logout(State(hub): State<Shared>, Path(brain): Path<String>) -> Response {
-    match hub.accounts.logout(hub.clone(), &brain).await {
+    let out = if brain == "hermes" { hub.hermes.forget(&hub) } else { hub.accounts.logout(hub.clone(), &brain).await };
+    match out {
         Ok(()) => Json(json!({ "signed_out": brain })).into_response(),
         Err(e) => error(StatusCode::BAD_REQUEST, format!("{e:#}")),
     }
@@ -2022,7 +2033,7 @@ async fn chats_new(State(hub): State<Shared>, body: Option<Json<NewChat>>) -> Re
     blocking(move || {
         let agent = req.agent.and_then(|a| hub.core.agent(&a)).unwrap_or_else(|| hub.core.focus());
         let brain = req.brain.unwrap_or_else(|| agent.brain.clone());
-        anyhow::ensure!(["claude", "codex"].contains(&brain.as_str()), "unknown brain `{brain}`");
+        anyhow::ensure!(crate::core::BRAINS.contains(&brain.as_str()), "unknown brain `{brain}`");
         let mut chat = hub.core.new_chat(&crate::core::random_hex(8), &agent.id, &brain)?;
         // An agent on a computer: the chat keeps the mode it starts in (its agent's, unless asked otherwise).
         if agent.computer().is_some() {

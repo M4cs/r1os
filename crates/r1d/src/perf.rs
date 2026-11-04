@@ -7,7 +7,8 @@
 //! - `reply.first_word.warm` / `.cold`: a Claude chat's message sent to its CLI → the first word of the reply; warm when
 //!   the process was already running, cold when it started for this turn (crate::session).
 //! - `reply.init.warm` / `.cold`: → the CLI's `init` for the turn (its own overhead, before the model's call).
-//! - `reply.done.<brain>`: → the whole reply (`claude`, `codex`, `pc` for a computer's).
+//! - `reply.first_word.hermes`: a Hermes run started → the first word it streamed (crate::hermes).
+//! - `reply.done.<brain>`: → the whole reply (`claude`, `codex`, `hermes`, `pc` for a computer's).
 //! - `voice.release_to_first_word`: the button up → the first word of the reply, when the reply follows what you said.
 //! - `app.<op>`: a step in the app window (crate::appwin: `app.open`, `app.click`, `app.read`…), r1d's request → the
 //!   host's answer, settling included.
