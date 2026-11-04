@@ -336,10 +336,12 @@ class CameraScreen(
     private fun shoot(words: String?) {
         if (busy) return
         busy = true
+        // Facing you, the still is checked against what the preview shows (the HAL doesn't always turn it round).
+        val stream = if (Camera.facingUser) finder.frame(STREAM_W, STREAM_H) else null
         finder.flash()
         if (CameraPrefs.shutter) shutter.play(MediaActionSound.SHUTTER_CLICK)
         lamp.color = Deck.REC
-        Photos.take(context, source, CameraPrefs.film, onDone = { id ->
+        Photos.take(context, source, CameraPrefs.film, stream = stream, onDone = { id ->
             busy = false
             lampNow()
             CameraPrefs.frames = CameraPrefs.frames + 1
@@ -398,6 +400,9 @@ class CameraScreen(
         /** The bands' heights. */
         const val STRIP_DP = 46f
         const val DECK_DP = 96f
+        /** The preview's frame a selfie is checked against: small, 3:4 like the stream turned upright. */
+        const val STREAM_W = 36
+        const val STREAM_H = 48
         val WB_ORDER = listOf(
             CaptureRequest.CONTROL_AWB_MODE_AUTO, CaptureRequest.CONTROL_AWB_MODE_DAYLIGHT, CaptureRequest.CONTROL_AWB_MODE_CLOUDY_DAYLIGHT,
             CaptureRequest.CONTROL_AWB_MODE_SHADE, CaptureRequest.CONTROL_AWB_MODE_TWILIGHT, CaptureRequest.CONTROL_AWB_MODE_INCANDESCENT,

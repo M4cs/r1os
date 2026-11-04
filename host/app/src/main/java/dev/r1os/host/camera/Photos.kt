@@ -21,14 +21,14 @@ object Photos {
     /** Takes a photo and keeps it: `source` says where from (`camera`, `chat`, `look`). Its media id. */
     fun take(context: Context, source: String, onDone: (String) -> Unit, onError: (String) -> Unit) = take(context, source, null, onDone, onError)
 
-    /** Taken through `film` (the camera app's). */
-    fun take(context: Context, source: String, film: Film?, onDone: (String) -> Unit, onError: (String) -> Unit) {
+    /** Taken through `film` (the camera app's); `stream`: its preview's frame at the shutter ([Camera.capture]). */
+    fun take(context: Context, source: String, film: Film?, onDone: (String) -> Unit, onError: (String) -> Unit, stream: Bitmap? = null) {
         Camera.capture(context, film, onJpeg = { jpeg ->
             R1d.upload("/api/media?source=${R1d.enc(source)}", jpeg, "image/jpeg", onError = onError) { r ->
                 val id = r.optJSONObject("media")?.optString("id").orEmpty()
                 if (id.isEmpty()) onError("The photo wasn't kept.") else onDone(id)
             }
-        }, onError = onError)
+        }, onError = onError, stream = stream)
     }
 
     /** Shows photo `id` in `view`, about `px` on its long side. */

@@ -230,8 +230,11 @@ object Camera {
      */
     fun capture(context: Context, onJpeg: (ByteArray) -> Unit, onError: (String) -> Unit) = capture(context, null, onJpeg, onError)
 
-    /** A still through `film` (the camera app's: what its viewfinder shows). */
-    fun capture(context: Context, film: Film?, onJpeg: (ByteArray) -> Unit, onError: (String) -> Unit) {
+    /**
+     * A still through `film` (the camera app's: what its viewfinder shows). `stream`: the preview's frame at the
+     * shutter, as the stream has it (before [previewTransform]); facing you, the still is matched to it ([halTurned]).
+     */
+    fun capture(context: Context, film: Film?, onJpeg: (ByteArray) -> Unit, onError: (String) -> Unit, stream: Bitmap? = null) {
         // One answer, whatever happens: a capture cut short (the camera closed under it) never reports,
         // so a few seconds without the picture is an error.
         var answered = false
@@ -255,7 +258,8 @@ object Camera {
                     image.close()
                 }
                 ir.setOnImageAvailableListener(null, null)
-                val out = runCatching { upright(bytes, film) }.getOrElse { bytes }
+                val out = runCatching { upright(bytes, film, stream) }.getOrElse { bytes }
+                stream?.recycle()
                 main.post { ok(out) }
             }, cam)
             try {
@@ -277,22 +281,36 @@ object Camera {
     }
 
     /**
-     * Turned upright (the sensor's mounting), sized down, re-encoded. The same turn facing you: Rabbit's camera
-     * already flips the picture when the motor turns it round (an extra 180° made selfies upside down, Max,
-     * 2026-10-10).
+     * Turned upright (the sensor's mounting), sized down, re-encoded. Facing you, Rabbit's HAL turns a still round
+     * by where the motor's driver *believes* the module faces (ADR-0046), so it usually needs no more (an extra 180°
+     * made selfies upside down, Max, 2026-10-10), but not always: the camera app's selfies came out upside down
+     * again (Max, 2026-11-03). So with the preview's frame at hand (`stream`), the still is checked against it and
+     * turned round when the HAL didn't; without one, the HAL is trusted.
      */
-    private fun upright(jpeg: ByteArray, film: Film?): ByteArray {
+    private fun upright(jpeg: ByteArray, film: Film?, stream: Bitmap? = null): ByteArray {
         val raw = BitmapFactory.decodeByteArray(jpeg, 0, jpeg.size) ?: return jpeg
         val turn = sensor % 360
         val scale = (MAX_SIDE.toFloat() / maxOf(raw.width, raw.height)).coerceAtMost(1f)
         val m = Matrix().apply {
             postScale(scale, scale)
             postRotate(turn.toFloat())
-            // The camera app's selfie, kept as its viewfinder showed it: mirrored (agents' own looks aren't).
-            if (film != null && facingUser && mirrorSelfies) postScale(-1f, 1f)
         }
         var out = Bitmap.createBitmap(raw, 0, 0, raw.width, raw.height, m, true)
-        raw.recycle()
+        if (out !== raw) raw.recycle()
+        if (facingUser) {
+            val round = stream != null && halTurned(out, stream) == false
+            // The camera app's selfie, kept as its viewfinder showed it: mirrored (agents' own looks aren't).
+            val mirror = film != null && mirrorSelfies
+            if (round || mirror) {
+                val f = Matrix().apply {
+                    if (round) postRotate(180f)
+                    if (mirror) postScale(-1f, 1f)
+                }
+                val turned = Bitmap.createBitmap(out, 0, 0, out.width, out.height, f, true)
+                if (turned !== out) out.recycle()
+                out = turned
+            }
+        }
         if (film != null && (film != Film.STD || controls.gain != 0f)) {
             // Grain the size it looks in the viewfinder: about 480 px wide on the R1's screen.
             val baked = film.bake(out, controls.gain, grainScale = (out.width / 480f).coerceAtLeast(1f))
@@ -304,6 +322,53 @@ object Camera {
             out.recycle()
             s.toByteArray()
         }
+    }
+
+    /**
+     * Facing you, whether the HAL turned this still (already upright for the sensor) round: true when it looks like
+     * the preview's `stream` frame turned round (as the viewfinder shows it), false when it looks like the frame as
+     * it is (upside down, as the stream is facing you), null when the picture can't tell (a blank wall).
+     */
+    private fun halTurned(still: Bitmap, stream: Bitmap): Boolean? {
+        val w = stream.width
+        val h = stream.height
+        if (w < 4 || h < 4) return null
+        val small = Bitmap.createScaledBitmap(still, w, h, true)
+        val a = luma(small)
+        if (small !== still) small.recycle()
+        val b = luma(stream)
+        val n = w * h
+        val same = correlation(a, b) { it }
+        val round = correlation(a, b) { n - 1 - it }
+        Log.i(TAG, "camera: selfie still vs preview: as is %.2f, turned round %.2f".format(same, round))
+        if (maxOf(same, round) < 0.25 || kotlin.math.abs(same - round) < 0.1) return null
+        return round > same
+    }
+
+    private fun luma(b: Bitmap): FloatArray {
+        val px = IntArray(b.width * b.height)
+        b.getPixels(px, 0, b.width, 0, 0, b.width, b.height)
+        return FloatArray(px.size) { i ->
+            val c = px[i]
+            0.299f * ((c shr 16) and 0xff) + 0.587f * ((c shr 8) and 0xff) + 0.114f * (c and 0xff)
+        }
+    }
+
+    /** Pearson's r between `a` and `b`, `b` read at `at(i)`. */
+    private inline fun correlation(a: FloatArray, b: FloatArray, at: (Int) -> Int): Float {
+        val ma = a.average().toFloat()
+        val mb = b.average().toFloat()
+        var ab = 0f
+        var aa = 0f
+        var bb = 0f
+        for (i in a.indices) {
+            val x = a[i] - ma
+            val y = b[at(i)] - mb
+            ab += x * y
+            aa += x * x
+            bb += y * y
+        }
+        return if (aa == 0f || bb == 0f) 0f else ab / kotlin.math.sqrt(aa * bb)
     }
 
     /** How a viewfinder of `w` × `h` px shows the preview: turned upright and filling it (centre crop). */
