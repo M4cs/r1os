@@ -2,6 +2,8 @@
 
 An agent-first OS for the Rabbit R1, open source under the MIT licence.
 
+![r1os on an R1: the glance screen, turning through agents, designing one, a spoken question answered with a card, an app on the wheel and the built-in tools. Recorded on a real R1, then cut and sped up.](web/public/media/r1os-feature.gif)
+
 The R1 boots straight into r1os's own shell, built for its wheel, side button, mic, speaker and rotating camera. You
 talk to agents: Claude Code or Codex, the unmodified CLIs, under your own login, in a sandbox on the R1. They answer,
 remember, run routines, use apps on the R1 for you, and build small apps for it when you ask. Rabbit's kernel and
@@ -10,6 +12,12 @@ vendor stay as the hardware layer; r1os's own Android system image sits on top.
 > **Status:** early, and in daily use on its maintainer's R1. Installing it on another R1 still takes a developer
 > (build the image, flash it from the command line). A desktop companion that installs it for anyone is being built.
 > Not affiliated with Rabbit Inc., Anthropic or OpenAI.
+
+## What it looks like
+
+[![r1os at a glance: first run, every day and the built-in tools, as real screens from an R1.](web/public/media/r1os-overview.png)](web/public/media/r1os-overview.png)
+
+Also: every step of [first run](web/public/media/r1os-onboarding.png), the [built-in tools](web/public/media/r1os-built-in.png) and [each screen on its own](web/public/media/screens).
 
 ## Try it without an R1
 

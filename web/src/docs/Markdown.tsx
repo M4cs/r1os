@@ -183,8 +183,13 @@ function Inline({ t }: { t: Token }) {
       );
     }
     case "image": {
+      // A layout of screens is small in the column: a click opens the file, full size (not through the router).
       const im = t as Tokens.Image;
-      return <img src={im.href} alt={im.text} loading="lazy" />;
+      return (
+        <a className="md-img" href={im.href} target="_blank" rel="noreferrer">
+          <img src={im.href} alt={im.text} loading="lazy" />
+        </a>
+      );
     }
     default:
       return null;

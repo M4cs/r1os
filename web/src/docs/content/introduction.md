@@ -11,6 +11,8 @@ r1os is an agent-first operating system. It covers most of the everyday things R
 
 > r1os is an independent project. It isn't made by, affiliated with or endorsed by Rabbit Inc., Anthropic, OpenAI or Google.
 
+![r1os at a glance, as real screens from an R1: first run, every day and the built-in tools.](/media/r1os-overview.png)
+
 ## What it does
 
 - **Agents you talk to.** Hold the button and talk to one of up to eight agents, each with its own character, chats, memory and files. It answers, browses the web, uses your apps or builds you one in seconds.

@@ -16,6 +16,19 @@ async function isFile(path: string): Promise<boolean> {
   return (await stat(path).catch(() => null))?.isFile() ?? false;
 }
 
+/** A file, or the byte range asked for: Safari won't play a video from a server that ignores ranges, and Bun doesn't answer them itself. */
+function served(path: string, range: string | null, headers: Record<string, string>): Response {
+  const file = Bun.file(path);
+  const all = { ...headers, "Accept-Ranges": "bytes" };
+  const asked = range?.trim().match(/^bytes=(\d*)-(\d*)$/);
+  if (!asked || (!asked[1] && !asked[2])) return new Response(file, { headers: all });
+  // `bytes=-N` is the last N bytes.
+  const start = asked[1] ? Number(asked[1]) : Math.max(file.size - Number(asked[2]), 0);
+  const end = asked[1] && asked[2] ? Math.min(Number(asked[2]), file.size - 1) : file.size - 1;
+  if (start > end) return new Response(null, { status: 416, headers: { ...all, "Content-Range": `bytes */${file.size}` } });
+  return new Response(file.slice(start, end + 1, file.type), { status: 206, headers: { ...all, "Content-Range": `bytes ${start}-${end}/${file.size}` } });
+}
+
 const server = Bun.serve({
   port: Number(process.env.PORT ?? 4180),
   async fetch(req) {
@@ -31,7 +44,7 @@ const server = Bun.serve({
     if (await isFile(file)) {
       // Vite's hashed assets never change; everything else is checked again each time.
       const cache = path.startsWith("/assets/") ? "public, max-age=31536000, immutable" : "no-cache";
-      return new Response(Bun.file(file), { headers: { ...always, "Cache-Control": cache } });
+      return served(file, req.headers.get("range"), { ...always, "Cache-Control": cache });
     }
     if (extname(path)) return new Response("Not found", { status: 404, headers: always });
     return new Response(Bun.file(index), { headers: { ...always, "Cache-Control": "no-cache", "Content-Type": "text/html; charset=utf-8" } });

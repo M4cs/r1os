@@ -72,6 +72,9 @@
 .md .callout.danger .callout-icon { color: var(--danger); }
 .md .callout > div > * + * { margin-top: 10px; }
 .md img { max-width: 100%; border-radius: 16px; }
+/* A picture on its own line uses the whole column, as code and tables do. */
+.md > p:has(> .md-img) { max-width: none; }
+.md-img { display: block; }
 
 .docs-pager { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 64px; text-transform: lowercase; }
 .docs-pager-link { display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; border-radius: 18px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); transition: box-shadow .2s, transform .25s cubic-bezier(.25, 1, .5, 1); }

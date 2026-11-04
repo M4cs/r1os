@@ -39,6 +39,8 @@ Turn up past the first agent to sleep. Turn down past the end, or swipe up from 
 
 A long press reorders agents and pinned apps, or in the launcher, pins an app to home.
 
+![The launcher's tools and the built-in screens, as real screens from an R1: journal, recorder, translator, timer, alarms, reminders, clock, system and about.](/media/r1os-built-in.png)
+
 ## Chats
 
 Hold and talk, or turn the device on its side to type. Replies stream in, tool use shows as a small chip, and some answers bring a card: headlines, weather, a chart. An agent at work in an app or the browser shows it live; touch it to open it full and take over ([Android apps](/docs/android)).

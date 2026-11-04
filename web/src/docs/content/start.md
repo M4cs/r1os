@@ -108,4 +108,6 @@ tools/agent-box.sh install   # Alpine, with Claude Code and Codex
 
 Onboarding runs on the wheel and button: Wi-Fi, your first agent, then Claude or Codex, signed in by scanning a QR code with your phone. Then hold the button and say something.
 
+![First run, step by step, as real screens from an R1: hi, Wi-Fi, an agent's shape, color, finish, eyes, what it wears, name, job and how it talks, then its brain, and ready. This R1 was already signed in, so the QR code doesn't show.](/media/r1os-onboarding.png)
+
 Next: [Using r1os](/docs/using), [Android apps](/docs/android) and the [Companion](/docs/companion). No R1? [The simulator](/docs/develop#the-simulator) runs r1os's daemon and shell on your computer.
